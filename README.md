@@ -6,6 +6,7 @@
 [![Ethereum Solidity](https://img.shields.io/badge/Solidity-0.8.20-lightgrey.svg)](https://soliditylang.org/)
 [![Supabase PostgreSQL](https://img.shields.io/badge/Supabase-PostgreSQL_RLS-emerald.svg)](https://supabase.com/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/talaribindu2715/smartevolve-AI)
 
 SmartEvolve AI is a complete, production-minded, mobile-first engineering application designed for personalized student profiling, adaptive AI recommendations, intelligent career guidance, and blockchain-backed credential verification.
 
