@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: smartevolve-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    healthCheckPath: /v3/api-docs
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: SUPABASE_DB_USER
+        sync: false
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: BLOCKCHAIN_RPC_URL
+        value: https://rpc.sepolia.org
+      - key: BLOCKCHAIN_CHAIN_ID
+        value: 11155111
+      - key: BLOCKCHAIN_NETWORK
+        value: sepolia
+      - key: CONTRACT_ADDRESS
+        sync: false
+      - key: BLOCKCHAIN_PRIVATE_KEY
+        sync: false
