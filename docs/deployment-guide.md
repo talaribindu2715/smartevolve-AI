@@ -120,3 +120,48 @@ Press `a` to open in Android Emulator or scan the QR code in Expo Go.
    eas build -p android --profile preview
    ```
    Download the generated `.apk` and install directly onto any Android device!
+
+---
+
+## 5. Web Frontend Deployment via Vercel
+
+The mobile application is powered by Expo Router, which natively compiles to a high-performance static web application (`npx expo export -p web`) fully supported by Vercel.
+
+### Method A: Connect GitHub Repository to Vercel (Recommended)
+1. Push your repository to GitHub:
+   ```bash
+   git push -u origin main
+   ```
+2. Go to [https://vercel.com/new](https://vercel.com/new) and select your repository (`talaribindu2715/smartevolve-AI`).
+3. In the **Project Configuration** panel:
+   - **Framework Preset**: `Other`
+   - **Root Directory**: Click "Edit" and choose `mobile`
+   - **Build Command**: `npx expo export -p web` (or leave default if reading `mobile/vercel.json`)
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install --legacy-peer-deps`
+4. Add **Environment Variables**:
+   - `EXPO_PUBLIC_API_URL`: Your backend URL (e.g., `https://your-backend.onrender.com/api/v1`)
+   - `EXPO_PUBLIC_SUPABASE_URL`: Your Supabase URL
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon Key
+5. Click **Deploy**. Vercel will build and assign your production URL (e.g., `https://smartevolve-ai.vercel.app`).
+
+### Method B: Deploy using Vercel CLI
+From your terminal:
+```bash
+# 1. Install Vercel CLI
+npm install -g vercel
+
+# 2. Navigate to the mobile directory
+cd e:/SmartEvolve-learning/mobile
+
+# 3. Export web bundle locally to verify
+npm run build:web
+
+# 4. Deploy to preview
+vercel
+
+# 5. Deploy to production
+vercel --prod
+```
+The pre-configured `mobile/vercel.json` automatically configures clean URLs, SPA rewrite rules (`/* -> /index.html`), and security headers.
+
