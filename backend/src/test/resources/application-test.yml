@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:smartevolve_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+supabase:
+  jwt:
+    secret: my-test-jwt-secret-key-must-be-at-least-256-bits-long-for-hmac-sha256
+    issuer: https://test.supabase.co/auth/v1
+
+blockchain:
+  enabled: false
+  rpc-url: http://127.0.0.1:8545
+  chain-id: 31337
+  contract-address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  issuer-private-key: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+  network-name: test-network
