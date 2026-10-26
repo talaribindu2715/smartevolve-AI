@@ -52,6 +52,21 @@ blockchain:
   issuer-private-key: ${BLOCKCHAIN_PRIVATE_KEY:0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
   network-name: ${BLOCKCHAIN_NETWORK:hardhat-local}
 
+# Spring Boot Actuator (Health Checks for Render)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: false
+
 # OpenAPI Swagger Documentation
 springdoc:
   api-docs:
@@ -68,3 +83,4 @@ logging:
     com.smartevolve: DEBUG
     org.springframework.security: INFO
     org.hibernate.SQL: WARN
+
