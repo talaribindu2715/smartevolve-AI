@@ -75,12 +75,24 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
 Set Environment Variables in Render:
-- `SUPABASE_DB_URL`: `jdbc:postgresql://db.YOUR_REF.supabase.co:5432/postgres`
+
+#### Option A: Supabase Connection Pooler (Recommended for Render)
+> **Note**: Render Free Tier requires IPv4, so the Supabase Connection Pooler (Port 6543) is strongly recommended.
+- `SUPABASE_DB_URL`: `jdbc:postgresql://aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require`
+- `SUPABASE_DB_USER`: `postgres.[YOUR-PROJECT-REF]` *(e.g. `postgres.abcdefghijklmnopqrst` - NOT `postgres.YOUR_SUPABASE_PROJECT_REF`)*
+- `SUPABASE_DB_PASSWORD`: `[YOUR-SUPABASE-DATABASE-PASSWORD]`
+- `SUPABASE_URL`: `https://[YOUR-PROJECT-REF].supabase.co`
+- `SUPABASE_JWT_SECRET`: `[YOUR-SUPABASE-JWT-SECRET]`
+- `SUPABASE_JWT_ISSUER`: `https://[YOUR-PROJECT-REF].supabase.co/auth/v1`
+- `CONTRACT_ADDRESS`: `0x5FbDB2315678afecb367f032d93F642f64180aa3` *(or your deployed contract address)*
+- `BLOCKCHAIN_RPC_URL`: `https://rpc.sepolia.org`
+
+#### Option B: Supabase Direct Connection (Requires IPv6 or Addon)
+- `SUPABASE_DB_URL`: `jdbc:postgresql://db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?sslmode=require`
 - `SUPABASE_DB_USER`: `postgres`
-- `SUPABASE_DB_PASSWORD`: `YOUR_PASSWORD`
-- `SUPABASE_JWT_SECRET`: `YOUR_SUPABASE_JWT_SECRET`
-- `CONTRACT_ADDRESS`: `YOUR_DEPLOYED_CONTRACT_ADDRESS`
-- `BLOCKCHAIN_RPC_URL`: `YOUR_SEPOLIA_RPC_OR_LOCAL`
+- `SUPABASE_DB_PASSWORD`: `[YOUR-SUPABASE-DATABASE-PASSWORD]`
+- `SUPABASE_URL`: `https://[YOUR-PROJECT-REF].supabase.co`
+- `SUPABASE_JWT_SECRET`: `[YOUR-SUPABASE-JWT-SECRET]`
 
 ---
 
