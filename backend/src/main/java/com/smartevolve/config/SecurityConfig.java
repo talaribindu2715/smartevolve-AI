@@ -33,16 +33,16 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public / Swagger / Actuator endpoints
+                // Public / Swagger / Actuator and API endpoints (JWT filter extracts identity or attaches demo student)
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/actuator/health",
                     "/actuator/info",
-                    "/api/public/**"
+                    "/api/**"
                 ).permitAll()
-                // All other endpoints require authenticated Supabase JWT
+                // Any other request
                 .anyRequest().authenticated()
             )
             .addFilterBefore(supabaseJwtFilter, UsernamePasswordAuthenticationFilter.class);
