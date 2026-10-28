@@ -11,13 +11,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle, Path, Polygon } from "react-native-svg";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { StatCard } from "../../src/components/StatCard";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { ProficiencyBar } from "../../src/components/ProficiencyBar";
+import { VideoCard } from "../../src/components/VideoCard";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function DashboardScreen() {
@@ -31,6 +32,11 @@ export default function DashboardScreen() {
   } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api.getDashboard(),
+  });
+
+  const { data: recommendedVideos } = useQuery({
+    queryKey: ["recommendedYouTubeVideos"],
+    queryFn: () => api.getRecommendedYouTubeVideos(),
   });
 
   if (isLoading) {
@@ -174,6 +180,18 @@ export default function DashboardScreen() {
 
         <TouchableOpacity
           style={styles.quickActionCard}
+          onPress={() => router.push("/videos")}
+        >
+          <View style={[styles.qaIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
+            <Svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444">
+              <Polygon points="5 3 19 12 5 21 5 3" />
+            </Svg>
+          </View>
+          <Text style={styles.qaTitle}>Videos</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickActionCard}
           onPress={() => router.push("/credentials")}
         >
           <View style={[styles.qaIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
@@ -279,6 +297,39 @@ export default function DashboardScreen() {
           </Card>
         )}
       </View>
+
+      {/* Recommended YouTube Video Masterclasses */}
+      {recommendedVideos && recommendedVideos.length > 0 && (
+        <View style={styles.sectionWrap}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>YouTube Video Academy</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                Video lessons mapped to your active skill gaps
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push("/videos")}>
+              <Text style={styles.seeAllText}>Explore Academy →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -spacing.md }}
+            contentContainerStyle={{ paddingHorizontal: spacing.md }}
+          >
+            {recommendedVideos.map((video) => (
+              <View key={video.id} style={{ width: 260, marginRight: spacing.md }}>
+                <VideoCard
+                  video={video}
+                  onPress={(v) => router.push(`/videos/${v.id || v.videoId}`)}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Top Skills Proficiency */}
       <View style={styles.sectionWrap}>

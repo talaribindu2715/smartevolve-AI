@@ -143,3 +143,27 @@ Authorization: Bearer <supabase_access_token>
 |---|---|---|
 | `GET` | `/api/credentials` | List all blockchain credentials issued to student |
 | `POST` | `/api/credentials/{id}/verify` | Execute on-chain verification on Ethereum smart contract |
+
+---
+
+### YouTube Educational Video Pipeline
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/youtube/videos` | Stream and filter educational YouTube masterclasses |
+| `GET` | `/api/youtube/videos/{id}` | Detailed video metadata, embed URL, and learner progress |
+| `GET` | `/api/youtube/recommended` | AI-targeted video recommendations based on skill deficits |
+| `GET` | `/api/youtube/skills` | High-level summary of skills with available video counts |
+| `POST` | `/api/youtube/progress` | Track watch completion and calibrate student proficiency |
+| `POST` | `/api/youtube/ingest` | Dynamic ingestion from YouTube Data API v3 |
+
+**POST `/api/youtube/progress` Request Body:**
+```json
+{
+  "videoId": "20000000-0000-0000-0000-000000000001",
+  "youtubeVideoId": "rfscVS0vtbw",
+  "watchedSeconds": 1500,
+  "totalSeconds": 1500,
+  "status": "COMPLETED"
+}
+```
+

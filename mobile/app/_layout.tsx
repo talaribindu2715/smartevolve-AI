@@ -71,6 +71,14 @@ export default function RootLayout() {
                 name="settings/index"
                 options={{ title: "Settings", headerShown: true }}
               />
+              <Stack.Screen
+                name="videos/index"
+                options={{ title: "YouTube Academy", headerShown: true }}
+              />
+              <Stack.Screen
+                name="videos/[id]"
+                options={{ title: "Video Masterclass", headerShown: true }}
+              />
             </Stack>
           </PaperProvider>
         </AuthProvider>

@@ -16,6 +16,9 @@ import {
   EvolutionHistory,
   DashboardSummary,
   Analytics,
+  YouTubeVideo,
+  YouTubeSkillSummary,
+  UpdateVideoProgressRequest,
 } from "../types";
 
 // Dynamic API base URL configuration:
@@ -136,4 +139,38 @@ export const api = {
 
   // Analytics
   getAnalytics: () => apiFetch<Analytics>("/api/analytics"),
+
+  // YouTube Educational Pipeline
+  getYouTubeVideos: (params?: { skillId?: string; difficulty?: string; query?: string; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.skillId) searchParams.append("skillId", params.skillId);
+    if (params?.difficulty) searchParams.append("difficulty", params.difficulty);
+    if (params?.query) searchParams.append("query", params.query);
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    const qs = searchParams.toString();
+    return apiFetch<YouTubeVideo[]>(`/api/youtube/videos${qs ? `?${qs}` : ""}`);
+  },
+
+  getYouTubeVideoDetail: (idOrVideoId: string) =>
+    apiFetch<YouTubeVideo>(`/api/youtube/videos/${idOrVideoId}`),
+
+  getRecommendedYouTubeVideos: () =>
+    apiFetch<YouTubeVideo[]>("/api/youtube/recommended"),
+
+  getYouTubeSkills: () =>
+    apiFetch<YouTubeSkillSummary[]>("/api/youtube/skills"),
+
+  updateVideoProgress: (data: UpdateVideoProgressRequest) =>
+    apiFetch<YouTubeVideo>("/api/youtube/progress", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  ingestYouTubeVideos: (query: string, skillId?: string) => {
+    const searchParams = new URLSearchParams({ query });
+    if (skillId) searchParams.append("skillId", skillId);
+    return apiFetch<YouTubeVideo[]>(`/api/youtube/ingest?${searchParams.toString()}`, {
+      method: "POST",
+    });
+  },
 };

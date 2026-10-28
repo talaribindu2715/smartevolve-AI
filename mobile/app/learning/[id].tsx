@@ -14,6 +14,7 @@ import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
+import { YouTubePlayer } from "../../src/components/YouTubePlayer";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function LearningScreen() {
@@ -85,6 +86,20 @@ export default function LearningScreen() {
       <Text style={styles.skillTarget}>
         Target Competency: <Text style={{ color: colors.accent }}>{resource.skillName}</Text>
       </Text>
+
+      {/* Embedded YouTube Player if Video module */}
+      {(resource.contentType === "VIDEO" ||
+        (resource.externalUrl &&
+          (resource.externalUrl.includes("youtube.com") ||
+            resource.externalUrl.includes("youtu.be")))) && (
+        <View style={{ marginVertical: spacing.md }}>
+          <YouTubePlayer
+            videoIdOrUrl={resource.externalUrl || resource.title}
+            title={resource.title}
+            autoPlay={false}
+          />
+        </View>
+      )}
 
       {/* Overview Card */}
       <Card style={styles.overviewCard}>

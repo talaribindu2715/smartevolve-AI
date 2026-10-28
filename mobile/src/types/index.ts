@@ -273,3 +273,42 @@ export interface Analytics {
     averageProficiency: number;
   }[];
 }
+
+export interface YouTubeVideo {
+  id: string;
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  channelTitle: string;
+  duration: string;
+  estimatedMinutes: number;
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  skillId?: string;
+  skillName?: string;
+  category?: string;
+  viewCount?: string;
+  videoUrl: string;
+  embedUrl: string;
+  watchStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+  progressPercentage: number;
+  watchedSeconds: number;
+  totalSeconds: number;
+  lastWatchedAt?: string;
+}
+
+export interface YouTubeSkillSummary {
+  skillId: string;
+  skillName: string;
+  category: string;
+  videoCount: number;
+}
+
+export interface UpdateVideoProgressRequest {
+  videoId?: string;
+  youtubeVideoId?: string;
+  watchedSeconds: number;
+  totalSeconds?: number;
+  status?: "IN_PROGRESS" | "COMPLETED";
+}
+

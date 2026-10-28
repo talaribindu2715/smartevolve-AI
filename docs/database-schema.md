@@ -219,6 +219,33 @@ Links directly to Supabase Auth `auth.users(id)`.
 - `metadata` (JSONB)
 - `created_at` (TIMESTAMPTZ)
 
+### 20. `youtube_videos`
+- `id` (UUID, PRIMARY KEY)
+- `video_id` (VARCHAR(64), UNIQUE)
+- `title` (VARCHAR(500), NOT NULL)
+- `description` (TEXT)
+- `thumbnail_url` (VARCHAR(500))
+- `channel_title` (VARCHAR(255))
+- `duration` (VARCHAR(32))
+- `estimated_minutes` (INTEGER)
+- `difficulty` (VARCHAR(32)): `BEGINNER`, `INTERMEDIATE`, `ADVANCED`
+- `skill_id` (UUID, FK -> `skills.id`)
+- `category` (VARCHAR(100))
+- `view_count` (VARCHAR(64))
+- `active` (BOOLEAN, DEFAULT TRUE)
+- `created_at` (TIMESTAMPTZ)
+
+### 21. `video_progress`
+- `id` (UUID, PRIMARY KEY)
+- `student_id` (UUID, FK -> `profiles.id`)
+- `video_id` (UUID, FK -> `youtube_videos.id`)
+- `watched_seconds` (INTEGER)
+- `total_seconds` (INTEGER)
+- `completion_percentage` (NUMERIC(5,2))
+- `status` (VARCHAR(32)): `NOT_STARTED`, `IN_PROGRESS`, `COMPLETED`
+- `created_at` (TIMESTAMPTZ), `last_watched_at` (TIMESTAMPTZ), `completed_at` (TIMESTAMPTZ)
+- *Constraint*: `UNIQUE(student_id, video_id)`
+
 ---
 
 ## 3. Row Level Security (RLS) Summary

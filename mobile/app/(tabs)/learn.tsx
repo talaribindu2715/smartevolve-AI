@@ -114,6 +114,26 @@ export default function LearnScreen() {
             ]}
           />
         </View>
+
+        {/* YouTube Academy Gateway */}
+        <TouchableOpacity
+          style={styles.youtubeAcademyBanner}
+          activeOpacity={0.88}
+          onPress={() => router.push("/videos")}
+        >
+          <View style={styles.ytBannerLeft}>
+            <View style={styles.ytIconCircle}>
+              <Svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF">
+                <Path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+              </Svg>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.ytBannerTitle}>YouTube Video Academy</Text>
+              <Text style={styles.ytBannerSub}>Interactive video masterclasses for your skills</Text>
+            </View>
+          </View>
+          <Text style={styles.ytBannerArrow}>→</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Sequence of Steps */}
@@ -368,5 +388,46 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 12,
     fontWeight: "700",
+  },
+  youtubeAcademyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  ytBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  ytIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.sm + 2,
+  },
+  ytBannerTitle: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  ytBannerSub: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  ytBannerArrow: {
+    color: "#EF4444",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: spacing.sm,
   },
 });

@@ -24,6 +24,7 @@ public class DataInitializer implements CommandLineRunner {
     private final AssessmentQuestionRepository assessmentQuestionRepository;
     private final ProfileRepository profileRepository;
     private final StudentSkillRepository studentSkillRepository;
+    private final YouTubeVideoRepository youTubeVideoRepository;
 
     @Override
     @Transactional
@@ -137,11 +138,18 @@ public class DataInitializer implements CommandLineRunner {
         addCareerSkill(careers.get("Data Analyst"), skills.get("Statistics"), 70.0, 1.1);
 
         // 4. Learning Resources
-        createResource("Mastering Python for AI", "Core Python syntax, list comprehensions, decorators, and asynchronous programming.", skills.get("Python"), "BEGINNER", 45);
-        createResource("Spring Boot 3 & Microservices Architecture", "Building production-ready REST services with Spring Boot, JPA, and JWT security.", skills.get("Spring Boot"), "INTERMEDIATE", 90);
-        createResource("React Native & Expo Modern Guide", "Building fluid, high-performance mobile apps with Expo Router and TypeScript.", skills.get("React & React Native"), "INTERMEDIATE", 60);
-        createResource("Generative AI & LLM Prompt Engineering", "Prompt techniques, few-shot examples, retrieval augmented generation (RAG).", skills.get("Prompt Engineering & LLMs"), "INTERMEDIATE", 50);
-        createResource("Docker & Containerization Fundamentals", "Containerizing full-stack microservices with multi-stage Dockerfiles.", skills.get("Docker"), "BEGINNER", 40);
+        createResource("Mastering Python for AI", "Core Python syntax, list comprehensions, decorators, and asynchronous programming.", skills.get("Python"), "BEGINNER", 45, "ARTICLE", "https://docs.python.org/3/tutorial/");
+        createResource("Python Video Masterclass: Fast-Track Crash Course", "Visual crash course covering Python variables, functions, OOP, and data structures.", skills.get("Python"), "BEGINNER", 60, "VIDEO", "https://www.youtube.com/watch?v=_uQrJ0TkZlc");
+        createResource("Spring Boot 3 & Microservices Architecture", "Building production-ready REST services with Spring Boot, JPA, and JWT security.", skills.get("Spring Boot"), "INTERMEDIATE", 90, "ARTICLE", "https://spring.io/guides");
+        createResource("Spring Boot 3 Video Masterclass: Production REST APIs", "Step-by-step video tutorial on building Spring Boot 3 microservices with PostgreSQL.", skills.get("Spring Boot"), "INTERMEDIATE", 135, "VIDEO", "https://www.youtube.com/watch?v=9SGDpanrc8U");
+        createResource("React Native & Expo Modern Guide", "Building fluid, high-performance mobile apps with Expo Router and TypeScript.", skills.get("React & React Native"), "INTERMEDIATE", 60, "ARTICLE", "https://docs.expo.dev/");
+        createResource("React Native Video Masterclass: Cross-Platform Apps", "Comprehensive video tutorial building complete iOS and Android applications.", skills.get("React & React Native"), "INTERMEDIATE", 160, "VIDEO", "https://www.youtube.com/watch?v=0-S5a0eXPoc");
+        createResource("Generative AI & LLM Prompt Engineering", "Prompt techniques, few-shot examples, retrieval augmented generation (RAG).", skills.get("Prompt Engineering & LLMs"), "INTERMEDIATE", 50, "ARTICLE", "https://learnprompting.org/");
+        createResource("Large Language Models & State of GPT Video", "Andrej Karpathy's masterclass breakdown of modern transformer LLMs.", skills.get("Prompt Engineering & LLMs"), "INTERMEDIATE", 42, "VIDEO", "https://www.youtube.com/watch?v=bZQun8Y4L2A");
+        createResource("Docker & Containerization Fundamentals", "Containerizing full-stack microservices with multi-stage Dockerfiles.", skills.get("Docker"), "BEGINNER", 40, "ARTICLE", "https://docs.docker.com/");
+
+        // 4b. Seed Curated YouTube Educational Pipeline
+        seedYouTubeVideos(skills);
 
         // 5. Create Assessments
         Assessment pythonQuiz = assessmentRepository.save(Assessment.builder()
@@ -211,8 +219,79 @@ public class DataInitializer implements CommandLineRunner {
             .evidenceType("SELF_REPORTED")
             .build());
 
-        log.info("SmartEvolve in-memory database initialized successfully with {} skills and {} careers.",
+        log.info("SmartEvolve in-memory database initialized successfully with {} skills, {} careers, and YouTube educational pipeline.",
             skills.size(), careers.size());
+    }
+
+    private void seedYouTubeVideos(Map<String, Skill> skills) {
+        // Python
+        saveVideo("rfscVS0vtbw", "Python Tutorial for Beginners - Full Course [2024]",
+                "Comprehensive Python course covering installation, syntax, variables, lists, functions, and object-oriented design.",
+                skills.get("Python"), "BEGINNER", "freeCodeCamp.org", "4:26:52", 266, "42M views");
+        saveVideo("_uQrJ0TkZlc", "Python for Beginners - Fast-Track Practical Guide",
+                "Learn Python in 1 hour with hands-on coding exercises, logic structures, and real-world examples.",
+                skills.get("Python"), "BEGINNER", "Programming with Mosh", "1:00:15", 60, "38M views");
+
+        // Java & Spring Boot
+        saveVideo("A74TOX803D0", "Java Full Course - Modern Java 21 & Concurrency",
+                "Master modern Java, records, virtual threads, streams API, and enterprise OOP patterns.",
+                skills.get("Java"), "INTERMEDIATE", "freeCodeCamp.org", "9:33:04", 573, "5.8M views");
+        saveVideo("9SGDpanrc8U", "Spring Boot 3 Full Course 2024 - Enterprise REST APIs",
+                "Build full-scale Spring Boot REST microservices with Spring Data JPA, PostgreSQL, Docker, and Spring Security.",
+                skills.get("Spring Boot"), "INTERMEDIATE", "Amigoscode", "2:15:30", 135, "1.1M views");
+
+        // React & React Native
+        saveVideo("0-S5a0eXPoc", "React Native Crash Course 2024 - Build Mobile Apps",
+                "Build iOS and Android applications with Expo Router, state management, animated components, and native APIs.",
+                skills.get("React & React Native"), "INTERMEDIATE", "freeCodeCamp.org", "2:40:00", 160, "980K views");
+        saveVideo("Tn6-PIqc4UM", "React in 100 Seconds // Quickstart Architecture",
+                "High-velocity overview of React components, virtual DOM, hooks, and architectural patterns.",
+                skills.get("React & React Native"), "BEGINNER", "Fireship", "2:24", 3, "2.4M views");
+
+        // Artificial Intelligence & Machine Learning
+        saveVideo("i_LwzRVP7bg", "Machine Learning for Beginners - Full Mathematical Course",
+                "Understand linear regression, decision trees, neural network math, scikit-learn, and model evaluation metrics.",
+                skills.get("Machine Learning"), "BEGINNER", "freeCodeCamp.org", "9:52:14", 592, "2.3M views");
+        saveVideo("aircAruvnKk", "Neural Networks & Deep Learning Foundations",
+                "Visual geometric intuition behind backpropagation, gradient descent, and multilayer perceptrons.",
+                skills.get("Deep Learning"), "INTERMEDIATE", "3Blue1Brown", "18:48", 19, "14M views");
+        saveVideo("bZQun8Y4L2A", "State of GPT: Large Language Models Explained",
+                "Andrej Karpathy details tokenizer internals, pre-training, fine-tuning, RLHF, and thinking models.",
+                skills.get("Prompt Engineering & LLMs"), "INTERMEDIATE", "Andrej Karpathy", "42:01", 42, "1.9M views");
+
+        // SQL & Databases
+        saveVideo("HXV3zeRR3h4", "SQL Tutorial - Full Database Course for Beginners",
+                "Master SQL queries, table schemas, aggregate operations, nested subqueries, and relational schema normalization.",
+                skills.get("SQL"), "BEGINNER", "freeCodeCamp.org", "4:20:00", 260, "16M views");
+        saveVideo("qw--VYLpxG4", "PostgreSQL Crash Course - Relational Architecture",
+                "PostgreSQL setup, indexes, constraints, foreign keys, window functions, and query optimization.",
+                skills.get("PostgreSQL"), "INTERMEDIATE", "Traversy Media", "45:10", 45, "750K views");
+
+        // Cloud & DevOps
+        saveVideo("3c-iBn73dDE", "Docker Tutorial for Beginners - Full Course Hands-On",
+                "Containerization fundamentals, Dockerfiles, images, containers, networks, volumes, and Docker Compose.",
+                skills.get("Docker"), "BEGINNER", "TechWorld with Nana", "3:10:48", 190, "4.2M views");
+        saveVideo("m8Icp_Cid5o", "System Design Interview - Complete Engineering Guide",
+                "Scalability, load balancing, caching tiers, message queues, horizontal partitioning, and CAP theorem.",
+                skills.get("System Design"), "ADVANCED", "NeetCode", "1:15:00", 75, "890K views");
+    }
+
+    private void saveVideo(String videoId, String title, String desc, Skill skill, String diff, String channel, String duration, int mins, String views) {
+        if (skill == null) return;
+        youTubeVideoRepository.save(YouTubeVideo.builder()
+                .videoId(videoId)
+                .title(title)
+                .description(desc)
+                .skill(skill)
+                .thumbnailUrl("https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg")
+                .channelTitle(channel)
+                .duration(duration)
+                .estimatedMinutes(mins)
+                .difficulty(diff)
+                .category(skill.getCategory())
+                .viewCount(views)
+                .active(true)
+                .build());
     }
 
     private void addCareerSkill(Career career, Skill skill, double proficiency, double weight) {
@@ -225,15 +304,16 @@ public class DataInitializer implements CommandLineRunner {
             .build());
     }
 
-    private void createResource(String title, String desc, Skill skill, String difficulty, int minutes) {
+    private void createResource(String title, String desc, Skill skill, String difficulty, int minutes, String contentType, String externalUrl) {
         if (skill == null) return;
         learningResourceRepository.save(LearningResource.builder()
             .title(title)
             .description(desc)
             .skill(skill)
             .difficulty(difficulty)
-            .contentType("ARTICLE")
+            .contentType(contentType != null ? contentType : "ARTICLE")
             .contentBody("Comprehensive guide on " + title + ". Complete the exercises and quiz to verify mastery.")
+            .externalUrl(externalUrl)
             .estimatedMinutes(minutes)
             .active(true)
             .build());
