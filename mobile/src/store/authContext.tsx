@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { secureStorage } from "../services/secureStorage";
+import { supabase, isSupabaseConfigured } from "../services/supabase";
 import { Profile } from "../types";
 import { api } from "../api/client";
 
@@ -31,10 +32,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     restoreSession();
+
+    // Listen to Supabase auth state changes if configured
+    if (isSupabaseConfigured()) {
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (event === "SIGNED_IN" && session) {
+            await secureStorage.setToken(session.access_token);
+            await secureStorage.setUserId(session.user.id);
+            setToken(session.access_token);
+            setIsAuthenticated(true);
+            try {
+              const profile = await api.getProfile();
+              setUser(profile);
+            } catch (_) {}
+          } else if (event === "SIGNED_OUT") {
+            await secureStorage.clear();
+            setToken(null);
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        }
+      );
+
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    }
   }, []);
 
   const restoreSession = async () => {
     try {
+      // 1. Check Supabase session first if configured
+      if (isSupabaseConfigured()) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          const accessToken = data.session.access_token;
+          await secureStorage.setToken(accessToken);
+          await secureStorage.setUserId(data.session.user.id);
+          setToken(accessToken);
+          setIsAuthenticated(true);
+          try {
+            const profile = await api.getProfile();
+            setUser(profile);
+          } catch (_) {}
+          return;
+        }
+      }
+
+      // 2. Check local storage fallback
       const storedToken = await secureStorage.getToken();
       if (storedToken) {
         setToken(storedToken);
@@ -65,6 +111,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.auth.signOut();
+      } catch (_) {}
+    }
     await secureStorage.clear();
     setToken(null);
     setUser(null);

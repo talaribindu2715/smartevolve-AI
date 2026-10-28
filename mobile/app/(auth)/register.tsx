@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "../../src/components/Button";
 import { useAuth } from "../../src/store/authContext";
+import { supabase, isSupabaseConfigured } from "../../src/services/supabase";
 import { api } from "../../src/api/client";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
@@ -68,10 +69,37 @@ export default function RegisterScreen() {
     setAuthError(null);
 
     try {
-      const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6IiIgKyBkYXRhLmVtYWlsLCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.fake";
-      const userId = "00000000-0000-0000-0000-000000000001";
+      let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6IiIgKyBkYXRhLmVtYWlsLCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.fake";
+      let userId = "00000000-0000-0000-0000-000000000001";
 
-      await login(mockToken, userId);
+      if (isSupabaseConfigured()) {
+        const { data: authData, error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              full_name: data.fullName,
+              education_level: data.educationLevel,
+              institution: data.institution || "Engineering College",
+              branch: data.branch,
+              graduation_year: data.graduationYear ? parseInt(data.graduationYear, 10) : 2027,
+            },
+          },
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (authData.session) {
+          token = authData.session.access_token;
+          userId = authData.session.user.id;
+        } else if (authData.user) {
+          userId = authData.user.id;
+        }
+      }
+
+      await login(token, userId);
 
       // Save initial profile details
       try {

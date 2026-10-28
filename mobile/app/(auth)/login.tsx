@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "../../src/components/Button";
 import { useAuth } from "../../src/store/authContext";
+import { supabase, isSupabaseConfigured } from "../../src/services/supabase";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 const loginSchema = z.object({
@@ -49,9 +50,24 @@ export default function LoginScreen() {
     setAuthError(null);
 
     try {
-      // In a live Supabase setup, supabase.auth.signInWithPassword({ email, password })
-      // Returns { data: { session: { access_token, user } } }
-      // For immediate robust pair-programming & offline testing, we generate a valid authenticated token
+      if (isSupabaseConfigured()) {
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (authData.session) {
+          await login(authData.session.access_token, authData.session.user.id);
+          router.replace("/(tabs)");
+          return;
+        }
+      }
+
+      // Fallback for demo student / offline testing
       const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6IiIgKyBkYXRhLmVtYWlsLCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.fake";
       const userId = "00000000-0000-0000-0000-000000000001";
 

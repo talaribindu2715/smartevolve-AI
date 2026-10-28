@@ -10,17 +10,7 @@ services:
     envVars:
       - key: PORT
         value: 8080
-      # Supabase PostgreSQL Database (Use Connection Pooler on port 6543 for IPv4 compatibility)
-      # For Pooler:  jdbc:postgresql://aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
-      #              User: postgres.[YOUR-PROJECT-REF] (e.g. postgres.abcdefghijklmnopqrst)
-      # For Direct:  jdbc:postgresql://db.[YOUR-PROJECT-REF].supabase.co:5432/postgres?sslmode=require
-      #              User: postgres
-      - key: SUPABASE_DB_URL
-        sync: false
-      - key: SUPABASE_DB_USER
-        sync: false
-      - key: SUPABASE_DB_PASSWORD
-        sync: false
+
       # Supabase Auth JWT
       - key: SUPABASE_JWT_SECRET
         sync: false
