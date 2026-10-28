@@ -25,16 +25,38 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
+// SSR-safe storage adapter that prevents "window is not defined" crashes during SSR / Node builds
+const safeStorage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === "web" && typeof window === "undefined") {
+      return null;
+    }
+    return AsyncStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === "web" && typeof window === "undefined") {
+      return;
+    }
+    return AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (Platform.OS === "web" && typeof window === "undefined") {
+      return;
+    }
+    return AsyncStorage.removeItem(key);
+  },
+};
+
 /**
  * Initialized Supabase client for mobile and web.
  * Uses AsyncStorage for cross-platform secure token persistence.
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
+    storage: safeStorage,
+    autoRefreshToken: typeof window !== "undefined" || Platform.OS !== "web",
     persistSession: true,
-    detectSessionInUrl: Platform.OS === "web",
+    detectSessionInUrl: Platform.OS === "web" && typeof window !== "undefined",
   },
 });
 
