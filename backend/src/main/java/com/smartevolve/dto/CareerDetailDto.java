@@ -23,6 +23,8 @@ public class CareerDetailDto {
     private boolean isCurrentGoal;
     private BigDecimal compatibilityScore;
     private String readinessLevel;
+    private String difficulty;
+    private int estimatedPreparationWeeks;
     private String explanation;
     private List<CareerMatchingEngine.SkillMatchDetail> matchedSkills;
     private List<CareerMatchingEngine.SkillMatchDetail> partiallyMatchedSkills;

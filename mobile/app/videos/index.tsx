@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  FlatList,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -20,11 +19,13 @@ import { Badge } from "../../src/components/Badge";
 import { YouTubeVideo } from "../../src/types";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
+const DIFFICULTIES = ["All Difficulties", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
+
 export default function VideoAcademyScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("All Difficulties");
 
   // Fetch all videos
   const {
@@ -37,7 +38,7 @@ export default function VideoAcademyScreen() {
     queryFn: () =>
       api.getYouTubeVideos({
         skillId: selectedSkillId || undefined,
-        difficulty: selectedDifficulty || undefined,
+        difficulty: selectedDifficulty === "All Difficulties" ? undefined : selectedDifficulty,
         query: searchQuery.trim() || undefined,
       }),
   });
@@ -57,6 +58,10 @@ export default function VideoAcademyScreen() {
   const handleVideoPress = (video: YouTubeVideo) => {
     router.push(`/videos/${video.id || video.videoId}`);
   };
+
+  const inProgressVideos = useMemo(() => {
+    return (videos || []).filter((v) => v.watchStatus === "IN_PROGRESS");
+  }, [videos]);
 
   const completedCount = useMemo(() => {
     return (videos || []).filter((v) => v.watchStatus === "COMPLETED").length;
@@ -91,7 +96,7 @@ export default function VideoAcademyScreen() {
 
         <Text style={styles.title}>Interactive Video Masterclasses</Text>
         <Text style={styles.subtitle}>
-          Curated industry tutorials mapped directly to your career roadmap and skill proficiencies.
+          Curated industry tutorials mapped directly to your career roadmap and skill gaps. Completing videos updates your skill proficiency and drives AI evolution.
         </Text>
       </View>
 
@@ -103,7 +108,7 @@ export default function VideoAcademyScreen() {
         </Svg>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search Python, React Native, Spring Boot, AI..."
+          placeholder="Search Python, React Native, Spring Boot, Solidity..."
           placeholderTextColor={colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -159,7 +164,52 @@ export default function VideoAcademyScreen() {
             );
           })}
         </ScrollView>
+
+        {/* Difficulty Filter Pills */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterPillsScroll, { marginTop: 8 }]}>
+          {DIFFICULTIES.map((diff) => {
+            const isSelected = selectedDifficulty === diff;
+            return (
+              <TouchableOpacity
+                key={diff}
+                style={[
+                  styles.diffPill,
+                  isSelected && styles.diffPillActive,
+                ]}
+                onPress={() => setSelectedDifficulty(diff)}
+              >
+                <Text
+                  style={[
+                    styles.diffPillText,
+                    isSelected && styles.diffPillTextActive,
+                  ]}
+                >
+                  {diff.replace("BEGINNER", "Beginner").replace("INTERMEDIATE", "Intermediate").replace("ADVANCED", "Advanced")}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
+
+      {/* Continue Learning Section */}
+      {inProgressVideos.length > 0 && (
+        <View style={styles.sectionWrap}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>▶ Continue Learning</Text>
+            <Badge label={`${inProgressVideos.length} In Progress`} variant="warning" />
+          </View>
+          {inProgressVideos.map((video) => (
+            <VideoCard
+              key={video.id}
+              video={video}
+              onPress={handleVideoPress}
+              layout="horizontal"
+              style={{ marginBottom: spacing.sm }}
+            />
+          ))}
+        </View>
+      )}
 
       {/* AI Recommended Videos Carousel */}
       {!searchQuery && recommendedVideos && recommendedVideos.length > 0 && (
@@ -174,8 +224,15 @@ export default function VideoAcademyScreen() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollList}>
             {recommendedVideos.map((video) => (
-              <View key={video.id} style={{ width: 260, marginRight: spacing.md }}>
+              <View key={video.id} style={{ width: 270, marginRight: spacing.md }}>
                 <VideoCard video={video} onPress={handleVideoPress} />
+                {video.recommendationReason && (
+                  <View style={styles.reasonCard}>
+                    <Text style={styles.reasonCardText} numberOfLines={2}>
+                      💡 {video.recommendationReason}
+                    </Text>
+                  </View>
+                )}
               </View>
             ))}
           </ScrollView>
@@ -226,6 +283,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.md,
+    paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
   },
   header: {
@@ -313,6 +371,42 @@ const styles = StyleSheet.create({
   },
   filterPillTextActive: {
     color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  diffPill: {
+    backgroundColor: colors.surfaceLight,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    marginRight: 6,
+  },
+  diffPillActive: {
+    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    borderColor: colors.accent,
+  },
+  diffPillText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  diffPillTextActive: {
+    color: colors.accent,
+    fontWeight: "700",
+  },
+  reasonCard: {
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    padding: 6,
+    marginTop: 4,
+  },
+  reasonCardText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 15,
   },
   sectionWrap: {
     marginBottom: spacing.xl,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,16 +10,24 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Svg, { Path, Circle } from "react-native-svg";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { colors, radius, spacing } from "../../src/theme/colors";
+import { RoadmapStep } from "../../src/types";
 
 export default function LearnScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [selectedPhaseFilter, setSelectedPhaseFilter] = useState<string>("ALL");
+  const [dailyTasksCompleted, setDailyTasksCompleted] = useState<Record<string, boolean>>({
+    task1: true,
+    task2: false,
+    task3: false,
+  });
 
   const {
     data: roadmap,
@@ -31,6 +39,37 @@ export default function LearnScreen() {
     queryFn: () => api.getActiveRoadmap(),
   });
 
+  const refreshRoadmapMutation = useMutation({
+    mutationFn: (careerId: string) => api.refreshRoadmap(careerId),
+    onSuccess: (updatedRoadmap) => {
+      queryClient.setQueryData(["activeRoadmap"], updatedRoadmap);
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["evolution"] });
+      Alert.alert(
+        "Roadmap Recalculated",
+        "Your adaptive learning roadmap has been re-indexed against your latest skill proficiencies and prerequisite graph."
+      );
+    },
+    onError: (err: any) => {
+      Alert.alert("Refresh Failed", err.message || "Failed to recalculate roadmap.");
+    },
+  });
+
+  const markCompleteMutation = useMutation({
+    mutationFn: (resourceId: string) =>
+      api.updateProgress({
+        resourceId,
+        status: "COMPLETED",
+        progressPercentage: 100,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activeRoadmap"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["evolution"] });
+      Alert.alert("Milestone Completed", "Progress recorded and dependent skills unlocked!");
+    },
+  });
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -40,7 +79,7 @@ export default function LearnScreen() {
     );
   }
 
-  if (!roadmap || roadmap.steps.length === 0) {
+  if (!roadmap || !roadmap.steps || roadmap.steps.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="1.5">
@@ -74,7 +113,7 @@ export default function LearnScreen() {
     }
   };
 
-  const handleStepPress = (step: any) => {
+  const handleStepPress = (step: RoadmapStep) => {
     if (step.status === "LOCKED") {
       Alert.alert(
         "Module Locked",
@@ -84,6 +123,26 @@ export default function LearnScreen() {
     }
     router.push(`/learning/${step.resourceId}`);
   };
+
+  const toggleDailyTask = (taskId: string) => {
+    setDailyTasksCompleted((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
+
+  // Group steps by Phase
+  const phases = [
+    { key: "BEGINNER", label: "Phase 1: Foundations", desc: "Core conceptual prerequisites & syntax fundamentals" },
+    { key: "INTERMEDIATE", label: "Phase 2: Core Engineering", desc: "Applied architectures, APIs & production patterns" },
+    { key: "ADVANCED", label: "Phase 3: Advanced Mastery", desc: "Performance optimization, security & scaling" },
+  ];
+
+  const filteredSteps = roadmap.steps.filter((step) => {
+    if (selectedPhaseFilter === "ALL") return true;
+    const stepPhase = step.phase || (step.difficulty === "ADVANCED" ? "ADVANCED" : step.difficulty === "INTERMEDIATE" ? "INTERMEDIATE" : "BEGINNER");
+    return stepPhase === selectedPhaseFilter;
+  });
 
   return (
     <ScrollView
@@ -99,10 +158,26 @@ export default function LearnScreen() {
     >
       {/* Header Info */}
       <View style={styles.header}>
-        <Text style={styles.tagline}>PERSONALIZED ADAPTIVE ROADMAP</Text>
-        <Text style={styles.title}>{roadmap.careerName}</Text>
+        <View style={styles.headerTopRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.tagline}>ADAPTIVE LEARNING ROADMAP</Text>
+            <Text style={styles.title}>{roadmap.careerName}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.refreshBtn}
+            disabled={refreshRoadmapMutation.isPending}
+            onPress={() => refreshRoadmapMutation.mutate(roadmap.careerId)}
+          >
+            {refreshRoadmapMutation.isPending ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.refreshBtnText}>↻ Recalculate</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.subtitle}>
-          {roadmap.completedSteps} of {roadmap.totalSteps} steps mastered ({roadmap.progressPercentage.toFixed(0)}%)
+          {roadmap.completedSteps} of {roadmap.totalSteps} milestones achieved ({roadmap.progressPercentage.toFixed(0)}% complete)
         </Text>
 
         {/* Progress Bar */}
@@ -110,10 +185,57 @@ export default function LearnScreen() {
           <View
             style={[
               styles.progressFill,
-              { width: `${roadmap.progressPercentage}%` },
+              { width: `${Math.min(100, Math.max(0, roadmap.progressPercentage))}%` },
             ]}
           />
         </View>
+
+        {/* Daily Learning Tasks Checklist */}
+        <Card style={styles.dailyTaskCard}>
+          <View style={styles.dailyTaskHeader}>
+            <Text style={styles.dailyTaskTitle}>🎯 Today's Learning Sprint</Text>
+            <Text style={styles.dailyTaskDate}>Daily Habit Tracker</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.taskItem}
+            activeOpacity={0.8}
+            onPress={() => toggleDailyTask("task1")}
+          >
+            <View style={[styles.checkbox, dailyTasksCompleted.task1 && styles.checkboxDone]}>
+              {dailyTasksCompleted.task1 && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={[styles.taskText, dailyTasksCompleted.task1 && styles.taskTextDone]}>
+              Review active milestone lesson & run code examples (25 min)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.taskItem}
+            activeOpacity={0.8}
+            onPress={() => toggleDailyTask("task2")}
+          >
+            <View style={[styles.checkbox, dailyTasksCompleted.task2 && styles.checkboxDone]}>
+              {dailyTasksCompleted.task2 && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={[styles.taskText, dailyTasksCompleted.task2 && styles.taskTextDone]}>
+              Watch 1 recommended YouTube deep-dive masterclass
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.taskItem}
+            activeOpacity={0.8}
+            onPress={() => toggleDailyTask("task3")}
+          >
+            <View style={[styles.checkbox, dailyTasksCompleted.task3 && styles.checkboxDone]}>
+              {dailyTasksCompleted.task3 && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={[styles.taskText, dailyTasksCompleted.task3 && styles.taskTextDone]}>
+              Take skill verification assessment to trigger AI evolution
+            </Text>
+          </TouchableOpacity>
+        </Card>
 
         {/* YouTube Academy Gateway */}
         <TouchableOpacity
@@ -129,28 +251,50 @@ export default function LearnScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.ytBannerTitle}>YouTube Video Academy</Text>
-              <Text style={styles.ytBannerSub}>Interactive video masterclasses for your skills</Text>
+              <Text style={styles.ytBannerSub}>Targeted video masterclasses aligned with your skill gaps</Text>
             </View>
           </View>
           <Text style={styles.ytBannerArrow}>→</Text>
         </TouchableOpacity>
+
+        {/* Learning Phase Filters */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.phaseFilterBar}>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedPhaseFilter === "ALL" && styles.filterChipActive]}
+            onPress={() => setSelectedPhaseFilter("ALL")}
+          >
+            <Text style={[styles.filterChipText, selectedPhaseFilter === "ALL" && styles.filterChipTextActive]}>
+              All Phases ({roadmap.steps.length})
+            </Text>
+          </TouchableOpacity>
+          {phases.map((ph) => {
+            const count = roadmap.steps.filter((s) => (s.phase || (s.difficulty === "ADVANCED" ? "ADVANCED" : s.difficulty === "INTERMEDIATE" ? "INTERMEDIATE" : "BEGINNER")) === ph.key).length;
+            return (
+              <TouchableOpacity
+                key={ph.key}
+                style={[styles.filterChip, selectedPhaseFilter === ph.key && styles.filterChipActive]}
+                onPress={() => setSelectedPhaseFilter(ph.key)}
+              >
+                <Text style={[styles.filterChipText, selectedPhaseFilter === ph.key && styles.filterChipTextActive]}>
+                  {ph.label.split(":")[0]} ({count})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Sequence of Steps */}
       <View style={styles.timelineList}>
-        {roadmap.steps.map((step, idx) => {
+        {filteredSteps.map((step, idx) => {
           const isCompleted = step.status === "COMPLETED";
           const isAvailable = step.status === "AVAILABLE" || step.status === "IN_PROGRESS";
+          const phase = step.phase || (step.difficulty === "ADVANCED" ? "ADVANCED" : step.difficulty === "INTERMEDIATE" ? "INTERMEDIATE" : "BEGINNER");
 
           return (
-            <TouchableOpacity
-              key={step.id}
-              activeOpacity={0.85}
-              onPress={() => handleStepPress(step)}
-              style={styles.stepCardWrap}
-            >
+            <View key={step.id} style={styles.stepCardWrap}>
               {/* Connector line between steps */}
-              {idx < roadmap.steps.length - 1 && (
+              {idx < filteredSteps.length - 1 && (
                 <View
                   style={[
                     styles.connectorLine,
@@ -185,25 +329,67 @@ export default function LearnScreen() {
                   (!isAvailable && !isCompleted) ? styles.cardLockedOpacity : undefined,
                 ]}
               >
-                <View style={styles.cardTop}>
-                  {getStepStatusBadge(step.status)}
-                  <Text style={styles.stepDuration}>{step.estimatedMinutes} mins</Text>
-                </View>
+                <TouchableOpacity activeOpacity={0.85} onPress={() => handleStepPress(step)}>
+                  <View style={styles.cardTop}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      {getStepStatusBadge(step.status)}
+                      <Badge label={phase} variant="info" />
+                    </View>
+                    <Text style={styles.stepDuration}>{step.estimatedMinutes} mins</Text>
+                  </View>
 
-                <Text style={styles.stepTitle}>{step.resourceTitle}</Text>
-                <Text style={styles.stepSkill}>Skill Target: <Text style={{ color: colors.accent }}>{step.skillName}</Text></Text>
-                <Text style={styles.stepReason}>{step.reason}</Text>
+                  <Text style={styles.stepTitle}>{step.resourceTitle}</Text>
+                  <Text style={styles.stepSkill}>
+                    Target Skill: <Text style={{ color: colors.accent, fontWeight: "700" }}>{step.skillName}</Text>
+                  </Text>
+                  <Text style={styles.stepReason}>{step.reason}</Text>
 
-                <View style={styles.cardFooter}>
-                  <Text style={styles.difficultyTag}>Difficulty: {step.difficulty}</Text>
+                  {/* Progress Indicator */}
+                  <View style={styles.stepProgressRow}>
+                    <Text style={styles.stepProgressLabel}>Milestone Progress</Text>
+                    <Text style={styles.stepProgressVal}>{step.progressPercentage ?? (isCompleted ? 100 : 0)}%</Text>
+                  </View>
+                  <View style={styles.stepProgressBar}>
+                    <View
+                      style={[
+                        styles.stepProgressFill,
+                        { width: `${step.progressPercentage ?? (isCompleted ? 100 : 0)}%` },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Direct Action Buttons */}
+                <View style={styles.cardActionRow}>
                   {isAvailable && (
-                    <Text style={styles.startActionText}>
-                      {step.status === "IN_PROGRESS" ? "Resume Lesson →" : "Start Lesson →"}
-                    </Text>
+                    <TouchableOpacity
+                      style={styles.actionBtnPrimary}
+                      onPress={() => router.push(`/learning/${step.resourceId}`)}
+                    >
+                      <Text style={styles.actionBtnPrimaryText}>
+                        {step.status === "IN_PROGRESS" ? "Continue Lesson" : "Start Learning"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {isAvailable && !isCompleted && (
+                    <TouchableOpacity
+                      style={styles.actionBtnSecondary}
+                      onPress={() => markCompleteMutation.mutate(step.resourceId)}
+                      disabled={markCompleteMutation.isPending}
+                    >
+                      <Text style={styles.actionBtnSecondaryText}>Mark Completed</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {isCompleted && (
+                    <View style={styles.completedTagRow}>
+                      <Text style={styles.completedTagText}>✓ Mastery Recorded</Text>
+                    </View>
                   )}
                 </View>
               </Card>
-            </TouchableOpacity>
+            </View>
           );
         })}
       </View>
@@ -255,6 +441,11 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.lg,
   },
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
   tagline: {
     color: colors.primary,
     fontSize: 12,
@@ -273,16 +464,154 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: spacing.sm,
   },
+  refreshBtn: {
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+  },
+  refreshBtnText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   progressTrack: {
     height: 6,
     backgroundColor: colors.surfaceLight,
     borderRadius: radius.full,
     overflow: "hidden",
+    marginBottom: spacing.md,
   },
   progressFill: {
     height: "100%",
     backgroundColor: colors.accent,
     borderRadius: radius.full,
+  },
+  dailyTaskCard: {
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  dailyTaskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  dailyTaskTitle: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  dailyTaskDate: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  taskItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    gap: spacing.sm,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceLight,
+  },
+  checkboxDone: {
+    backgroundColor: colors.success,
+    borderColor: colors.success,
+  },
+  checkmark: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  taskText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    flex: 1,
+  },
+  taskTextDone: {
+    textDecorationLine: "line-through",
+    color: colors.textMuted,
+  },
+  youtubeAcademyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  ytBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  ytIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.sm + 2,
+  },
+  ytBannerTitle: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  ytBannerSub: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  ytBannerArrow: {
+    color: "#EF4444",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: spacing.sm,
+  },
+  phaseFilterBar: {
+    flexDirection: "row",
+    marginBottom: spacing.xs,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterChipText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  filterChipTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   timelineList: {
     gap: spacing.md,
@@ -369,65 +698,75 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  cardFooter: {
+  stepProgressRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopColor: colors.cardBorder,
-    borderTopWidth: 1,
-    paddingTop: 8,
+    marginTop: 4,
+    marginBottom: 4,
   },
-  difficultyTag: {
+  stepProgressLabel: {
     color: colors.textMuted,
     fontSize: 11,
-    textTransform: "uppercase",
   },
-  startActionText: {
+  stepProgressVal: {
     color: colors.accent,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  stepProgressBar: {
+    height: 4,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: radius.full,
+    overflow: "hidden",
+    marginBottom: spacing.sm,
+  },
+  stepProgressFill: {
+    height: "100%",
+    backgroundColor: colors.accent,
+    borderRadius: radius.full,
+  },
+  cardActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderTopColor: colors.cardBorder,
+    borderTopWidth: 1,
+    paddingTop: 10,
+    marginTop: 4,
+  },
+  actionBtnPrimary: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.sm,
+  },
+  actionBtnPrimaryText: {
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "700",
   },
-  youtubeAcademyBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
+  actionBtnSecondary: {
+    backgroundColor: "transparent",
+    borderColor: colors.cardBorder,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginTop: spacing.md,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: radius.sm,
   },
-  ytBannerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  ytIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#EF4444",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: spacing.sm + 2,
-  },
-  ytBannerTitle: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  ytBannerSub: {
+  actionBtnSecondaryText: {
     color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "600",
   },
-  ytBannerArrow: {
-    color: "#EF4444",
-    fontSize: 18,
+  completedTagRow: {
+    paddingVertical: 4,
+  },
+  completedTagText: {
+    color: colors.success,
+    fontSize: 12,
     fontWeight: "700",
-    marginLeft: spacing.sm,
   },
 });

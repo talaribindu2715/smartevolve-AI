@@ -36,4 +36,6 @@ public class YouTubeVideoDto {
     private Integer watchedSeconds;
     private Integer totalSeconds;
     private OffsetDateTime lastWatchedAt;
+    private String recommendationReason;
+    private Boolean isSavedForLater;
 }

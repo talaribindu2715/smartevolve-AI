@@ -6,15 +6,20 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Svg, { Path } from "react-native-svg";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
+import { Button } from "../../src/components/Button";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function EvolutionScreen() {
+  const queryClient = useQueryClient();
+
   const {
     data: history,
     isLoading: isHistoryLoading,
@@ -28,6 +33,23 @@ export default function EvolutionScreen() {
   const { data: trends, isLoading: isTrendsLoading } = useQuery({
     queryKey: ["evolutionTrends"],
     queryFn: () => api.getTrends(),
+  });
+
+  const recalculateMutation = useMutation({
+    mutationFn: () => api.recalculateEvolution(),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["evolutionHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["evolutionTrends"] });
+      queryClient.invalidateQueries({ queryKey: ["activeRoadmap"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      Alert.alert(
+        "AI Evolution Cycle Complete",
+        res.message || "Your skill proficiencies and prerequisite graphs have been evaluated and adapted."
+      );
+    },
+    onError: (err: any) => {
+      Alert.alert("Adaptation Error", err.message || "Failed to trigger evolution cycle");
+    },
   });
 
   const isLoading = isHistoryLoading || isTrendsLoading;
@@ -57,10 +79,27 @@ export default function EvolutionScreen() {
     >
       {/* Top Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTag}>ADAPTIVE PROFILE EVOLUTION</Text>
-        <Text style={styles.headerTitle}>Skill Growth Timeline</Text>
+        <View style={styles.headerTopRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTag}>SELF-EVOLVING AI SYSTEM</Text>
+            <Text style={styles.headerTitle}>Skill Evolution Engine</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.recalcBtn}
+            disabled={recalculateMutation.isPending}
+            onPress={() => recalculateMutation.mutate()}
+          >
+            {recalculateMutation.isPending ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.recalcBtnText}>⚡ Trigger Evolution</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.headerSub}>
-          Audited log of skill proficiency adaptations driven by assessment evidence and project work.
+          Deterministic, explainable skill adaptation driven by assessment verification, learning tasks, and prerequisite progression.
         </Text>
       </View>
 
@@ -69,38 +108,80 @@ export default function EvolutionScreen() {
         <Card style={styles.trendCard}>
           <View style={styles.trendRow}>
             <View style={styles.trendCol}>
-              <Text style={styles.trendVal}>{trends.trajectory}</Text>
+              <Text style={styles.trendVal}>{trends.growthTrajectory || "BALANCED"}</Text>
               <Text style={styles.trendSub}>Trajectory</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.trendCol}>
               <Text style={[styles.trendVal, { color: colors.accent }]}>
-                +{trends.totalProficiencyGained || 0}%
+                {trends.totalEvolutionEventsCount || events.length}
               </Text>
-              <Text style={styles.trendSub}>Total Skill Gain</Text>
+              <Text style={styles.trendSub}>Evolution Cycles</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.trendCol}>
               <Text style={[styles.trendVal, { color: colors.success }]}>
-                +{trends.averageGrowthPerAttempt || 0}%
+                +{events.length > 0 ? (events.reduce((acc, e) => acc + (e.delta > 0 ? e.delta : 0), 0) / Math.max(1, events.length)).toFixed(1) : 0}%
               </Text>
-              <Text style={styles.trendSub}>Velocity/Quiz</Text>
+              <Text style={styles.trendSub}>Avg Velocity</Text>
             </View>
           </View>
-
-          {trends.topImprovingSkills && trends.topImprovingSkills.length > 0 && (
-            <View style={styles.topSkillsRow}>
-              <Text style={styles.topSkillsLabel}>Fastest Improving:</Text>
-              {trends.topImprovingSkills.map((sk: string) => (
-                <Badge key={sk} label={sk} variant="info" style={{ marginRight: 6 }} />
-              ))}
-            </View>
-          )}
         </Card>
       )}
 
+      {/* Strengths & Weaknesses Analysis Card */}
+      <Card style={styles.analysisCard}>
+        <Text style={styles.analysisSectionTitle}>Skill Mastery Diagnostic</Text>
+
+        <View style={styles.analysisGrid}>
+          {/* Strongest Skills */}
+          <View style={styles.analysisCol}>
+            <Text style={styles.analysisColTitle}>💪 Top Strengths</Text>
+            {trends?.strongestSkills && trends.strongestSkills.length > 0 ? (
+              <View style={styles.tagWrap}>
+                {trends.strongestSkills.map((sk: string) => (
+                  <Badge key={sk} label={sk} variant="success" style={{ marginVertical: 3 }} />
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.analysisEmpty}>Complete assessments to identify strengths</Text>
+            )}
+          </View>
+
+          <View style={styles.analysisDivider} />
+
+          {/* Weakest Skills */}
+          <View style={styles.analysisCol}>
+            <Text style={styles.analysisColTitle}>🎯 Growth Opportunities</Text>
+            {trends?.weakestSkills && trends.weakestSkills.length > 0 ? (
+              <View style={styles.tagWrap}>
+                {trends.weakestSkills.map((sk: string) => (
+                  <Badge key={sk} label={sk} variant="warning" style={{ marginVertical: 3 }} />
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.analysisEmpty}>No critical gaps currently flagged</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Recommended Next Actions */}
+        {trends?.recommendedNextActions && trends.recommendedNextActions.length > 0 && (
+          <View style={styles.nextActionsWrap}>
+            <Text style={styles.nextActionsTitle}>🧠 AI Adaptive Next Actions:</Text>
+            {trends.recommendedNextActions.map((action: string, i: number) => (
+              <Text key={i} style={styles.actionItemText}>
+                • {action}
+              </Text>
+            ))}
+          </View>
+        )}
+      </Card>
+
       {/* Timeline Events List */}
       <View style={styles.timelineList}>
+        <Text style={styles.timelineHeading}>Historical Evolution Log ({events.length} Events)</Text>
+
         {events.length === 0 ? (
           <Card style={styles.emptyCard}>
             <Svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={colors.textMuted} strokeWidth="1.5">
@@ -108,7 +189,7 @@ export default function EvolutionScreen() {
             </Svg>
             <Text style={styles.emptyTitle}>No Evolution Events Yet</Text>
             <Text style={styles.emptySub}>
-              Take skill diagnostic quizzes or complete learning modules. Every demonstrated proof of mastery updates your proficiency and records evidence here!
+              Take a skill diagnostic assessment or complete video modules. Every verified evidence item triggers the Bayesian proficiency recalculation engine and logs an audited event here!
             </Text>
           </Card>
         ) : (
@@ -194,6 +275,11 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.md,
   },
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
   headerTag: {
     color: colors.primary,
     fontSize: 12,
@@ -212,9 +298,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 18,
   },
+  recalcBtn: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    borderColor: colors.primary,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.md,
+  },
+  recalcBtnText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   trendCard: {
     padding: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     backgroundColor: colors.surface,
   },
   trendRow: {
@@ -242,21 +341,67 @@ const styles = StyleSheet.create({
     height: 28,
     backgroundColor: colors.cardBorder,
   },
-  topSkillsRow: {
+  analysisCard: {
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderColor: "rgba(99, 102, 241, 0.2)",
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  analysisSectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: spacing.sm,
+  },
+  analysisGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  analysisCol: {
+    flex: 1,
+  },
+  analysisColTitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  analysisDivider: {
+    width: 1,
+    backgroundColor: colors.cardBorder,
+  },
+  tagWrap: {
+    flexDirection: "column",
+  },
+  analysisEmpty: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontStyle: "italic",
+    marginTop: 4,
+  },
+  nextActionsWrap: {
     marginTop: spacing.md,
     paddingTop: spacing.sm,
-    borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
-    gap: 4,
+    borderTopWidth: 1,
   },
-  topSkillsLabel: {
-    color: colors.textMuted,
+  nextActionsTitle: {
+    color: colors.accent,
     fontSize: 12,
-    fontWeight: "600",
-    marginRight: 4,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  actionItemText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  timelineHeading: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: spacing.sm,
   },
   timelineList: {
     gap: spacing.md,

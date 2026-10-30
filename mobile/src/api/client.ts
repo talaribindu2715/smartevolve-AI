@@ -19,6 +19,9 @@ import {
   YouTubeVideo,
   YouTubeSkillSummary,
   UpdateVideoProgressRequest,
+  EligibleCredential,
+  ClaimCredentialRequest,
+  TrendAnalysisSummary,
 } from "../types";
 
 // Dynamic API base URL configuration:
@@ -128,14 +131,26 @@ export const api = {
 
   // Evolution & Trends
   getEvolutionHistory: () => apiFetch<EvolutionHistory[]>("/api/evolution/history"),
-  getTrends: () => apiFetch<any>("/api/evolution/trends"),
+  getTrends: () => apiFetch<TrendAnalysisSummary>("/api/evolution/trends"),
+  recalculateEvolution: () =>
+    apiFetch<{ message: string; historyCount: number }>("/api/evolution/recalculate", {
+      method: "POST",
+    }),
 
   // Blockchain Credentials
   getCredentials: () => apiFetch<Credential[]>("/api/credentials"),
+  getEligibleCredentials: () => apiFetch<EligibleCredential[]>("/api/credentials/eligible"),
+  claimCredential: (data: ClaimCredentialRequest) =>
+    apiFetch<Credential>("/api/credentials/claim", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   verifyCredential: (id: string) =>
     apiFetch<VerifyCredentialResponse>(`/api/credentials/${id}/verify`, {
       method: "POST",
     }),
+  getPublicCredentialVerification: (id: string) =>
+    apiFetch<VerifyCredentialResponse>(`/api/credentials/public/${id}`),
 
   // Analytics
   getAnalytics: () => apiFetch<Analytics>("/api/analytics"),

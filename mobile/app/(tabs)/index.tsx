@@ -14,7 +14,6 @@ import { useQuery } from "@tanstack/react-query";
 import Svg, { Circle, Path, Polygon } from "react-native-svg";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
-import { StatCard } from "../../src/components/StatCard";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { ProficiencyBar } from "../../src/components/ProficiencyBar";
@@ -37,6 +36,11 @@ export default function DashboardScreen() {
   const { data: recommendedVideos } = useQuery({
     queryKey: ["recommendedYouTubeVideos"],
     queryFn: () => api.getRecommendedYouTubeVideos(),
+  });
+
+  const { data: evolutionHistory } = useQuery({
+    queryKey: ["evolutionHistory"],
+    queryFn: () => api.getEvolutionHistory(),
   });
 
   if (isLoading) {
@@ -66,6 +70,12 @@ export default function DashboardScreen() {
         return "primary";
     }
   };
+
+  // Find next recommended learning milestone
+  const nextRoadmapStep = dashboard?.activeRoadmap?.steps?.find(
+    (s) => s.status === "AVAILABLE" || s.status === "IN_PROGRESS"
+  );
+  const latestEvolution = evolutionHistory && evolutionHistory.length > 0 ? evolutionHistory[0] : null;
 
   return (
     <ScrollView
@@ -132,7 +142,7 @@ export default function DashboardScreen() {
 
         <Button
           title={careerGoal === "Not Selected" ? "Choose Career Path" : "View Career Gap Analysis"}
-          onPress={() => router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/careers")}
+          onPress={() => router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/(tabs)/careers")}
           size="sm"
           style={{ marginTop: spacing.md }}
         />
@@ -202,6 +212,57 @@ export default function DashboardScreen() {
           <Text style={styles.qaTitle}>Credentials</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Next Recommended Learning Task Callout */}
+      {nextRoadmapStep && (
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionTitle}>🎯 Next Learning Task</Text>
+          <Card style={styles.nextTaskCard}>
+            <View style={styles.nextTaskTop}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nextTaskTag}>NEXT UP IN ROADMAP</Text>
+                <Text style={styles.nextTaskTitle}>{nextRoadmapStep.resourceTitle}</Text>
+                <Text style={styles.nextTaskSkill}>
+                  Skill Focus: <Text style={{ color: colors.accent, fontWeight: "700" }}>{nextRoadmapStep.skillName}</Text>
+                </Text>
+              </View>
+              <Badge label={`${nextRoadmapStep.estimatedMinutes}m`} variant="info" />
+            </View>
+
+            <Button
+              title="Continue Learning Task →"
+              size="sm"
+              onPress={() => router.push(`/learning/${nextRoadmapStep.resourceId}`)}
+              style={{ marginTop: spacing.sm }}
+            />
+          </Card>
+        </View>
+      )}
+
+      {/* Latest AI Evolution Event Callout */}
+      {latestEvolution && (
+        <View style={styles.sectionWrap}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🧬 Latest AI Evolution Event</Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/evolution")}>
+              <Text style={styles.seeAllText}>Evolution Log →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Card style={styles.evolutionCard}>
+            <View style={styles.evolutionTop}>
+              <Text style={styles.evolutionSkill}>{latestEvolution.skillName}</Text>
+              <Text style={[styles.evolutionDelta, { color: latestEvolution.delta >= 0 ? colors.success : colors.warning }]}>
+                {latestEvolution.delta >= 0 ? "+" : ""}{latestEvolution.delta.toFixed(1)}%
+              </Text>
+            </View>
+            <Text style={styles.evolutionReason}>💬 {latestEvolution.changeReason}</Text>
+            <Text style={styles.evolutionMeta}>
+              Evidence: {latestEvolution.evidenceType.replace("_", " ")} • {new Date(latestEvolution.createdAt).toLocaleDateString()}
+            </Text>
+          </Card>
+        </View>
+      )}
 
       {/* Active Roadmap Snippet */}
       {dashboard?.activeRoadmap && (
@@ -368,7 +429,7 @@ export default function DashboardScreen() {
                 <Badge label="ON-CHAIN" variant="blockchain" />
               </View>
               <Text style={styles.credHash} numberOfLines={1}>
-                Tx: {c.transactionHash}
+                Tx: {c.transactionHash || "Cryptographically Verified"}
               </Text>
             </Card>
           ))}
@@ -526,6 +587,66 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 12,
     fontWeight: "600",
+  },
+  nextTaskCard: {
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    borderColor: colors.primary,
+    borderWidth: 1,
+    padding: spacing.md,
+  },
+  nextTaskTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  nextTaskTag: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  nextTaskTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  nextTaskSkill: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  evolutionCard: {
+    backgroundColor: "rgba(139, 92, 246, 0.1)",
+    borderColor: colors.secondary,
+    borderWidth: 1,
+    padding: spacing.md,
+  },
+  evolutionTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  evolutionSkill: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  evolutionDelta: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  evolutionReason: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginVertical: 4,
+  },
+  evolutionMeta: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
   },
   roadmapHeaderRow: {
     flexDirection: "row",

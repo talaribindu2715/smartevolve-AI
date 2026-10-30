@@ -73,6 +73,9 @@ public class CareerService {
             var match = careerMatchingEngine.evaluateCompatibility(
                     c.getId(), c.getName(), c.getCategory(), studentSkillMap, requirements);
 
+            String difficulty = computeCareerDifficulty(c.getName(), c.getCategory());
+            int weeks = computeEstimatedWeeks(difficulty);
+
             return CareerDto.builder()
                     .id(c.getId())
                     .name(c.getName())
@@ -81,6 +84,8 @@ public class CareerService {
                     .compatibilityScore(match.getCompatibilityScore())
                     .readinessLevel(match.getReadinessLevel())
                     .requiredSkillsCount(requirements.size())
+                    .difficulty(difficulty)
+                    .estimatedPreparationWeeks(weeks)
                     .build();
         }).sorted((a, b) -> b.getCompatibilityScore().compareTo(a.getCompatibilityScore()))
           .collect(Collectors.toList());
@@ -109,7 +114,12 @@ public class CareerService {
 
         List<SkillGapAnalyzer.SkillGapItem> gaps = skillGapAnalyzer.analyzeGaps(studentSkillMap, requirements);
 
-        boolean isGoal = preferenceRepository.findByStudentIdAndCareerId(studentId, careerId).isPresent();
+        boolean isGoal = preferenceRepository.findByStudentIdAndCareerId(studentId, careerId)
+                .map(p -> p.getPreferenceRank() == 1)
+                .orElse(false);
+
+        String difficulty = computeCareerDifficulty(career.getName(), career.getCategory());
+        int weeks = computeEstimatedWeeks(difficulty);
 
         return CareerDetailDto.builder()
                 .id(career.getId())
@@ -119,6 +129,8 @@ public class CareerService {
                 .isCurrentGoal(isGoal)
                 .compatibilityScore(match.getCompatibilityScore())
                 .readinessLevel(match.getReadinessLevel())
+                .difficulty(difficulty)
+                .estimatedPreparationWeeks(weeks)
                 .explanation(match.getExplanation())
                 .matchedSkills(match.getMatchedSkills())
                 .partiallyMatchedSkills(match.getPartiallyMatchedSkills())
@@ -135,6 +147,15 @@ public class CareerService {
         Career career = careerRepository.findById(careerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Career not found: " + careerId));
 
+        // Demote previous rank 1 preferences so the selected career is uniquely the primary goal
+        List<StudentCareerPreference> existing = preferenceRepository.findByStudentIdOrderByPreferenceRankAsc(studentId);
+        for (StudentCareerPreference p : existing) {
+            if (!p.getCareer().getId().equals(careerId) && p.getPreferenceRank() == 1) {
+                p.setPreferenceRank(2);
+                preferenceRepository.save(p);
+            }
+        }
+
         StudentCareerPreference pref = preferenceRepository.findByStudentIdAndCareerId(studentId, careerId)
                 .orElse(StudentCareerPreference.builder()
                         .student(profile)
@@ -148,6 +169,24 @@ public class CareerService {
 
         // Automatically generate or refresh personalized roadmap for this career
         roadmapService.generateOrRefreshRoadmap(studentId, careerId);
+    }
+
+    public static String computeCareerDifficulty(String name, String category) {
+        String lower = (name + " " + category).toLowerCase();
+        if (lower.contains("data analyst") || lower.contains("frontend") || lower.contains("python developer")) {
+            return "BEGINNER_FRIENDLY";
+        } else if (lower.contains("ai") || lower.contains("machine learning") || lower.contains("data scientist") || lower.contains("cloud engineer")) {
+            return "ADVANCED";
+        }
+        return "INTERMEDIATE";
+    }
+
+    public static int computeEstimatedWeeks(String difficulty) {
+        switch (difficulty) {
+            case "BEGINNER_FRIENDLY": return 8;
+            case "ADVANCED": return 16;
+            default: return 12;
+        }
     }
 
     private Map<UUID, BigDecimal> getStudentSkillMap(UUID studentId) {

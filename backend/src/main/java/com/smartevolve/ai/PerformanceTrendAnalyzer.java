@@ -39,6 +39,10 @@ public class PerformanceTrendAnalyzer {
         private double averageGrowthPerAttempt;
         private String trajectory; // ACCELERATING, STEADY, EARLY
         private List<String> topImprovingSkills;
+        private List<String> strongestSkills;
+        private List<String> weakestSkills;
+        private List<String> recommendedNextActions;
+        private int totalEvolutionEventsCount;
     }
 
     public TrendAnalysisSummary analyzeTrends(
@@ -52,6 +56,14 @@ public class PerformanceTrendAnalyzer {
                     .averageGrowthPerAttempt(0.0)
                     .trajectory("EARLY")
                     .topImprovingSkills(Collections.emptyList())
+                    .strongestSkills(Collections.emptyList())
+                    .weakestSkills(Collections.emptyList())
+                    .recommendedNextActions(List.of(
+                            "Take a diagnostic quiz to initialize your baseline proficiencies",
+                            "Explore industry careers and activate your target role",
+                            "Watch curated video masterclasses in our YouTube Academy"
+                    ))
+                    .totalEvolutionEventsCount(0)
                     .build();
         }
 
@@ -84,6 +96,24 @@ public class PerformanceTrendAnalyzer {
                 .map(Map.Entry::getKey)
                 .toList();
 
+        // Skill map to name/proficiency ranking from history
+        Map<String, BigDecimal> latestProfBySkillName = new HashMap<>();
+        for (EvolutionEventDTO ev : history) {
+            latestProfBySkillName.put(ev.getSkillName(), ev.getNewProficiency());
+        }
+
+        List<String> strongSkills = latestProfBySkillName.entrySet().stream()
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .limit(3)
+                .map(e -> String.format("%s (%.0f%%)", e.getKey(), e.getValue().doubleValue()))
+                .toList();
+
+        List<String> weakSkills = latestProfBySkillName.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .limit(3)
+                .map(e -> String.format("%s (%.0f%%)", e.getKey(), e.getValue().doubleValue()))
+                .toList();
+
         String trajectory;
         if (history.size() >= 5 && avgGrowth >= 10.0) {
             trajectory = "ACCELERATING";
@@ -93,12 +123,23 @@ public class PerformanceTrendAnalyzer {
             trajectory = "EARLY";
         }
 
+        List<String> nextActions = new ArrayList<>();
+        if (!weakSkills.isEmpty()) {
+            nextActions.add("Review prerequisite modules for highest deficit area: " + weakSkills.get(0));
+        }
+        nextActions.add("Take a diagnostic quiz to trigger your next proficiency calibration");
+        nextActions.add("Claim on-chain achievement badge for verified skills with >= 80% score");
+
         return TrendAnalysisSummary.builder()
                 .overallAverageProficiency(avgProf)
                 .totalProficiencyGained(totalGain.setScale(1, RoundingMode.HALF_UP))
                 .averageGrowthPerAttempt(Math.round(avgGrowth * 10.0) / 10.0)
                 .trajectory(trajectory)
                 .topImprovingSkills(topSkills)
+                .strongestSkills(strongSkills)
+                .weakestSkills(weakSkills)
+                .recommendedNextActions(nextActions)
+                .totalEvolutionEventsCount(history.size())
                 .build();
     }
 }

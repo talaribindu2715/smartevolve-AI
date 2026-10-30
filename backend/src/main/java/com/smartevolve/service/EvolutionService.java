@@ -5,8 +5,8 @@ import com.smartevolve.dto.EvolutionHistoryDto;
 import com.smartevolve.entity.SkillEvolutionHistory;
 import com.smartevolve.entity.StudentSkill;
 import com.smartevolve.repository.SkillEvolutionHistoryRepository;
+import com.smartevolve.repository.StudentCareerPreferenceRepository;
 import com.smartevolve.repository.StudentSkillRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +19,40 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EvolutionService {
 
     private final SkillEvolutionHistoryRepository historyRepository;
     private final StudentSkillRepository studentSkillRepository;
     private final PerformanceTrendAnalyzer trendAnalyzer;
+    private final StudentCareerPreferenceRepository preferenceRepository;
+    @org.springframework.context.annotation.Lazy
+    private final RoadmapService roadmapService;
+
+    public EvolutionService(
+            SkillEvolutionHistoryRepository historyRepository,
+            StudentSkillRepository studentSkillRepository,
+            PerformanceTrendAnalyzer trendAnalyzer,
+            StudentCareerPreferenceRepository preferenceRepository,
+            @org.springframework.context.annotation.Lazy RoadmapService roadmapService) {
+        this.historyRepository = historyRepository;
+        this.studentSkillRepository = studentSkillRepository;
+        this.trendAnalyzer = trendAnalyzer;
+        this.preferenceRepository = preferenceRepository;
+        this.roadmapService = roadmapService;
+    }
+
+    @Transactional
+    public PerformanceTrendAnalyzer.TrendAnalysisSummary triggerEvolutionCycle(UUID studentId) {
+        log.info("Triggering comprehensive AI evolution recalculation for student {}", studentId);
+
+        // Refresh roadmap and recommendations for active career goal if set
+        var prefOpt = preferenceRepository.findFirstByStudentIdOrderByPreferenceRankAsc(studentId);
+        if (prefOpt.isPresent()) {
+            roadmapService.generateOrRefreshRoadmap(studentId, prefOpt.get().getCareer().getId());
+        }
+
+        return getTrendAnalysis(studentId);
+    }
 
     @Transactional(readOnly = true)
     public List<EvolutionHistoryDto> getEvolutionHistory(UUID studentId) {

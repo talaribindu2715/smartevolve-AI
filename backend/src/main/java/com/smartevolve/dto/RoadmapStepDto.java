@@ -24,5 +24,9 @@ public class RoadmapStepDto {
     private String priority;
     private String reason;
     private String status; // LOCKED, AVAILABLE, IN_PROGRESS, COMPLETED
+    private String phase; // BEGINNER, INTERMEDIATE, ADVANCED
+    private String contentType; // ARTICLE, VIDEO, etc.
+    private String externalUrl;
+    private java.math.BigDecimal progressPercentage;
     private List<UUID> prerequisiteResourceIds;
 }

@@ -21,4 +21,6 @@ public class CareerDto {
     private BigDecimal compatibilityScore; // Computed dynamically for current user
     private String readinessLevel;
     private int requiredSkillsCount;
+    private String difficulty; // BEGINNER_FRIENDLY, INTERMEDIATE, ADVANCED
+    private int estimatedPreparationWeeks;
 }

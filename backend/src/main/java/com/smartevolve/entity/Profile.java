@@ -39,6 +39,12 @@ public class Profile {
     @Column(name = "interests", columnDefinition = "TEXT")
     private String interests;
 
+    @Column(name = "preferred_learning_style")
+    private String preferredLearningStyle;
+
+    @Column(name = "academic_goals", columnDefinition = "TEXT")
+    private String academicGoals;
+
     @Column(name = "onboarding_completed")
     @Builder.Default
     private Boolean onboardingCompleted = false;

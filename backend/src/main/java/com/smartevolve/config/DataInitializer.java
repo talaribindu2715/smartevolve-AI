@@ -192,6 +192,8 @@ public class DataInitializer implements CommandLineRunner {
             .branch("Computer Science")
             .graduationYear(2027)
             .interests("AI, Machine Learning, Data Analytics")
+            .preferredLearningStyle("Hands-on Projects & Video Masterclasses")
+            .academicGoals("Specialize in Cloud-Native AI Pipelines and Full-Stack Architecture")
             .onboardingCompleted(true)
             .build());
 

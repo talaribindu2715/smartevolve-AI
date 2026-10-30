@@ -36,4 +36,11 @@ public class EvolutionController {
         UUID studentId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(evolutionService.getTrendAnalysis(studentId));
     }
+
+    @org.springframework.web.bind.annotation.PostMapping("/recalculate")
+    @Operation(summary = "Trigger AI evolution cycle recalculating recommendations and trajectory")
+    public ResponseEntity<PerformanceTrendAnalyzer.TrendAnalysisSummary> recalculateEvolution() {
+        UUID studentId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(evolutionService.triggerEvolutionCycle(studentId));
+    }
 }

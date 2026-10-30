@@ -6,6 +6,10 @@ export interface Profile {
   branch: string;
   graduationYear: number;
   interests: string[];
+  preferredLearningStyle?: string;
+  academicGoals?: string;
+  targetCareerId?: string;
+  targetCareerName?: string;
   onboardingCompleted: boolean;
   createdAt?: string;
 }
@@ -36,6 +40,8 @@ export interface Career {
   compatibilityScore: number;
   readinessLevel: "READY" | "HIGH_POTENTIAL" | "DEVELOPING" | "EARLY_STAGE";
   requiredSkillsCount: number;
+  difficulty?: "BEGINNER_FRIENDLY" | "INTERMEDIATE" | "ADVANCED";
+  estimatedPreparationWeeks?: number;
 }
 
 export interface SkillMatchDetail {
@@ -70,6 +76,8 @@ export interface CareerDetail {
   isCurrentGoal: boolean;
   compatibilityScore: number;
   readinessLevel: string;
+  difficulty?: "BEGINNER_FRIENDLY" | "INTERMEDIATE" | "ADVANCED";
+  estimatedPreparationWeeks?: number;
   explanation: string;
   matchedSkills: SkillMatchDetail[];
   partiallyMatchedSkills: SkillMatchDetail[];
@@ -151,6 +159,10 @@ export interface RoadmapStep {
   resourceId: string;
   resourceTitle: string;
   difficulty: string;
+  phase?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  contentType?: string;
+  externalUrl?: string;
+  progressPercentage?: number;
   estimatedMinutes: number;
   skillId: string;
   skillName: string;
@@ -295,6 +307,8 @@ export interface YouTubeVideo {
   watchedSeconds: number;
   totalSeconds: number;
   lastWatchedAt?: string;
+  recommendationReason?: string;
+  isSavedForLater?: boolean;
 }
 
 export interface YouTubeSkillSummary {
@@ -310,5 +324,33 @@ export interface UpdateVideoProgressRequest {
   watchedSeconds: number;
   totalSeconds?: number;
   status?: "IN_PROGRESS" | "COMPLETED";
+}
+
+export interface EligibleCredential {
+  milestoneId: string;
+  title: string;
+  description: string;
+  credentialType: string;
+  skillId?: string;
+  skillName?: string;
+  achievementHash: string;
+  eligibleSince: string;
+}
+
+export interface ClaimCredentialRequest {
+  milestoneId: string;
+  credentialType: string;
+  title: string;
+  skillId?: string;
+  skillName?: string;
+  achievementDataHash?: string;
+}
+
+export interface TrendAnalysisSummary {
+  growthTrajectory: string;
+  totalEvolutionEventsCount: number;
+  strongestSkills: string[];
+  weakestSkills: string[];
+  recommendedNextActions: string[];
 }
 

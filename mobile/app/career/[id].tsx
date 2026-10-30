@@ -91,6 +91,10 @@ export default function CareerDetailScreen() {
             label={career.readinessLevel.replace("_", " ")}
             variant={career.readinessLevel === "READY" ? "success" : "info"}
           />
+          <Badge
+            label={career.difficulty ? career.difficulty.replace("_", " ") : "INTERMEDIATE"}
+            variant="warning"
+          />
           {career.isCurrentGoal ? (
             <Badge label="ACTIVE GOAL" variant="success" />
           ) : (
@@ -98,15 +102,29 @@ export default function CareerDetailScreen() {
           )}
         </View>
 
-        {!career.isCurrentGoal && (
-          <Button
-            title="Set as My Target Career Goal"
-            onPress={() => setGoalMutation.mutate()}
-            loading={setGoalMutation.isPending}
-            size="md"
-            style={{ marginTop: spacing.md }}
-          />
-        )}
+        <View style={styles.prepRow}>
+          <Text style={styles.prepLabel}>Estimated Preparation Timeline:</Text>
+          <Text style={styles.prepVal}>~{career.estimatedPreparationWeeks || 12} weeks</Text>
+        </View>
+
+        <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
+          {!career.isCurrentGoal ? (
+            <Button
+              title="Set as Target Career Goal"
+              onPress={() => setGoalMutation.mutate()}
+              loading={setGoalMutation.isPending}
+              size="md"
+              style={{ flex: 1 }}
+            />
+          ) : (
+            <Button
+              title="View Learning Roadmap →"
+              onPress={() => router.push("/(tabs)/learn")}
+              size="md"
+              style={{ flex: 1 }}
+            />
+          )}
+        </View>
       </Card>
 
       {/* Explainable AI Analysis */}
@@ -241,6 +259,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
     marginTop: spacing.xs,
+  },
+  prepRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    marginTop: spacing.sm,
+  },
+  prepLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  prepVal: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
   },
   sectionWrap: {
     marginTop: spacing.md,

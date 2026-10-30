@@ -88,6 +88,32 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      {/* Academic Goals & Preferences Card */}
+      <Card style={styles.goalsCard}>
+        <View style={styles.goalsHeaderRow}>
+          <Text style={styles.goalsCardTitle}>🎯 Target Career & Learning Style</Text>
+          <TouchableOpacity onPress={() => router.push("/settings")}>
+            <Text style={styles.editProfileLink}>Edit ✎</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.goalMetaRow}>
+          <Text style={styles.goalMetaLabel}>Target Role:</Text>
+          <Text style={styles.goalMetaVal}>{profile?.targetCareerName || "Not Set"}</Text>
+        </View>
+
+        <View style={styles.goalMetaRow}>
+          <Text style={styles.goalMetaLabel}>Learning Style:</Text>
+          <Text style={styles.goalMetaVal}>{profile?.preferredLearningStyle || "Hands-on Projects"}</Text>
+        </View>
+
+        {profile?.academicGoals ? (
+          <View style={styles.academicGoalsQuote}>
+            <Text style={styles.academicGoalsText}>“{profile.academicGoals}”</Text>
+          </View>
+        ) : null}
+      </Card>
+
       {/* Category Radar Chart */}
       <View style={styles.sectionWrap}>
         <Text style={styles.sectionTitle}>Category Competency Radar</Text>
@@ -208,6 +234,55 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
     marginTop: spacing.md,
+  },
+  goalsCard: {
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  goalsHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  goalsCardTitle: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  editProfileLink: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  goalMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+  },
+  goalMetaLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  goalMetaVal: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  academicGoalsQuote: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopColor: colors.cardBorder,
+    borderTopWidth: 1,
+  },
+  academicGoalsText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontStyle: "italic",
+    lineHeight: 18,
   },
   sectionWrap: {
     marginTop: spacing.md,

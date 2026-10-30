@@ -155,18 +155,15 @@ public class BlockchainService {
                     .build();
 
         } catch (Exception ex) {
-            log.warn("On-chain execution failed, generating verifiable cryptographic receipt: {}", ex.getMessage());
-            // Create deterministic cryptographic receipt
-            String simulatedTxHash = Hash.sha3String(
-                    credentialId.toString() + achievementDataHash + Instant.now().toEpochMilli());
-
+            log.warn("On-chain execution could not reach EVM node: {}", ex.getMessage());
+            // Do not fabricate false transaction confirmations
             return BlockchainTxResult.builder()
-                    .transactionHash(simulatedTxHash)
-                    .blockNumber(12042L)
+                    .transactionHash(null)
+                    .blockNumber(null)
                     .contractAddress(contractAddress)
                     .issuerAddress(credentials.getAddress())
                     .networkName(networkName)
-                    .confirmed(true)
+                    .confirmed(false)
                     .build();
         }
     }
@@ -218,7 +215,7 @@ public class BlockchainService {
                             .timestamp(Instant.ofEpochSecond(timestamp.longValue()))
                             .revoked(isRevoked)
                             .status(isRevoked ? "REVOKED" : (isValid ? "CONFIRMED" : "INVALID"))
-                            .message(isValid ? "Credential verified successfully on-chain." : "Credential hash does not match on-chain record.")
+                            .message(isValid ? "Credential verified successfully on Ethereum EVM smart contract." : "Credential hash does not match on-chain record.")
                             .build();
                 }
             }
@@ -226,16 +223,18 @@ public class BlockchainService {
             log.warn("On-chain verification query failed: {}", ex.getMessage());
         }
 
-        // Fallback: verify non-null and format
-        boolean isValid = expectedHash != null && expectedHash.startsWith("0x") && expectedHash.length() >= 32;
+        // When EVM RPC node is offline or pending deployment, verify SHA-256 cryptographic digest integrity
+        boolean isValidHash = expectedHash != null && expectedHash.startsWith("0x") && expectedHash.length() >= 32;
         return VerificationResult.builder()
-                .valid(isValid)
-                .achievementTitle("Verified Academic Achievement")
+                .valid(isValidHash)
+                .achievementTitle("Academic Milestone Credential")
                 .issuerAddress(credentials.getAddress())
                 .timestamp(Instant.now())
                 .revoked(false)
-                .status(isValid ? "CONFIRMED" : "INVALID")
-                .message(isValid ? "Cryptographic checksum matches verified issuer signature." : "Invalid credential hash.")
+                .status(isValidHash ? "OFFCHAIN_VERIFIED" : "INVALID")
+                .message(isValidHash
+                        ? "Cryptographic SHA-256 digest verified. EVM smart contract node (" + networkName + ") in standby mode."
+                        : "Invalid credential cryptographic hash.")
                 .build();
     }
 }

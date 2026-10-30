@@ -297,6 +297,11 @@ public class RoadmapService {
                     .map(pr -> pr.getPrerequisiteResource().getId())
                     .collect(Collectors.toList());
 
+            String diff = s.getResource().getDifficulty() != null ? s.getResource().getDifficulty().toUpperCase() : "BEGINNER";
+            String phase = diff.contains("ADVANCED") ? "ADVANCED" : diff.contains("INTERMEDIATE") ? "INTERMEDIATE" : "BEGINNER";
+            BigDecimal stepPct = "COMPLETED".equalsIgnoreCase(s.getStatus()) ? new BigDecimal("100.0")
+                    : "IN_PROGRESS".equalsIgnoreCase(s.getStatus()) ? new BigDecimal("50.0") : BigDecimal.ZERO;
+
             return RoadmapStepDto.builder()
                     .id(s.getId())
                     .resourceId(s.getResource().getId())
@@ -309,6 +314,10 @@ public class RoadmapService {
                     .priority(s.getPriority())
                     .reason(s.getReason())
                     .status(s.getStatus())
+                    .phase(phase)
+                    .contentType(s.getResource().getContentType())
+                    .externalUrl(s.getResource().getExternalUrl())
+                    .progressPercentage(stepPct)
                     .prerequisiteResourceIds(prereqIds)
                     .build();
         }).collect(Collectors.toList());

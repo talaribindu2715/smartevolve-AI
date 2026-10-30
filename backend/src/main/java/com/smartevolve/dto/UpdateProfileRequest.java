@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -20,5 +21,8 @@ public class UpdateProfileRequest {
     private String branch;
     private Integer graduationYear;
     private List<String> interests;
+    private String preferredLearningStyle;
+    private String academicGoals;
+    private UUID targetCareerId;
     private Boolean onboardingCompleted;
 }

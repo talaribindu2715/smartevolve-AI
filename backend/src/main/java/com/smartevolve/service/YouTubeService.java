@@ -122,7 +122,12 @@ public class YouTubeService {
 
         // Prioritize videos that are NOT yet completed
         return candidateVideos.stream()
-                .map(v -> mapToDto(v, progressMap.get(v.getId())))
+                .map(v -> {
+                    YouTubeVideoDto dto = mapToDto(v, progressMap.get(v.getId()));
+                    String skillName = v.getSkill() != null ? v.getSkill().getName() : "Key Skill";
+                    dto.setRecommendationReason("Recommended to close active gap in " + skillName + " for your target career role.");
+                    return dto;
+                })
                 .sorted((a, b) -> {
                     boolean aCompleted = "COMPLETED".equalsIgnoreCase(a.getWatchStatus());
                     boolean bCompleted = "COMPLETED".equalsIgnoreCase(b.getWatchStatus());

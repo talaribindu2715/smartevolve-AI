@@ -21,6 +21,10 @@ public class ProfileDto {
     private String branch;
     private Integer graduationYear;
     private List<String> interests;
+    private String preferredLearningStyle;
+    private String academicGoals;
+    private UUID targetCareerId;
+    private String targetCareerName;
     private Boolean onboardingCompleted;
     private OffsetDateTime createdAt;
 }
