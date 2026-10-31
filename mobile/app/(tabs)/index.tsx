@@ -18,6 +18,8 @@ import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { VideoCard } from "../../src/components/VideoCard";
+import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
+import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function DashboardScreen() {
@@ -25,17 +27,23 @@ export default function DashboardScreen() {
 
   const {
     data: dashboard,
-    isLoading,
-    refetch,
+    isLoading: isDashboardLoading,
+    isError: isDashboardError,
+    refetch: refetchDashboard,
     isRefetching,
   } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api.getDashboard(),
   });
 
-  const { data: recommendedVideos } = useQuery({
+  const { data: recommendedVideos, refetch: refetchVideos } = useQuery({
     queryKey: ["recommendedYouTubeVideos"],
     queryFn: () => api.getRecommendedYouTubeVideos(),
+  });
+
+  const { data: allVideos } = useQuery({
+    queryKey: ["youtubeVideos"],
+    queryFn: () => api.getYouTubeVideos(),
   });
 
   const { data: evolutionHistory } = useQuery({
@@ -43,14 +51,15 @@ export default function DashboardScreen() {
     queryFn: () => api.getEvolutionHistory(),
   });
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={styles.loadingText}>Synthesizing Adaptive AI Dashboard...</Text>
-      </View>
-    );
-  }
+  const { data: evolutionTrends } = useQuery({
+    queryKey: ["evolutionTrends"],
+    queryFn: () => api.getTrends(),
+  });
+
+  const handleRefreshAll = () => {
+    refetchDashboard();
+    refetchVideos();
+  };
 
   const studentName = dashboard?.studentName || "Student";
   const careerGoal = dashboard?.targetCareerName || "Not Selected";
@@ -77,6 +86,9 @@ export default function DashboardScreen() {
   );
   const latestEvolution = evolutionHistory && evolutionHistory.length > 0 ? evolutionHistory[0] : null;
 
+  // Filter in-progress videos for Recently Watched / Continue Learning section
+  const inProgressVideos = (allVideos || []).filter((v) => v.watchStatus === "IN_PROGRESS");
+
   return (
     <ScrollView
       style={styles.container}
@@ -84,357 +96,432 @@ export default function DashboardScreen() {
       refreshControl={
         <RefreshControl
           refreshing={isRefetching}
-          onRefresh={refetch}
+          onRefresh={handleRefreshAll}
           tintColor={colors.primary}
         />
       }
     >
-      {/* Top Welcome Bar */}
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.greetingSub}>SmartEvolve AI Profile</Text>
-          <Text style={styles.greetingTitle}>Hello, {studentName} 👋</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => router.push("/settings")}
-          style={styles.settingsBtn}
-        >
-          <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2">
-            <Circle cx="12" cy="12" r="3" />
-            <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </Svg>
-        </TouchableOpacity>
-      </View>
-
-      {/* Target Career & Readiness Hero Card */}
-      <Card style={styles.heroCard}>
-        <View style={styles.heroTop}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroGoalLabel}>TARGET CAREER GOAL</Text>
-            <Text style={styles.heroCareerName}>{careerGoal}</Text>
+      <View style={styles.responsiveWrapper}>
+        {/* Top Welcome Bar */}
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.greetingSub}>SmartEvolve AI Profile</Text>
+            <Text style={styles.greetingTitle}>Hello, {studentName} 👋</Text>
           </View>
-          <Badge
-            label={readinessLevel.replace("_", " ")}
-            variant={getReadinessBadgeVariant(readinessLevel)}
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            style={styles.settingsBtn}
+          >
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2">
+              <Circle cx="12" cy="12" r="3" />
+              <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </Svg>
+          </TouchableOpacity>
+        </View>
+
+        {/* Backend Connectivity Notice if error */}
+        {isDashboardError && (
+          <ErrorBanner
+            title="Connecting to AI Service"
+            message="SmartEvolve is attempting to connect to the cloud AI service. If the backend is on cold standby, tap to reconnect."
+            onRetry={handleRefreshAll}
           />
-        </View>
+        )}
 
-        <View style={styles.heroStatsRow}>
-          <View style={styles.heroMetricCol}>
-            <Text style={styles.heroMetricVal}>{readiness.toFixed(0)}%</Text>
-            <Text style={styles.heroMetricSub}>Career Readiness</Text>
+        {/* Loading Skeletons */}
+        {isDashboardLoading && (
+          <View style={{ marginBottom: spacing.md }}>
+            <CardSkeleton />
+            <CardSkeleton />
           </View>
-          <View style={styles.heroDivider} />
-          <View style={styles.heroMetricCol}>
-            <Text style={[styles.heroMetricVal, { color: colors.accent }]}>
-              {overallProf.toFixed(0)}%
-            </Text>
-            <Text style={styles.heroMetricSub}>Overall Proficiency</Text>
-          </View>
-          <View style={styles.heroDivider} />
-          <View style={styles.heroMetricCol}>
-            <Text style={[styles.heroMetricVal, { color: colors.blockchain }]}>
-              {dashboard?.verifiedCredentials?.length || 0}
-            </Text>
-            <Text style={styles.heroMetricSub}>On-Chain Badges</Text>
-          </View>
-        </View>
+        )}
 
-        <Button
-          title={careerGoal === "Not Selected" ? "Choose Career Path" : "View Career Gap Analysis"}
-          onPress={() => router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/(tabs)/careers")}
-          size="sm"
-          style={{ marginTop: spacing.md }}
-        />
-      </Card>
-
-      {/* Quick Actions Bar */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/(tabs)/learn")}
-        >
-          <View style={[styles.qaIconWrap, { backgroundColor: "rgba(99, 102, 241, 0.15)" }]}>
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="2">
-              <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </Svg>
-          </View>
-          <Text style={styles.qaTitle}>Roadmap</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/(tabs)/careers")}
-        >
-          <View style={[styles.qaIconWrap, { backgroundColor: "rgba(6, 182, 212, 0.15)" }]}>
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.accent} strokeWidth="2">
-              <Path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </Svg>
-          </View>
-          <Text style={styles.qaTitle}>Careers</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/(tabs)/evolution")}
-        >
-          <View style={[styles.qaIconWrap, { backgroundColor: "rgba(139, 92, 246, 0.15)" }]}>
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.secondary} strokeWidth="2">
-              <Path d="M18 20V10M12 20V4M6 20v-6" />
-            </Svg>
-          </View>
-          <Text style={styles.qaTitle}>Evolution</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/videos")}
-        >
-          <View style={[styles.qaIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444">
-              <Polygon points="5 3 19 12 5 21 5 3" />
-            </Svg>
-          </View>
-          <Text style={styles.qaTitle}>Videos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.quickActionCard}
-          onPress={() => router.push("/credentials")}
-        >
-          <View style={[styles.qaIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
-            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.blockchain} strokeWidth="2">
-              <Path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </Svg>
-          </View>
-          <Text style={styles.qaTitle}>Credentials</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Next Recommended Learning Task Callout */}
-      {nextRoadmapStep && (
-        <View style={styles.sectionWrap}>
-          <Text style={styles.sectionTitle}>🎯 Next Learning Task</Text>
-          <Card style={styles.nextTaskCard}>
-            <View style={styles.nextTaskTop}>
+        {/* Target Career & Readiness Hero Card */}
+        {!isDashboardLoading && (
+          <Card style={styles.heroCard}>
+            <View style={styles.heroTop}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.nextTaskTag}>NEXT UP IN ROADMAP</Text>
-                <Text style={styles.nextTaskTitle}>{nextRoadmapStep.resourceTitle}</Text>
-                <Text style={styles.nextTaskSkill}>
-                  Skill Focus: <Text style={{ color: colors.accent, fontWeight: "700" }}>{nextRoadmapStep.skillName}</Text>
-                </Text>
+                <Text style={styles.heroGoalLabel}>TARGET CAREER GOAL</Text>
+                <Text style={styles.heroCareerName}>{careerGoal}</Text>
               </View>
-              <Badge label={`${nextRoadmapStep.estimatedMinutes}m`} variant="info" />
+              <Badge
+                label={readinessLevel.replace("_", " ")}
+                variant={getReadinessBadgeVariant(readinessLevel)}
+              />
+            </View>
+
+            <View style={styles.heroStatsRow}>
+              <View style={styles.heroMetricCol}>
+                <Text style={styles.heroMetricVal}>{readiness.toFixed(0)}%</Text>
+                <Text style={styles.heroMetricSub}>Career Readiness</Text>
+              </View>
+              <View style={styles.heroDivider} />
+              <View style={styles.heroMetricCol}>
+                <Text style={[styles.heroMetricVal, { color: colors.accent }]}>
+                  {overallProf.toFixed(0)}%
+                </Text>
+                <Text style={styles.heroMetricSub}>Overall Proficiency</Text>
+              </View>
+              <View style={styles.heroDivider} />
+              <View style={styles.heroMetricCol}>
+                <Text style={[styles.heroMetricVal, { color: colors.blockchain }]}>
+                  {dashboard?.verifiedCredentials?.length || 0}
+                </Text>
+                <Text style={styles.heroMetricSub}>On-Chain Badges</Text>
+              </View>
             </View>
 
             <Button
-              title="Continue Learning Task →"
+              title={careerGoal === "Not Selected" ? "Choose Career Path" : "View Career Gap Analysis"}
+              onPress={() =>
+                router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/(tabs)/careers")
+              }
               size="sm"
-              onPress={() => router.push(`/learning/${nextRoadmapStep.resourceId}`)}
-              style={{ marginTop: spacing.sm }}
+              style={{ marginTop: spacing.md }}
             />
           </Card>
-        </View>
-      )}
+        )}
 
-      {/* Latest AI Evolution Event Callout */}
-      {latestEvolution && (
-        <View style={styles.sectionWrap}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🧬 Latest AI Evolution Event</Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/evolution")}>
-              <Text style={styles.seeAllText}>Evolution Log →</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Card style={styles.evolutionCard}>
-            <View style={styles.evolutionTop}>
-              <Text style={styles.evolutionSkill}>{latestEvolution.skillName}</Text>
-              <Text style={[styles.evolutionDelta, { color: latestEvolution.delta >= 0 ? colors.success : colors.warning }]}>
-                {latestEvolution.delta >= 0 ? "+" : ""}{latestEvolution.delta.toFixed(1)}%
-              </Text>
+        {/* Quick Actions Bar */}
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/(tabs)/learn")}
+          >
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(99, 102, 241, 0.15)" }]}>
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="2">
+                <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </Svg>
             </View>
-            <Text style={styles.evolutionReason}>💬 {latestEvolution.changeReason}</Text>
-            <Text style={styles.evolutionMeta}>
-              Evidence: {latestEvolution.evidenceType.replace("_", " ")} • {new Date(latestEvolution.createdAt).toLocaleDateString()}
-            </Text>
-          </Card>
-        </View>
-      )}
+            <Text style={styles.qaTitle}>Roadmap</Text>
+          </TouchableOpacity>
 
-      {/* Active Roadmap Snippet */}
-      {dashboard?.activeRoadmap && (
-        <View style={styles.sectionWrap}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Learning Roadmap</Text>
-            <TouchableOpacity onPress={() => router.push("/(tabs)/learn")}>
-              <Text style={styles.seeAllText}>Open Full Roadmap →</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/(tabs)/careers")}
+          >
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(6, 182, 212, 0.15)" }]}>
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.accent} strokeWidth="2">
+                <Path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </Svg>
+            </View>
+            <Text style={styles.qaTitle}>Careers</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/(tabs)/evolution")}
+          >
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(139, 92, 246, 0.15)" }]}>
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.secondary} strokeWidth="2">
+                <Path d="M18 20V10M12 20V4M6 20v-6" />
+              </Svg>
+            </View>
+            <Text style={styles.qaTitle}>Evolution</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/videos")}
+          >
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444">
+                <Polygon points="5 3 19 12 5 21 5 3" />
+              </Svg>
+            </View>
+            <Text style={styles.qaTitle}>Videos</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/credentials")}
+          >
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.blockchain} strokeWidth="2">
+                <Path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </Svg>
+            </View>
+            <Text style={styles.qaTitle}>Credentials</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Skill Improvement Summary Section */}
+        {evolutionTrends && (
+          <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>📈 Skill Velocity & Improvement</Text>
+              <Badge label={evolutionTrends.growthTrajectory || "ACTIVE"} variant="info" />
+            </View>
+            <Card style={styles.trendSummaryCard}>
+              <View style={styles.trendSummaryRow}>
+                <View style={styles.trendSummaryCol}>
+                  <Text style={styles.trendSummaryVal}>
+                    {evolutionTrends.totalEvolutionEventsCount || evolutionHistory?.length || 0}
+                  </Text>
+                  <Text style={styles.trendSummarySub}>Total AI Adaptations</Text>
+                </View>
+                <View style={styles.trendSummaryDivider} />
+                <View style={styles.trendSummaryCol}>
+                  <Text style={[styles.trendSummaryVal, { color: colors.success }]}>
+                    {evolutionTrends.strongestSkills && evolutionTrends.strongestSkills.length > 0
+                      ? evolutionTrends.strongestSkills[0]
+                      : "Calibrating"}
+                  </Text>
+                  <Text style={styles.trendSummarySub}>Leading Skill Area</Text>
+                </View>
+              </View>
+            </Card>
           </View>
+        )}
 
-          <Card>
-            <View style={styles.roadmapHeaderRow}>
-              <View>
-                <Text style={styles.roadmapTitle}>{dashboard.activeRoadmap.careerName}</Text>
-                <Text style={styles.roadmapSub}>
-                  {dashboard.activeRoadmap.completedSteps} of {dashboard.activeRoadmap.totalSteps} steps completed
+        {/* Next Recommended Learning Task Callout */}
+        {nextRoadmapStep && (
+          <View style={styles.sectionWrap}>
+            <Text style={styles.sectionTitle}>🎯 Next Learning Task</Text>
+            <Card style={styles.nextTaskCard}>
+              <View style={styles.nextTaskTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.nextTaskTag}>NEXT UP IN ROADMAP</Text>
+                  <Text style={styles.nextTaskTitle}>{nextRoadmapStep.resourceTitle}</Text>
+                  <Text style={styles.nextTaskSkill}>
+                    Skill Focus: <Text style={{ color: colors.accent, fontWeight: "700" }}>{nextRoadmapStep.skillName}</Text>
+                  </Text>
+                </View>
+                <Badge label={`${nextRoadmapStep.estimatedMinutes}m`} variant="info" />
+              </View>
+
+              <Button
+                title="Continue Learning Task →"
+                size="sm"
+                onPress={() => router.push(`/learning/${nextRoadmapStep.resourceId}`)}
+                style={{ marginTop: spacing.sm }}
+              />
+            </Card>
+          </View>
+        )}
+
+        {/* Recently Watched / Continue Learning Section */}
+        {inProgressVideos.length > 0 && (
+          <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>▶ Continue Watching Videos</Text>
+              <TouchableOpacity onPress={() => router.push("/videos")}>
+                <Text style={styles.seeAllText}>All Videos →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.md }} contentContainerStyle={{ paddingHorizontal: spacing.md }}>
+              {inProgressVideos.map((video) => (
+                <View key={video.id} style={{ width: 260, marginRight: spacing.md }}>
+                  <VideoCard
+                    video={video}
+                    onPress={(v) => router.push(`/videos/${v.id || v.videoId}`)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Latest AI Evolution Event Callout */}
+        {latestEvolution && (
+          <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>🧬 Latest AI Evolution Event</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/evolution")}>
+                <Text style={styles.seeAllText}>Evolution Log →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Card style={styles.evolutionCard}>
+              <View style={styles.evolutionTop}>
+                <Text style={styles.evolutionSkill}>{latestEvolution.skillName}</Text>
+                <Text style={[styles.evolutionDelta, { color: latestEvolution.delta >= 0 ? colors.success : colors.warning }]}>
+                  {latestEvolution.delta >= 0 ? "+" : ""}{latestEvolution.delta.toFixed(1)}%
                 </Text>
               </View>
-              <Text style={styles.roadmapPct}>
-                {dashboard.activeRoadmap.progressPercentage.toFixed(0)}%
+              <Text style={styles.evolutionReason}>💬 {latestEvolution.changeReason}</Text>
+              <Text style={styles.evolutionMeta}>
+                Evidence: {latestEvolution.evidenceType.replace("_", " ")} • {new Date(latestEvolution.createdAt).toLocaleDateString()}
               </Text>
-            </View>
-
-            {/* Steps Preview */}
-            <View style={styles.stepsPreviewWrap}>
-              {dashboard.activeRoadmap.steps.slice(0, 3).map((step) => (
-                <TouchableOpacity
-                  key={step.id}
-                  style={styles.stepPreviewItem}
-                  onPress={() => router.push(`/learning/${step.resourceId}`)}
-                >
-                  <View style={styles.stepPreviewLeft}>
-                    <Badge
-                      label={step.status}
-                      variant={
-                        step.status === "COMPLETED"
-                          ? "success"
-                          : step.status === "AVAILABLE"
-                          ? "info"
-                          : "warning"
-                      }
-                    />
-                    <Text style={styles.stepPreviewTitle} numberOfLines={1}>
-                      {step.resourceTitle}
-                    </Text>
-                  </View>
-                  <Text style={styles.stepMinutes}>{step.estimatedMinutes}m</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Card>
-        </View>
-      )}
-
-      {/* AI Recommendations */}
-      <View style={styles.sectionWrap}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>AI Adaptive Recommendations</Text>
-          <Badge label="Auto-Updated" variant="info" />
-        </View>
-
-        {dashboard?.recommendations && dashboard.recommendations.length > 0 ? (
-          dashboard.recommendations.map((rec) => (
-            <Card key={rec.id} style={styles.recCard}>
-              <View style={styles.recTop}>
-                <Badge
-                  label={rec.priority}
-                  variant={rec.priority === "CRITICAL" ? "error" : "warning"}
-                />
-                <Text style={styles.recTime}>{rec.estimatedMinutes} mins</Text>
-              </View>
-              <Text style={styles.recTitle}>{rec.resourceTitle || rec.skillName}</Text>
-              <Text style={styles.recReason}>💡 {rec.reason}</Text>
-
-              {rec.resourceId && (
-                <Button
-                  title="Start Learning Module"
-                  onPress={() => router.push(`/learning/${rec.resourceId}`)}
-                  variant="outline"
-                  size="sm"
-                  style={{ marginTop: spacing.sm }}
-                />
-              )}
             </Card>
-          ))
-        ) : (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No pending recommendations</Text>
-            <Text style={styles.emptySub}>
-              You are currently aligned with your target goals! Take a diagnostic quiz to reveal new growth areas.
-            </Text>
-          </Card>
+          </View>
         )}
-      </View>
 
-      {/* Recommended YouTube Video Masterclasses */}
-      {recommendedVideos && recommendedVideos.length > 0 && (
+        {/* Active Roadmap Snippet */}
+        {dashboard?.activeRoadmap && (
+          <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Active Learning Roadmap</Text>
+              <TouchableOpacity onPress={() => router.push("/(tabs)/learn")}>
+                <Text style={styles.seeAllText}>Open Full Roadmap →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Card>
+              <View style={styles.roadmapHeaderRow}>
+                <View>
+                  <Text style={styles.roadmapTitle}>{dashboard.activeRoadmap.careerName}</Text>
+                  <Text style={styles.roadmapSub}>
+                    {dashboard.activeRoadmap.completedSteps} of {dashboard.activeRoadmap.totalSteps} steps completed
+                  </Text>
+                </View>
+                <Text style={styles.roadmapPct}>
+                  {dashboard.activeRoadmap.progressPercentage.toFixed(0)}%
+                </Text>
+              </View>
+
+              {/* Steps Preview */}
+              <View style={styles.stepsPreviewWrap}>
+                {dashboard.activeRoadmap.steps.slice(0, 3).map((step) => (
+                  <TouchableOpacity
+                    key={step.id}
+                    style={styles.stepPreviewItem}
+                    onPress={() => router.push(`/learning/${step.resourceId}`)}
+                  >
+                    <View style={styles.stepPreviewLeft}>
+                      <Badge
+                        label={step.status}
+                        variant={
+                          step.status === "COMPLETED"
+                            ? "success"
+                            : step.status === "AVAILABLE"
+                            ? "info"
+                            : "warning"
+                        }
+                      />
+                      <Text style={styles.stepPreviewTitle} numberOfLines={1}>
+                        {step.resourceTitle}
+                      </Text>
+                    </View>
+                    <Text style={styles.stepMinutes}>{step.estimatedMinutes}m</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Card>
+          </View>
+        )}
+
+        {/* AI Recommendations */}
         <View style={styles.sectionWrap}>
           <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>YouTube Video Academy</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
-                Video lessons mapped to your active skill gaps
-              </Text>
-            </View>
-            <TouchableOpacity onPress={() => router.push("/videos")}>
-              <Text style={styles.seeAllText}>Explore Academy →</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>AI Adaptive Recommendations</Text>
+            <Badge label="Auto-Updated" variant="info" />
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginHorizontal: -spacing.md }}
-            contentContainerStyle={{ paddingHorizontal: spacing.md }}
-          >
-            {recommendedVideos.map((video) => (
-              <View key={video.id} style={{ width: 260, marginRight: spacing.md }}>
-                <VideoCard
-                  video={video}
-                  onPress={(v) => router.push(`/videos/${v.id || v.videoId}`)}
-                />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+          {dashboard?.recommendations && dashboard.recommendations.length > 0 ? (
+            dashboard.recommendations.map((rec) => (
+              <Card key={rec.id} style={styles.recCard}>
+                <View style={styles.recTop}>
+                  <Badge
+                    label={rec.priority}
+                    variant={rec.priority === "CRITICAL" ? "error" : "warning"}
+                  />
+                  <Text style={styles.recTime}>{rec.estimatedMinutes} mins</Text>
+                </View>
+                <Text style={styles.recTitle}>{rec.resourceTitle || rec.skillName}</Text>
+                <Text style={styles.recReason}>💡 {rec.reason}</Text>
 
-      {/* Top Skills Proficiency */}
-      <View style={styles.sectionWrap}>
-        <Text style={styles.sectionTitle}>Demonstrated Skills</Text>
-        <Card>
-          {dashboard?.topSkills && dashboard.topSkills.length > 0 ? (
-            dashboard.topSkills.slice(0, 4).map((s) => (
-              <ProficiencyBar
-                key={s.id}
-                label={s.skillName}
-                value={s.proficiency}
-                category={s.category}
-                evidenceType={s.evidenceType}
-              />
+                {rec.resourceId && (
+                  <Button
+                    title="Start Learning Module"
+                    onPress={() => router.push(`/learning/${rec.resourceId}`)}
+                    variant="outline"
+                    size="sm"
+                    style={{ marginTop: spacing.sm }}
+                  />
+                )}
+              </Card>
             ))
           ) : (
-            <Text style={styles.emptySub}>No skill assessments recorded yet. Take an assessment to calibrate your baseline!</Text>
-          )}
-        </Card>
-      </View>
-
-      {/* Blockchain Achievements Snippet */}
-      {dashboard?.verifiedCredentials && dashboard.verifiedCredentials.length > 0 && (
-        <View style={styles.sectionWrap}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Blockchain Verified Badges</Text>
-            <TouchableOpacity onPress={() => router.push("/credentials")}>
-              <Text style={styles.seeAllText}>Verify On-Chain →</Text>
-            </TouchableOpacity>
-          </View>
-
-          {dashboard.verifiedCredentials.map((c) => (
-            <Card key={c.id} style={styles.credCard}>
-              <View style={styles.credTop}>
-                <Text style={styles.credTitle}>{c.achievementTitle}</Text>
-                <Badge label="ON-CHAIN" variant="blockchain" />
-              </View>
-              <Text style={styles.credHash} numberOfLines={1}>
-                Tx: {c.transactionHash || "Cryptographically Verified"}
+            <Card style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No pending recommendations</Text>
+              <Text style={styles.emptySub}>
+                You are currently aligned with your target goals! Complete milestones to trigger new adaptive tasks.
               </Text>
             </Card>
-          ))}
+          )}
         </View>
-      )}
+
+        {/* Recommended YouTube Video Masterclasses */}
+        {recommendedVideos && recommendedVideos.length > 0 && (
+          <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>YouTube Video Academy</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                  Video lessons mapped to your active skill gaps
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push("/videos")}>
+                <Text style={styles.seeAllText}>Explore Academy →</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginHorizontal: -spacing.md }}
+              contentContainerStyle={{ paddingHorizontal: spacing.md }}
+            >
+              {recommendedVideos.map((video) => (
+                <View key={video.id} style={{ width: 260, marginRight: spacing.md }}>
+                  <VideoCard
+                    video={video}
+                    onPress={(v) => router.push(`/videos/${v.id || v.videoId}`)}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Top Skills Proficiency */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionTitle}>Demonstrated Skills</Text>
+          <Card>
+            {dashboard?.topSkills && dashboard.topSkills.length > 0 ? (
+              dashboard.topSkills.slice(0, 4).map((s) => (
+                <ProficiencyBar
+                  key={s.id}
+                  label={s.skillName}
+                  value={s.proficiency}
+                  category={s.category}
+                  evidenceType={s.evidenceType}
+                />
+              ))
+            ) : (
+              <Text style={styles.emptySub}>No skill assessments recorded yet. Take an assessment to calibrate your baseline!</Text>
+            )}
+          </Card>
+        </View>
+
+        {/* Blockchain Achievements Snippet */}
+        {dashboard?.verifiedCredentials && dashboard.verifiedCredentials.length > 0 && (
+          <View style={styles.sectionWrap}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Blockchain Verified Badges</Text>
+              <TouchableOpacity onPress={() => router.push("/credentials")}>
+                <Text style={styles.seeAllText}>Verify On-Chain →</Text>
+              </TouchableOpacity>
+            </View>
+
+            {dashboard.verifiedCredentials.map((c) => (
+              <Card key={c.id} style={styles.credCard}>
+                <View style={styles.credTop}>
+                  <Text style={styles.credTitle}>{c.achievementTitle}</Text>
+                  <Badge label="ON-CHAIN" variant="blockchain" />
+                </View>
+                <Text style={styles.credHash} numberOfLines={1}>
+                  Tx: {c.transactionHash || "Cryptographically Verified"}
+                </Text>
+              </Card>
+            ))}
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -449,150 +536,162 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
   },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: 14,
+  responsiveWrapper: {
+    width: "100%",
+    maxWidth: 820,
+    alignSelf: "center",
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   greetingSub: {
-    color: colors.primary,
+    color: colors.textSecondary,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   greetingTitle: {
     color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: 26,
+    fontWeight: "900",
   },
   settingsBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    padding: spacing.xs,
     backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
     borderColor: colors.cardBorder,
+    borderWidth: 1,
+    borderRadius: radius.md,
   },
   heroCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.cardBorderActive,
-    borderWidth: 1.5,
     padding: spacing.lg,
-    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderWidth: 1.5,
+    marginBottom: spacing.lg,
   },
   heroTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: spacing.md,
   },
   heroGoalLabel: {
-    color: colors.textMuted,
+    color: colors.accent,
     fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontWeight: "800",
+    letterSpacing: 0.8,
   },
   heroCareerName: {
     color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 22,
+    fontWeight: "900",
     marginTop: 2,
   },
   heroStatsRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    backgroundColor: "rgba(11, 15, 25, 0.4)",
+    justifyContent: "space-around",
+    backgroundColor: colors.background,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
   },
   heroMetricCol: {
-    flex: 1,
     alignItems: "center",
+    flex: 1,
   },
   heroMetricVal: {
     color: colors.primary,
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   heroMetricSub: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: 11,
     marginTop: 2,
+    textAlign: "center",
   },
   heroDivider: {
     width: 1,
-    height: 28,
+    height: 30,
     backgroundColor: colors.cardBorder,
   },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: spacing.sm,
+  },
   sectionWrap: {
-    marginTop: spacing.md,
+    marginBottom: spacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.xs,
-  },
-  sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   seeAllText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: "600",
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
   },
   quickActionsScroll: {
     flexDirection: "row",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.lg,
   },
   quickActionCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    borderColor: colors.cardBorder,
-    borderWidth: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginRight: spacing.sm,
     alignItems: "center",
-    gap: 8,
+    marginRight: spacing.md,
   },
   qaIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 6,
   },
   qaTitle: {
-    color: colors.textPrimary,
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: "600",
   },
-  nextTaskCard: {
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
-    borderColor: colors.primary,
-    borderWidth: 1,
+  trendSummaryCard: {
     padding: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  trendSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  trendSummaryCol: {
+    flex: 1,
+    alignItems: "center",
+  },
+  trendSummaryVal: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.primary,
+  },
+  trendSummarySub: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  trendSummaryDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.cardBorder,
+  },
+  nextTaskCard: {
+    padding: spacing.md,
+    backgroundColor: "rgba(6, 182, 212, 0.08)",
+    borderColor: "rgba(6, 182, 212, 0.35)",
+    borderWidth: 1,
   },
   nextTaskTop: {
     flexDirection: "row",
@@ -600,7 +699,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   nextTaskTag: {
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.5,
@@ -614,13 +713,13 @@ const styles = StyleSheet.create({
   nextTaskSkill: {
     color: colors.textSecondary,
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 2,
   },
   evolutionCard: {
-    backgroundColor: "rgba(139, 92, 246, 0.1)",
-    borderColor: colors.secondary,
-    borderWidth: 1,
     padding: spacing.md,
+    backgroundColor: "rgba(139, 92, 246, 0.08)",
+    borderColor: "rgba(139, 92, 246, 0.35)",
+    borderWidth: 1,
   },
   evolutionTop: {
     flexDirection: "row",
@@ -631,22 +730,21 @@ const styles = StyleSheet.create({
   evolutionSkill: {
     color: colors.textPrimary,
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   evolutionDelta: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
   },
   evolutionReason: {
     color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
-    marginVertical: 4,
+    marginBottom: 6,
   },
   evolutionMeta: {
     color: colors.textMuted,
     fontSize: 11,
-    marginTop: 2,
   },
   roadmapHeaderRow: {
     flexDirection: "row",
@@ -660,9 +758,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   roadmapSub: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: 12,
-    marginTop: 2,
   },
   roadmapPct: {
     color: colors.accent,
@@ -671,60 +768,78 @@ const styles = StyleSheet.create({
   },
   stepsPreviewWrap: {
     gap: 8,
-    marginTop: 4,
+    borderTopColor: colors.cardBorder,
+    borderTopWidth: 1,
+    paddingTop: spacing.sm,
   },
   stepPreviewItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
   },
   stepPreviewLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
     flex: 1,
+    marginRight: spacing.sm,
   },
   stepPreviewTitle: {
-    color: colors.textSecondary,
+    color: colors.textPrimary,
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
     flex: 1,
   },
   stepMinutes: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   recCard: {
+    padding: spacing.md,
     marginBottom: spacing.sm,
   },
   recTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   recTime: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   recTitle: {
     color: colors.textPrimary,
     fontSize: 15,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   recReason: {
     color: colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  emptyCard: {
+    padding: spacing.lg,
+    alignItems: "center",
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  emptySub: {
+    color: colors.textMuted,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
     lineHeight: 18,
   },
   credCard: {
-    marginBottom: spacing.xs,
+    padding: spacing.md,
     borderColor: colors.blockchainBorder,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
   },
   credTop: {
     flexDirection: "row",
@@ -740,21 +855,6 @@ const styles = StyleSheet.create({
   credHash: {
     color: colors.textMuted,
     fontSize: 11,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-  },
-  emptyCard: {
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  emptyTitle: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  emptySub: {
-    color: colors.textMuted,
-    fontSize: 13,
-    textAlign: "center",
+    fontFamily: "monospace",
   },
 });

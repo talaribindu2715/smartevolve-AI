@@ -316,6 +316,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: spacing.xl,
     paddingTop: spacing.xxl,
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
   },
   header: {
     marginBottom: spacing.lg,

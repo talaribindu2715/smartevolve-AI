@@ -6,17 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import Svg, { Path, Circle } from "react-native-svg";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { SkillRadarChart } from "../../src/components/SkillRadarChart";
+import { CardSkeleton, Skeleton } from "../../src/components/Skeleton";
+import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function ProfileScreen() {
@@ -25,6 +25,8 @@ export default function ProfileScreen() {
   const {
     data: profile,
     isLoading: isProfileLoading,
+    isError: isProfileError,
+    error: profileError,
     refetch: refetchProfile,
     isRefetching,
   } = useQuery({
@@ -32,29 +34,45 @@ export default function ProfileScreen() {
     queryFn: () => api.getProfile(),
   });
 
-  const { data: studentSkills, isLoading: isSkillsLoading } = useQuery({
+  const {
+    data: studentSkills,
+    isLoading: isSkillsLoading,
+    refetch: refetchSkills,
+  } = useQuery({
     queryKey: ["studentSkills"],
     queryFn: () => api.getMySkills(),
   });
 
-  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+  const {
+    data: analytics,
+    isLoading: isAnalyticsLoading,
+    refetch: refetchAnalytics,
+  } = useQuery({
     queryKey: ["analytics"],
     queryFn: () => api.getAnalytics(),
   });
 
+  const { data: credentials } = useQuery({
+    queryKey: ["credentials"],
+    queryFn: () => api.getCredentials(),
+  });
+
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => api.getDashboard(),
+  });
+
   const isLoading = isProfileLoading || isSkillsLoading || isAnalyticsLoading;
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={styles.loadingText}>Loading Student Profile...</Text>
-      </View>
-    );
-  }
+  const handleRefresh = async () => {
+    await Promise.all([refetchProfile(), refetchSkills(), refetchAnalytics()]);
+  };
 
   const skills = studentSkills || [];
   const categoryProficiencies = analytics?.categoryProficiencies || {};
+  const verifiedBadgeCount = (credentials || []).filter(
+    (c) => c.status === "CONFIRMED"
+  ).length;
 
   return (
     <ScrollView
@@ -63,110 +81,181 @@ export default function ProfileScreen() {
       refreshControl={
         <RefreshControl
           refreshing={isRefetching}
-          onRefresh={refetchProfile}
+          onRefresh={handleRefresh}
           tintColor={colors.primary}
         />
       }
     >
-      {/* Top Header Card */}
-      <Card style={styles.profileHeaderCard}>
-        <View style={styles.avatarWrap}>
-          <Text style={styles.avatarText}>
-            {(profile?.fullName || "S").substring(0, 2).toUpperCase()}
-          </Text>
-        </View>
+      <View style={styles.responsiveWrapper}>
+        {isProfileError && (
+          <ErrorBanner
+            message={
+              profileError instanceof Error
+                ? profileError.message
+                : "Unable to load student profile."
+            }
+            onRetry={handleRefresh}
+          />
+        )}
 
-        <Text style={styles.name}>{profile?.fullName || "Student"}</Text>
-        <Text style={styles.education}>
-          {profile?.branch} • {profile?.institution || "Engineering College"}
-        </Text>
-        <Text style={styles.gradYear}>Class of {profile?.graduationYear || 2027}</Text>
-
-        <View style={styles.metaBadgeRow}>
-          <Badge label="VERIFIED STUDENT" variant="success" />
-          <Badge label="ADAPTIVE ENGINE ACTIVE" variant="primary" />
-        </View>
-      </Card>
-
-      {/* Academic Goals & Preferences Card */}
-      <Card style={styles.goalsCard}>
-        <View style={styles.goalsHeaderRow}>
-          <Text style={styles.goalsCardTitle}>🎯 Target Career & Learning Style</Text>
-          <TouchableOpacity onPress={() => router.push("/settings")}>
-            <Text style={styles.editProfileLink}>Edit ✎</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.goalMetaRow}>
-          <Text style={styles.goalMetaLabel}>Target Role:</Text>
-          <Text style={styles.goalMetaVal}>{profile?.targetCareerName || "Not Set"}</Text>
-        </View>
-
-        <View style={styles.goalMetaRow}>
-          <Text style={styles.goalMetaLabel}>Learning Style:</Text>
-          <Text style={styles.goalMetaVal}>{profile?.preferredLearningStyle || "Hands-on Projects"}</Text>
-        </View>
-
-        {profile?.academicGoals ? (
-          <View style={styles.academicGoalsQuote}>
-            <Text style={styles.academicGoalsText}>“{profile.academicGoals}”</Text>
+        {isLoading ? (
+          <View style={{ gap: spacing.md }}>
+            <CardSkeleton height={200} />
+            <CardSkeleton height={140} />
+            <CardSkeleton height={240} />
           </View>
-        ) : null}
-      </Card>
+        ) : (
+          <>
+            {/* Top Header Card */}
+            <Card style={styles.profileHeaderCard}>
+              <View style={styles.avatarWrap}>
+                <Text style={styles.avatarText}>
+                  {(profile?.fullName || "S").substring(0, 2).toUpperCase()}
+                </Text>
+              </View>
 
-      {/* Category Radar Chart */}
-      <View style={styles.sectionWrap}>
-        <Text style={styles.sectionTitle}>Category Competency Radar</Text>
-        <Card style={styles.radarCard}>
-          <SkillRadarChart data={categoryProficiencies} size={280} />
-          <Text style={styles.radarSubtitle}>
-            Continuous competency mapping across 8 standard engineering disciplines.
-          </Text>
-        </Card>
-      </View>
-
-      {/* Verified Skills Breakdown */}
-      <View style={styles.sectionWrap}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Calibrated Skill Proficiencies</Text>
-          <Text style={styles.skillsCount}>{skills.length} Skills</Text>
-        </View>
-
-        <Card>
-          {skills.length > 0 ? (
-            skills.map((s) => (
-              <ProficiencyBar
-                key={s.id}
-                label={s.skillName}
-                value={s.proficiency}
-                category={s.category}
-                evidenceType={s.evidenceType}
-              />
-            ))
-          ) : (
-            <View style={styles.emptySkillsWrap}>
-              <Text style={styles.emptySkillsText}>
-                No calibrated skills yet. Take an assessment to initialize your verified profile!
+              <Text style={styles.name}>{profile?.fullName || "Student"}</Text>
+              <Text style={styles.education}>
+                {profile?.branch || "Engineering Discipline"} •{" "}
+                {profile?.institution || "Engineering College"}
               </Text>
-            </View>
-          )}
-        </Card>
-      </View>
+              <Text style={styles.gradYear}>
+                Class of {profile?.graduationYear || 2027} • Academic Goal Active
+              </Text>
 
-      {/* Action Links */}
-      <View style={styles.actionsWrap}>
-        <Button
-          title="View Blockchain Credentials"
-          onPress={() => router.push("/credentials")}
-          variant="outline"
-          size="md"
-        />
-        <Button
-          title="Account Settings & Preferences"
-          onPress={() => router.push("/settings")}
-          variant="secondary"
-          size="md"
-        />
+              <View style={styles.metaBadgeRow}>
+                <Badge label="VERIFIED STUDENT" variant="success" />
+                <Badge label="AI ADAPTIVE PROFILE" variant="primary" />
+                {verifiedBadgeCount > 0 && (
+                  <Badge label={`${verifiedBadgeCount} ON-CHAIN CREDENTIALS`} variant="blockchain" />
+                )}
+              </View>
+
+              {/* Fast Stats Row */}
+              <View style={styles.statsRow}>
+                <View style={styles.statCol}>
+                  <Text style={styles.statVal}>
+                    {analytics?.overallProficiency
+                      ? `${analytics.overallProficiency.toFixed(0)}%`
+                      : "0%"}
+                  </Text>
+                  <Text style={styles.statLabel}>Proficiency</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statCol}>
+                  <Text style={styles.statVal}>
+                    {dashboard?.careerReadinessScore != null
+                      ? `${dashboard.careerReadinessScore.toFixed(0)}%`
+                      : "0%"}
+                  </Text>
+                  <Text style={styles.statLabel}>Career Readiness</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statCol}>
+                  <Text style={styles.statVal}>{skills.length}</Text>
+                  <Text style={styles.statLabel}>Skills Tracked</Text>
+                </View>
+              </View>
+            </Card>
+
+            {/* Academic Goals & Preferences Card */}
+            <Card style={styles.goalsCard}>
+              <View style={styles.goalsHeaderRow}>
+                <Text style={styles.goalsCardTitle}>🎯 Target Career & Learning Preferences</Text>
+                <TouchableOpacity onPress={() => router.push("/settings")}>
+                  <Text style={styles.editProfileLink}>Edit Settings ✎</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.goalMetaRow}>
+                <Text style={styles.goalMetaLabel}>Target Career:</Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(tabs)/careers")}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                >
+                  <Text style={styles.goalMetaVal}>
+                    {profile?.targetCareerName || "Not Selected (Tap to choose)"}
+                  </Text>
+                  <Text style={{ color: colors.accent, fontSize: 11 }}>→</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.goalMetaRow}>
+                <Text style={styles.goalMetaLabel}>Learning Style:</Text>
+                <Text style={styles.goalMetaVal}>
+                  {profile?.preferredLearningStyle || "Hands-on / Practical Projects"}
+                </Text>
+              </View>
+
+              {profile?.academicGoals ? (
+                <View style={styles.academicGoalsQuote}>
+                  <Text style={styles.academicGoalsText}>“{profile.academicGoals}”</Text>
+                </View>
+              ) : null}
+            </Card>
+
+            {/* Category Radar Chart */}
+            <View style={styles.sectionWrap}>
+              <Text style={styles.sectionTitle}>Category Competency Radar</Text>
+              <Card style={styles.radarCard}>
+                <SkillRadarChart data={categoryProficiencies} size={280} />
+                <Text style={styles.radarSubtitle}>
+                  Continuous multi-dimensional competency analysis across engineering disciplines.
+                </Text>
+              </Card>
+            </View>
+
+            {/* Calibrated Skills Breakdown */}
+            <View style={styles.sectionWrap}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Calibrated Skill Proficiencies</Text>
+                <Text style={styles.skillsCount}>{skills.length} Calibrated</Text>
+              </View>
+
+              <Card>
+                {skills.length > 0 ? (
+                  skills.map((s) => (
+                    <ProficiencyBar
+                      key={s.id}
+                      label={s.skillName}
+                      value={s.proficiency}
+                      category={s.category}
+                      evidenceType={s.evidenceType}
+                    />
+                  ))
+                ) : (
+                  <View style={styles.emptySkillsWrap}>
+                    <Text style={styles.emptySkillsText}>
+                      No calibrated skills yet. Complete an assessment or mark roadmap lessons complete to populate your verified skill profile!
+                    </Text>
+                    <Button
+                      title="Explore Careers & Start Roadmap"
+                      onPress={() => router.push("/(tabs)/careers")}
+                      size="sm"
+                      style={{ marginTop: spacing.md }}
+                    />
+                  </View>
+                )}
+              </Card>
+            </View>
+
+            {/* Action Links */}
+            <View style={styles.actionsWrap}>
+              <Button
+                title="View Blockchain Verified Credentials"
+                onPress={() => router.push("/credentials")}
+                variant="outline"
+                size="md"
+              />
+              <Button
+                title="Account Settings & Preferences"
+                onPress={() => router.push("/settings")}
+                variant="secondary"
+                size="md"
+              />
+            </View>
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -182,16 +271,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-    gap: spacing.sm,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: 14,
+  responsiveWrapper: {
+    width: "100%",
+    maxWidth: 820,
+    alignSelf: "center",
   },
   profileHeaderCard: {
     alignItems: "center",
@@ -232,8 +315,40 @@ const styles = StyleSheet.create({
   },
   metaBadgeRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     gap: spacing.sm,
     marginTop: spacing.md,
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    width: "100%",
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.cardBorder,
+  },
+  statCol: {
+    alignItems: "center",
+    flex: 1,
+  },
+  statVal: {
+    color: colors.textPrimary,
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  statLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
+    textTransform: "uppercase",
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.cardBorder,
   },
   goalsCard: {
     padding: spacing.md,
@@ -261,7 +376,8 @@ const styles = StyleSheet.create({
   goalMetaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 3,
+    alignItems: "center",
+    paddingVertical: 5,
   },
   goalMetaLabel: {
     color: colors.textMuted,
@@ -323,6 +439,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 13,
     textAlign: "center",
+    lineHeight: 20,
   },
   actionsWrap: {
     marginTop: spacing.xl,

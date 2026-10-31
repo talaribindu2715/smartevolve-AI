@@ -17,6 +17,8 @@ import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Button } from "../../src/components/Button";
 import { Badge } from "../../src/components/Badge";
+import { CardSkeleton } from "../../src/components/Skeleton";
+import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 const LEARNING_STYLES = [
@@ -34,6 +36,7 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [adaptiveReminders, setAdaptiveReminders] = useState(true);
   const [offlineSync, setOfflineSync] = useState(false);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   // Form State
   const [fullName, setFullName] = useState("");
@@ -46,7 +49,13 @@ export default function SettingsScreen() {
   const [targetCareerId, setTargetCareerId] = useState<string | undefined>(undefined);
   const [interestsText, setInterestsText] = useState("");
 
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    error: profileError,
+    refetch: refetchProfile,
+  } = useQuery({
     queryKey: ["profile"],
     queryFn: () => api.getProfile(),
   });
@@ -96,6 +105,8 @@ export default function SettingsScreen() {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["activeRoadmap"] });
       queryClient.invalidateQueries({ queryKey: ["careers"] });
+      setSuccessBanner("Profile saved! Your learning style and target career have been updated.");
+      setTimeout(() => setSuccessBanner(null), 5000);
       Alert.alert(
         "Profile Saved Successfully",
         "Your academic preferences, learning style, and target career have been saved and applied to your AI recommendation pipeline."
@@ -128,229 +139,279 @@ export default function SettingsScreen() {
     ]);
   };
 
-  if (isProfileLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading Account Preferences...</Text>
-      </View>
-    );
-  }
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Account Info Header */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionHeader}>Authenticated Account</Text>
-        <View style={styles.profileRow}>
-          <View style={styles.avatarMini}>
-            <Text style={styles.avatarText}>
-              {(fullName || user?.fullName || "S").substring(0, 1).toUpperCase()}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.userName}>{fullName || user?.fullName || "Student"}</Text>
-            <Text style={styles.userBranch}>{branch || "Engineering Student"}</Text>
-          </View>
-          <Badge label="ACTIVE" variant="success" />
-        </View>
-      </Card>
-
-      {/* Edit Profile Form */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionHeader}>Edit Student Profile</Text>
-
-        <Text style={styles.inputLabel}>Full Name *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="e.g. Alex Morgan"
-          placeholderTextColor={colors.textMuted}
-        />
-
-        <View style={styles.formRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.inputLabel}>Branch / Major</Text>
-            <TextInput
-              style={styles.textInput}
-              value={branch}
-              onChangeText={setBranch}
-              placeholder="e.g. Computer Science"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
-          <View style={{ width: 12 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.inputLabel}>Graduation Year</Text>
-            <TextInput
-              style={styles.textInput}
-              value={graduationYear}
-              onChangeText={setGraduationYear}
-              keyboardType="numeric"
-              placeholder="e.g. 2026"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+      <View style={styles.responsiveWrapper}>
+        {/* Top Breadcrumb Navigation */}
+        <View style={styles.navBar}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtnText}>← Back to Profile</Text>
+          </TouchableOpacity>
+          <Text style={styles.navTitle}>Settings & Preferences</Text>
         </View>
 
-        <Text style={styles.inputLabel}>Institution / University</Text>
-        <TextInput
-          style={styles.textInput}
-          value={institution}
-          onChangeText={setInstitution}
-          placeholder="e.g. Indian Institute of Technology"
-          placeholderTextColor={colors.textMuted}
-        />
+        {isProfileError && (
+          <ErrorBanner
+            message={
+              profileError instanceof Error
+                ? profileError.message
+                : "Unable to load settings profile."
+            }
+            onRetry={refetchProfile}
+          />
+        )}
 
-        <Text style={styles.inputLabel}>Technical Interests (comma separated)</Text>
-        <TextInput
-          style={styles.textInput}
-          value={interestsText}
-          onChangeText={setInterestsText}
-          placeholder="e.g. AI, Distributed Systems, Cloud, Web3"
-          placeholderTextColor={colors.textMuted}
-        />
+        {successBanner && (
+          <View style={styles.successBanner}>
+            <Text style={styles.successBannerText}>✓ {successBanner}</Text>
+          </View>
+        )}
 
-        <Text style={styles.inputLabel}>Preferred Learning Style</Text>
-        <View style={styles.stylePillsWrap}>
-          {LEARNING_STYLES.map((style) => {
-            const isSelected = preferredLearningStyle === style;
-            return (
-              <TouchableOpacity
-                key={style}
-                style={[styles.stylePill, isSelected && styles.stylePillActive]}
-                onPress={() => setPreferredLearningStyle(style)}
+        {isProfileLoading ? (
+          <View style={{ gap: spacing.md, marginTop: spacing.md }}>
+            <CardSkeleton height={100} />
+            <CardSkeleton height={320} />
+            <CardSkeleton height={160} />
+          </View>
+        ) : (
+          <>
+            {/* Account Info Header */}
+            <Card style={styles.sectionCard}>
+              <Text style={styles.sectionHeader}>Authenticated Account</Text>
+              <View style={styles.profileRow}>
+                <View style={styles.avatarMini}>
+                  <Text style={styles.avatarText}>
+                    {(fullName || user?.fullName || "S").substring(0, 1).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.userName}>{fullName || user?.fullName || "Student"}</Text>
+                  <Text style={styles.userBranch}>{branch || "Engineering Student"}</Text>
+                </View>
+                <Badge label="ACTIVE" variant="success" />
+              </View>
+            </Card>
+
+            {/* Edit Profile Form */}
+            <Card style={styles.sectionCard}>
+              <Text style={styles.sectionHeader}>Edit Student Profile</Text>
+
+              <Text style={styles.inputLabel}>Full Name *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="e.g. Alex Morgan"
+                placeholderTextColor={colors.textMuted}
+              />
+
+              <View style={styles.formRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Branch / Major</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={branch}
+                    onChangeText={setBranch}
+                    placeholder="e.g. Computer Science"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                </View>
+                <View style={{ width: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Graduation Year</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={graduationYear}
+                    onChangeText={setGraduationYear}
+                    keyboardType="numeric"
+                    placeholder="e.g. 2026"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Institution / University</Text>
+              <TextInput
+                style={styles.textInput}
+                value={institution}
+                onChangeText={setInstitution}
+                placeholder="e.g. Indian Institute of Technology"
+                placeholderTextColor={colors.textMuted}
+              />
+
+              <Text style={styles.inputLabel}>Technical Interests (comma separated)</Text>
+              <TextInput
+                style={styles.textInput}
+                value={interestsText}
+                onChangeText={setInterestsText}
+                placeholder="e.g. AI, Distributed Systems, Cloud, Web3"
+                placeholderTextColor={colors.textMuted}
+              />
+
+              <Text style={styles.inputLabel}>Preferred Learning Style</Text>
+              <View style={styles.stylePillsWrap}>
+                {LEARNING_STYLES.map((style) => {
+                  const isSelected = preferredLearningStyle === style;
+                  return (
+                    <TouchableOpacity
+                      key={style}
+                      style={[styles.stylePill, isSelected && styles.stylePillActive]}
+                      onPress={() => setPreferredLearningStyle(style)}
+                    >
+                      <Text
+                        style={[
+                          styles.stylePillText,
+                          isSelected && styles.stylePillTextActive,
+                        ]}
+                      >
+                        {style}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.inputLabel}>Target Career Path</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.careerPillsScroll}
               >
-                <Text style={[styles.stylePillText, isSelected && styles.stylePillTextActive]}>
-                  {style}
+                {(careers || []).map((c) => {
+                  const isSelected = targetCareerId === c.id;
+                  return (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[styles.careerPill, isSelected && styles.careerPillActive]}
+                      onPress={() => setTargetCareerId(c.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.careerPillText,
+                          isSelected && styles.careerPillTextActive,
+                        ]}
+                      >
+                        {c.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>Academic & Career Goals</Text>
+              <TextInput
+                style={[styles.textInput, styles.textArea]}
+                value={academicGoals}
+                onChangeText={setAcademicGoals}
+                multiline
+                numberOfLines={3}
+                placeholder="e.g. Master system design, build production AI pipelines, and land a Staff AI Engineer role."
+                placeholderTextColor={colors.textMuted}
+              />
+
+              <Button
+                title={
+                  updateProfileMutation.isPending
+                    ? "Saving Profile Changes..."
+                    : "Save Profile Changes"
+                }
+                onPress={handleSaveProfile}
+                loading={updateProfileMutation.isPending}
+                size="md"
+                style={{ marginTop: spacing.md }}
+              />
+            </Card>
+
+            {/* Adaptive Learning Preferences */}
+            <Card style={styles.sectionCard}>
+              <Text style={styles.sectionHeader}>Adaptive Learning AI Engine</Text>
+
+              <View style={styles.settingRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>Adaptive Roadmap Recalculation</Text>
+                  <Text style={styles.settingSub}>
+                    Automatically unlock successor modules upon assessment score submission
+                  </Text>
+                </View>
+                <Switch
+                  value={adaptiveReminders}
+                  onValueChange={setAdaptiveReminders}
+                  trackColor={{ false: colors.surfaceLight, true: colors.primary }}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.settingRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>Skill Evolution Notifications</Text>
+                  <Text style={styles.settingSub}>
+                    Get alerts when your career readiness score changes
+                  </Text>
+                </View>
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={setNotificationsEnabled}
+                  trackColor={{ false: colors.surfaceLight, true: colors.primary }}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.settingRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.settingLabel}>Offline Cache Synchronization</Text>
+                  <Text style={styles.settingSub}>
+                    Pre-fetch lessons and quizzes for offline study
+                  </Text>
+                </View>
+                <Switch
+                  value={offlineSync}
+                  onValueChange={setOfflineSync}
+                  trackColor={{ false: colors.surfaceLight, true: colors.primary }}
+                />
+              </View>
+            </Card>
+
+            {/* Blockchain Ledger Settings */}
+            <Card style={styles.sectionCard}>
+              <Text style={styles.sectionHeader}>Blockchain Ledger & Security</Text>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoKey}>Active Network</Text>
+                <Text style={styles.infoVal}>Hardhat EVM Local / Sepolia Testnet (Chain ID: 31337 / 11155111)</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoKey}>Smart Contract</Text>
+                <Text style={[styles.infoVal, styles.monoText]} numberOfLines={1}>
+                  0x5FbDB2315678afecb367f032d93F642f64180aa3
                 </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoKey}>Authentication</Text>
+                <Text style={styles.infoVal}>Supabase Auth (HMAC-SHA256 JWT)</Text>
+              </View>
+            </Card>
 
-        <Text style={styles.inputLabel}>Target Career Path</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.careerPillsScroll}>
-          {(careers || []).map((c) => {
-            const isSelected = targetCareerId === c.id;
-            return (
-              <TouchableOpacity
-                key={c.id}
-                style={[styles.careerPill, isSelected && styles.careerPillActive]}
-                onPress={() => setTargetCareerId(c.id)}
-              >
-                <Text style={[styles.careerPillText, isSelected && styles.careerPillTextActive]}>
-                  {c.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            {/* App Info & Sign Out */}
+            <View style={styles.actionsWrap}>
+              <Button
+                title="Sign Out of Account"
+                onPress={handleLogout}
+                variant="danger"
+                size="md"
+              />
 
-        <Text style={styles.inputLabel}>Academic & Career Goals</Text>
-        <TextInput
-          style={[styles.textInput, styles.textArea]}
-          value={academicGoals}
-          onChangeText={setAcademicGoals}
-          multiline
-          numberOfLines={3}
-          placeholder="e.g. Master system design, build production AI pipelines, and land a Staff AI Engineer role."
-          placeholderTextColor={colors.textMuted}
-        />
-
-        <Button
-          title={updateProfileMutation.isPending ? "Saving Profile..." : "Save Profile Changes"}
-          onPress={handleSaveProfile}
-          loading={updateProfileMutation.isPending}
-          size="md"
-          style={{ marginTop: spacing.md }}
-        />
-      </Card>
-
-      {/* Adaptive Learning Preferences */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionHeader}>Adaptive Learning AI Engine</Text>
-
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.settingLabel}>Adaptive Roadmap Recalculation</Text>
-            <Text style={styles.settingSub}>
-              Automatically unlock successor modules upon assessment score submission
-            </Text>
-          </View>
-          <Switch
-            value={adaptiveReminders}
-            onValueChange={setAdaptiveReminders}
-            trackColor={{ false: colors.surfaceLight, true: colors.primary }}
-          />
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.settingLabel}>Skill Evolution Notifications</Text>
-            <Text style={styles.settingSub}>
-              Get alerts when your career readiness score changes
-            </Text>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-            trackColor={{ false: colors.surfaceLight, true: colors.primary }}
-          />
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.settingLabel}>Offline Cache Synchronization</Text>
-            <Text style={styles.settingSub}>
-              Pre-fetch lessons and quizzes for offline study
-            </Text>
-          </View>
-          <Switch
-            value={offlineSync}
-            onValueChange={setOfflineSync}
-            trackColor={{ false: colors.surfaceLight, true: colors.primary }}
-          />
-        </View>
-      </Card>
-
-      {/* Blockchain Ledger Settings */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionHeader}>Blockchain Ledger & Security</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoKey}>Active Network</Text>
-          <Text style={styles.infoVal}>Hardhat EVM Local (Chain ID: 31337)</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoKey}>Smart Contract</Text>
-          <Text style={[styles.infoVal, styles.monoText]} numberOfLines={1}>
-            0x5FbDB2315678afecb367f032d93F642f64180aa3
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoKey}>Authentication</Text>
-          <Text style={styles.infoVal}>Supabase Auth (HMAC-SHA256 JWT)</Text>
-        </View>
-      </Card>
-
-      {/* App Info & Sign Out */}
-      <View style={styles.actionsWrap}>
-        <Button
-          title="Sign Out of Account"
-          onPress={handleLogout}
-          variant="danger"
-          size="md"
-        />
-
-        <View style={styles.versionWrap}>
-          <Text style={styles.versionText}>SmartEvolve AI Mobile v1.0.0 (Production Build)</Text>
-          <Text style={styles.versionSub}>Final Year B.Tech Engineering Capstone Project</Text>
-        </View>
+              <View style={styles.versionWrap}>
+                <Text style={styles.versionText}>SmartEvolve AI Mobile v1.0.0 (Production Build)</Text>
+                <Text style={styles.versionSub}>Final Year B.Tech Engineering Capstone Project</Text>
+              </View>
+            </View>
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -367,19 +428,47 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-    gap: spacing.sm,
+  responsiveWrapper: {
+    width: "100%",
+    maxWidth: 820,
+    alignSelf: "center",
   },
-  loadingText: {
-    color: colors.textSecondary,
+  navBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  backBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  backBtnText: {
+    color: colors.primary,
     fontSize: 14,
+    fontWeight: "700",
+  },
+  navTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  successBanner: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    borderWidth: 1,
+    borderColor: colors.success,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  successBannerText: {
+    color: colors.success,
+    fontSize: 13,
+    fontWeight: "600",
   },
   sectionCard: {
     padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   sectionHeader: {
     color: colors.primary,

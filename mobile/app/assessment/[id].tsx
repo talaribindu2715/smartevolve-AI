@@ -99,19 +99,32 @@ export default function AssessmentScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Quiz Header Bar */}
-      <View style={styles.quizHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.quizTag}>{assessment.assessmentType}</Text>
-          <Text style={styles.quizTitle}>{assessment.title}</Text>
-          <Text style={styles.quizSkill}>Target Skill: {assessment.skillName}</Text>
+      <View style={styles.responsiveWrapper}>
+        {/* Navigation Breadcrumb Bar */}
+        <View style={styles.navBar}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backBtnText}>← Exit Assessment</Text>
+          </TouchableOpacity>
+          <Text style={styles.navBarTitle}>Skill Evaluation</Text>
         </View>
 
-        <View style={styles.timerWrap}>
-          <Text style={styles.timerVal}>{formatTimer(elapsedSeconds)}</Text>
-          <Text style={styles.timerLabel}>Time Elapsed</Text>
+        {/* Quiz Header Bar */}
+        <View style={styles.quizHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.quizTag}>{assessment.assessmentType}</Text>
+            <Text style={styles.quizTitle}>{assessment.title}</Text>
+            <Text style={styles.quizSkill}>Target Skill: {assessment.skillName}</Text>
+          </View>
+
+          <View style={styles.timerWrap}>
+            <Text style={styles.timerVal}>{formatTimer(elapsedSeconds)}</Text>
+            <Text style={styles.timerLabel}>Time Elapsed</Text>
+          </View>
         </View>
-      </View>
 
       {/* Adaptive Profile Update Result Card (Shown after submission) */}
       {submittedResult && (
@@ -245,6 +258,7 @@ export default function AssessmentScreen() {
           style={{ marginTop: spacing.md, marginBottom: spacing.xl }}
         />
       )}
+      </View>
     </ScrollView>
   );
 }
@@ -257,6 +271,31 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.md,
     paddingBottom: spacing.xxl,
+  },
+  responsiveWrapper: {
+    width: "100%",
+    maxWidth: 820,
+    alignSelf: "center",
+  },
+  navBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  backBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  backBtnText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  navBarTitle: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
   },
   loadingContainer: {
     flex: 1,

@@ -187,6 +187,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: spacing.xl,
     justifyContent: "center",
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
   },
   header: {
     marginBottom: spacing.xl,
