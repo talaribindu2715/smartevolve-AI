@@ -17,7 +17,9 @@ export const ProficiencyBar: React.FC<ProficiencyBarProps> = ({
   category,
   evidenceType,
 }) => {
-  const boundedValue = Math.max(0, Math.min(100, value));
+  const safeValue = typeof value === "number" && !isNaN(value) ? value : 0;
+  const safeTarget = typeof targetValue === "number" && !isNaN(targetValue) ? targetValue : undefined;
+  const boundedValue = Math.max(0, Math.min(100, safeValue));
 
   const getBarColor = (val: number) => {
     if (val >= 80) return colors.success;
@@ -48,21 +50,21 @@ export const ProficiencyBar: React.FC<ProficiencyBarProps> = ({
             },
           ]}
         />
-        {targetValue !== undefined && targetValue > 0 && (
+        {safeTarget !== undefined && safeTarget > 0 && (
           <View
             style={[
               styles.targetMarker,
-              { left: `${Math.min(100, targetValue)}%` },
+              { left: `${Math.min(100, safeTarget)}%` },
             ]}
           />
         )}
       </View>
 
-      {targetValue !== undefined && (
+      {safeTarget !== undefined && (
         <View style={styles.footerRow}>
           <Text style={styles.subText}>
-            Target: {targetValue.toFixed(0)}%
-            {boundedValue >= targetValue ? " (Met)" : ` (${(targetValue - boundedValue).toFixed(0)}% gap)`}
+            Target: {safeTarget.toFixed(0)}%
+            {boundedValue >= safeTarget ? " (Met)" : ` (${(safeTarget - boundedValue).toFixed(0)}% gap)`}
           </Text>
           {evidenceType ? <Text style={styles.subText}>{evidenceType}</Text> : null}
         </View>

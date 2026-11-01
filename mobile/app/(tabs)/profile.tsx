@@ -165,7 +165,7 @@ export default function ProfileScreen() {
               <View style={styles.statsRow}>
                 <View style={styles.statCol}>
                   <Text style={styles.statVal}>
-                    {analytics?.overallProficiency
+                    {analytics?.overallProficiency != null
                       ? `${analytics.overallProficiency.toFixed(0)}%`
                       : "0%"}
                   </Text>

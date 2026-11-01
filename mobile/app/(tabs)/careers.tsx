@@ -283,7 +283,7 @@ export default function CareersScreen() {
 
                         <View style={styles.scoreWrap}>
                           <Text style={[styles.scoreText, { color: getScoreColor(career.compatibilityScore) }]}>
-                            {career.compatibilityScore.toFixed(0)}%
+                            {(career.compatibilityScore ?? 0).toFixed(0)}%
                           </Text>
                           <Text style={styles.scoreLabel}>Match</Text>
                         </View>
@@ -338,7 +338,7 @@ export default function CareersScreen() {
                     <View style={styles.compareMetric}>
                       <Text style={styles.compareMetricLabel}>Compatibility</Text>
                       <Text style={[styles.compareMetricVal, { color: getScoreColor(selectedForCompare[0].compatibilityScore) }]}>
-                        {selectedForCompare[0].compatibilityScore.toFixed(0)}%
+                        {(selectedForCompare[0].compatibilityScore ?? 0).toFixed(0)}%
                       </Text>
                     </View>
                     <View style={styles.compareMetric}>
@@ -378,7 +378,7 @@ export default function CareersScreen() {
                     <View style={styles.compareMetric}>
                       <Text style={styles.compareMetricLabel}>Compatibility</Text>
                       <Text style={[styles.compareMetricVal, { color: getScoreColor(selectedForCompare[1].compatibilityScore) }]}>
-                        {selectedForCompare[1].compatibilityScore.toFixed(0)}%
+                        {(selectedForCompare[1].compatibilityScore ?? 0).toFixed(0)}%
                       </Text>
                     </View>
                     <View style={styles.compareMetric}>

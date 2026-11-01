@@ -111,10 +111,10 @@ export default function CareerDetailScreen() {
                   <Text
                     style={[
                       styles.scoreVal,
-                      { color: getScoreColor(career.compatibilityScore) },
+                      { color: getScoreColor(career.compatibilityScore ?? 0) },
                     ]}
                   >
-                    {career.compatibilityScore.toFixed(0)}%
+                    {(career.compatibilityScore ?? 0).toFixed(0)}%
                   </Text>
                   <Text style={styles.scoreSub}>Match Score</Text>
                 </View>

@@ -130,7 +130,7 @@ export default function AssessmentScreen() {
       {submittedResult && (
         <Card style={styles.resultHeroCard}>
           <View style={styles.resultTop}>
-            <Text style={styles.resultTitle}>Assessment Score: {submittedResult.percentage.toFixed(0)}%</Text>
+            <Text style={styles.resultTitle}>Assessment Score: {(submittedResult.percentage ?? 0).toFixed(0)}%</Text>
             <Badge
               label={submittedResult.percentage >= 80 ? "PASSED - MASTERY" : "ATTEMPT COMPLETED"}
               variant={submittedResult.percentage >= 80 ? "success" : "info"}
@@ -140,19 +140,19 @@ export default function AssessmentScreen() {
           <View style={styles.evolutionResultRow}>
             <View style={styles.evolutionCol}>
               <Text style={styles.evolutionSub}>Previous</Text>
-              <Text style={styles.evolutionVal}>{submittedResult.previousProficiency.toFixed(0)}%</Text>
+              <Text style={styles.evolutionVal}>{(submittedResult.previousProficiency ?? 0).toFixed(0)}%</Text>
             </View>
             <Text style={styles.arrowIcon}>→</Text>
             <View style={styles.evolutionCol}>
               <Text style={styles.evolutionSub}>Updated</Text>
               <Text style={[styles.evolutionVal, { color: colors.success }]}>
-                {submittedResult.newProficiency.toFixed(0)}%
+                {(submittedResult.newProficiency ?? 0).toFixed(0)}%
               </Text>
             </View>
             <View style={styles.deltaPill}>
               <Text style={styles.deltaPillText}>
                 {submittedResult.proficiencyDelta >= 0 ? "+" : ""}
-                {submittedResult.proficiencyDelta.toFixed(1)}%
+                {(submittedResult.proficiencyDelta ?? 0).toFixed(1)}%
               </Text>
             </View>
           </View>

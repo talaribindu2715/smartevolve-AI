@@ -152,13 +152,13 @@ export default function DashboardScreen() {
 
             <View style={styles.heroStatsRow}>
               <View style={styles.heroMetricCol}>
-                <Text style={styles.heroMetricVal}>{readiness.toFixed(0)}%</Text>
+                <Text style={styles.heroMetricVal}>{(readiness ?? 0).toFixed(0)}%</Text>
                 <Text style={styles.heroMetricSub}>Career Readiness</Text>
               </View>
               <View style={styles.heroDivider} />
               <View style={styles.heroMetricCol}>
                 <Text style={[styles.heroMetricVal, { color: colors.accent }]}>
-                  {overallProf.toFixed(0)}%
+                  {(overallProf ?? 0).toFixed(0)}%
                 </Text>
                 <Text style={styles.heroMetricSub}>Overall Proficiency</Text>
               </View>
@@ -339,7 +339,7 @@ export default function DashboardScreen() {
               <View style={styles.evolutionTop}>
                 <Text style={styles.evolutionSkill}>{latestEvolution.skillName}</Text>
                 <Text style={[styles.evolutionDelta, { color: latestEvolution.delta >= 0 ? colors.success : colors.warning }]}>
-                  {latestEvolution.delta >= 0 ? "+" : ""}{latestEvolution.delta.toFixed(1)}%
+                  {(latestEvolution.delta ?? 0) >= 0 ? "+" : ""}{(latestEvolution.delta ?? 0).toFixed(1)}%
                 </Text>
               </View>
               <Text style={styles.evolutionReason}>💬 {latestEvolution.changeReason}</Text>
@@ -369,7 +369,7 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
                 <Text style={styles.roadmapPct}>
-                  {dashboard.activeRoadmap.progressPercentage.toFixed(0)}%
+                  {(dashboard.activeRoadmap.progressPercentage ?? 0).toFixed(0)}%
                 </Text>
               </View>
 

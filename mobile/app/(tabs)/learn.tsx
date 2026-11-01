@@ -177,7 +177,7 @@ export default function LearnScreen() {
             <>
               <Text style={styles.subtitle}>
                 {roadmap.completedSteps} of {roadmap.totalSteps} milestones achieved (
-                {roadmap.progressPercentage.toFixed(0)}% complete)
+                {(roadmap.progressPercentage ?? 0).toFixed(0)}% complete)
               </Text>
 
               {/* Progress Bar */}
@@ -185,7 +185,7 @@ export default function LearnScreen() {
                 <View
                   style={[
                     styles.progressFill,
-                    { width: `${Math.min(100, Math.max(0, roadmap.progressPercentage))}%` },
+                    { width: `${Math.min(100, Math.max(0, roadmap.progressPercentage ?? 0))}%` },
                   ]}
                 />
               </View>
@@ -241,8 +241,8 @@ export default function LearnScreen() {
                 <Text style={styles.gapCardTitle}>{careerDetail.name} Skill Matrix</Text>
               </View>
               <Badge
-                label={`${careerDetail.compatibilityScore.toFixed(0)}% Ready`}
-                variant={careerDetail.compatibilityScore >= 70 ? "success" : "warning"}
+                label={`${(careerDetail.compatibilityScore ?? 0).toFixed(0)}% Ready`}
+                variant={(careerDetail.compatibilityScore ?? 0) >= 70 ? "success" : "warning"}
               />
             </View>
 

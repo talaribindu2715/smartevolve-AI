@@ -155,7 +155,7 @@ export default function EvolutionScreen() {
               <View style={styles.divider} />
               <View style={styles.trendCol}>
                 <Text style={[styles.trendVal, { color: colors.success }]}>
-                  +{events.length > 0 ? (events.reduce((acc, e) => acc + (e.delta > 0 ? e.delta : 0), 0) / Math.max(1, events.length)).toFixed(1) : 0}%
+                  +{events.length > 0 ? (events.reduce((acc, e) => acc + ((e.delta ?? 0) > 0 ? (e.delta ?? 0) : 0), 0) / Math.max(1, events.length)).toFixed(1) : 0}%
                 </Text>
                 <Text style={styles.trendSub}>Avg Velocity</Text>
               </View>
@@ -348,10 +348,10 @@ export default function EvolutionScreen() {
 
                       <View style={styles.deltaWrap}>
                         <Text style={[styles.deltaText, { color: isPositive ? colors.success : colors.warning }]}>
-                          {deltaSign}{event.delta.toFixed(1)}%
+                          {deltaSign}{(event.delta ?? 0).toFixed(1)}%
                         </Text>
                         <Text style={styles.profTransition}>
-                          {event.previousProficiency.toFixed(0)}% → {event.newProficiency.toFixed(0)}%
+                          {(event.previousProficiency ?? 0).toFixed(0)}% → {(event.newProficiency ?? 0).toFixed(0)}%
                         </Text>
                       </View>
                     </View>
