@@ -50,6 +50,8 @@ export default function RootLayout() {
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)/reset-password" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen
                 name="career/[id]"
@@ -68,6 +70,10 @@ export default function RootLayout() {
                 options={{ title: "Blockchain Credentials", headerShown: true }}
               />
               <Stack.Screen
+                name="notifications/index"
+                options={{ title: "Notifications", headerShown: true }}
+              />
+              <Stack.Screen
                 name="settings/index"
                 options={{ title: "Settings", headerShown: true }}
               />
@@ -78,6 +84,18 @@ export default function RootLayout() {
               <Stack.Screen
                 name="videos/[id]"
                 options={{ title: "Video Masterclass", headerShown: true }}
+              />
+              <Stack.Screen
+                name="mentor/dashboard"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="admin/dashboard"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="recruiter/dashboard"
+                options={{ headerShown: false }}
               />
             </Stack>
           </PaperProvider>

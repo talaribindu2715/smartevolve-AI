@@ -97,11 +97,25 @@ export default function RegisterScreen() {
         } else if (authData.user) {
           userId = authData.user.id;
         }
+      } else {
+        // Direct Backend Registration
+        const res = await api.register({
+          fullName: data.fullName,
+          email: data.email,
+          password: data.password,
+          educationLevel: data.educationLevel,
+          institution: data.institution || "Engineering College",
+          branch: data.branch,
+          graduationYear: data.graduationYear ? parseInt(data.graduationYear, 10) : 2027,
+          interests: data.interests,
+        });
+        token = res.token;
+        userId = res.userId;
       }
 
       await login(token, userId);
 
-      // Save initial profile details
+      // Save initial profile details - strictly enforce default STUDENT role
       try {
         await api.updateProfile({
           fullName: data.fullName,
@@ -110,6 +124,7 @@ export default function RegisterScreen() {
           branch: data.branch,
           graduationYear: data.graduationYear ? parseInt(data.graduationYear, 10) : 2027,
           onboardingCompleted: true,
+          role: "STUDENT",
         });
       } catch (_) {}
 

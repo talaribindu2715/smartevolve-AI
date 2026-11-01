@@ -27,21 +27,32 @@ public class SecurityConfig {
     private final SupabaseJwtFilter supabaseJwtFilter;
 
     @Bean
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public / Swagger / Actuator and API endpoints (JWT filter extracts identity or attaches demo student)
+                // Public / Swagger / Actuator
                 .requestMatchers(
+                    "/api/auth/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/actuator/health",
-                    "/actuator/info",
-                    "/api/**"
+                    "/actuator/info"
                 ).permitAll()
+                // Role-restricted API routes
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/mentor/**").hasAnyRole("MENTOR", "ADMIN")
+                .requestMatchers("/api/recruiter/**").hasAnyRole("RECRUITER", "ADMIN")
+                // General authenticated API endpoints
+                .requestMatchers("/api/**").authenticated()
                 // Any other request
                 .anyRequest().authenticated()
             )

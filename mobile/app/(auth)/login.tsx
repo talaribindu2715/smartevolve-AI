@@ -17,6 +17,9 @@ import * as z from "zod";
 import { Button } from "../../src/components/Button";
 import { useAuth } from "../../src/store/authContext";
 import { supabase, isSupabaseConfigured } from "../../src/services/supabase";
+import { DEMO_IDENTITIES } from "../../src/services/secureStorage";
+import { UserRole } from "../../src/types";
+import { api } from "../../src/api/client";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 const loginSchema = z.object({
@@ -28,7 +31,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, switchRole, getDashboardRouteForRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -62,17 +65,41 @@ export default function LoginScreen() {
 
         if (authData.session) {
           await login(authData.session.access_token, authData.session.user.id);
-          router.replace("/(tabs)");
+          const route = getDashboardRouteForRole();
+          router.replace(route as any);
           return;
         }
       }
 
-      // Fallback for demo student / offline testing
-      const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6IiIgKyBkYXRhLmVtYWlsLCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.fake";
-      const userId = "00000000-0000-0000-0000-000000000001";
+      // 2. Try Backend REST API Authentication
+      try {
+        const authRes = await api.login({
+          email: data.email,
+          password: data.password,
+        });
+        if (authRes && authRes.token) {
+          await login(authRes.token, authRes.userId, authRes.role as UserRole);
+          const route = getDashboardRouteForRole(authRes.role as UserRole);
+          router.replace(route as any);
+          return;
+        }
+      } catch (backendErr: any) {
+        // Fall back to demo roles if both cloud auth and backend are unreachable
+      }
 
-      await login(mockToken, userId);
-      router.replace("/(tabs)");
+      // 3. Check if email matches any demo role account
+      const lower = data.email.toLowerCase().trim();
+      let matchedRole: UserRole = "STUDENT";
+      if (lower.includes("faculty") || lower.includes("mentor") || lower.includes("rostova")) {
+        matchedRole = "MENTOR";
+      } else if (lower.includes("admin") || lower.includes("connor")) {
+        matchedRole = "ADMIN";
+      } else if (lower.includes("recruiter") || lower.includes("vance")) {
+        matchedRole = "RECRUITER";
+      }
+
+      const targetRoute = await switchRole(matchedRole);
+      router.replace(targetRoute as any);
     } catch (err: any) {
       setAuthError(err.message || "Invalid email or password");
     } finally {
@@ -80,9 +107,16 @@ export default function LoginScreen() {
     }
   };
 
-  const fillDemoStudent = () => {
-    setValue("email", "alex.chen@student.edu");
-    setValue("password", "SmartEvolve2026!");
+  const handleQuickDemoRole = async (role: UserRole) => {
+    setLoading(true);
+    try {
+      const route = await switchRole(role);
+      router.replace(route as any);
+    } catch (err: any) {
+      setAuthError(err.message || "Failed to switch role.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -92,9 +126,13 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.appName}>SmartEvolve <Text style={{ color: colors.accent }}>AI</Text></Text>
+          <Text style={styles.appName}>
+            SmartEvolve <Text style={{ color: colors.accent }}>AI</Text>
+          </Text>
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue your adaptive learning journey</Text>
+          <Text style={styles.subtitle}>
+            Sign in to your role-specific dashboard (Student, Mentor, Admin, Recruiter)
+          </Text>
         </View>
 
         {authError ? (
@@ -113,7 +151,7 @@ export default function LoginScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="student@university.edu"
+                  placeholder="name@university.edu"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -151,18 +189,81 @@ export default function LoginScreen() {
             )}
           </View>
 
-          {/* Quick Demo Fill button */}
-          <TouchableOpacity onPress={fillDemoStudent} style={styles.demoFillBtn}>
-            <Text style={styles.demoFillText}>Fill Demo Student Credentials</Text>
-          </TouchableOpacity>
+          <View style={styles.forgotRow}>
+            <Link href="/(auth)/forgot-password" asChild>
+              <TouchableOpacity>
+                <Text style={styles.forgotLinkText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
 
           <Button
-            title="Sign In"
+            title="Sign In to Dashboard"
             onPress={handleSubmit(onSubmit)}
             loading={loading}
             size="lg"
-            style={{ marginTop: spacing.sm }}
+            style={{ marginTop: spacing.xs }}
           />
+
+          {/* Quick 1-Click Role Login Panel */}
+          <View style={styles.demoSection}>
+            <Text style={styles.demoSectionTitle}>
+              ⚡ 1-Click Role Test Logins:
+            </Text>
+            <Text style={styles.demoSectionSub}>
+              Instantly test and verify permissions for each database role:
+            </Text>
+
+            <View style={styles.demoButtonsGrid}>
+              <TouchableOpacity
+                style={[styles.demoRoleBtn, { borderColor: "#3B82F6" }]}
+                onPress={() => handleQuickDemoRole("STUDENT")}
+                disabled={loading}
+              >
+                <Text style={styles.demoRoleEmoji}>🎓</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.demoRoleName}>STUDENT</Text>
+                  <Text style={styles.demoRoleUser}>Alex Chen</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoRoleBtn, { borderColor: "#10B981" }]}
+                onPress={() => handleQuickDemoRole("MENTOR")}
+                disabled={loading}
+              >
+                <Text style={styles.demoRoleEmoji}>👨‍🏫</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.demoRoleName}>MENTOR / FACULTY</Text>
+                  <Text style={styles.demoRoleUser}>Dr. Elena Rostova</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoRoleBtn, { borderColor: "#EF4444" }]}
+                onPress={() => handleQuickDemoRole("ADMIN")}
+                disabled={loading}
+              >
+                <Text style={styles.demoRoleEmoji}>🛡️</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.demoRoleName}>ADMIN</Text>
+                  <Text style={styles.demoRoleUser}>Sarah Connor</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.demoRoleBtn, { borderColor: "#A855F7" }]}
+                onPress={() => handleQuickDemoRole("RECRUITER")}
+                disabled={loading}
+              >
+                <Text style={styles.demoRoleEmoji}>💼</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.demoRoleName}>RECRUITER</Text>
+                  <Text style={styles.demoRoleUser}>Marcus Vance</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Don't have an account?</Text>
@@ -188,7 +289,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     justifyContent: "center",
     width: "100%",
-    maxWidth: 480,
+    maxWidth: 520,
     alignSelf: "center",
   },
   header: {
@@ -210,6 +311,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     marginTop: 4,
+    lineHeight: 20,
   },
   errorBanner: {
     backgroundColor: colors.errorBg,
@@ -251,24 +353,70 @@ const styles = StyleSheet.create({
   fieldError: {
     color: colors.error,
     fontSize: 12,
+    marginTop: 2,
   },
-  demoFillBtn: {
-    alignSelf: "flex-end",
-    paddingVertical: 4,
+  demoSection: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
   },
-  demoFillText: {
-    color: colors.accent,
-    fontSize: 12,
+  demoSectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  demoSectionSub: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
+    marginBottom: spacing.sm,
+  },
+  demoButtonsGrid: {
+    gap: 8,
+  },
+  demoRoleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: 10,
+    gap: 10,
+  },
+  demoRoleEmoji: {
+    fontSize: 20,
+  },
+  demoRoleName: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  demoRoleUser: {
+    color: colors.textSecondary,
+    fontSize: 11,
+  },
+  forgotRow: {
+    alignItems: "flex-end",
+    marginTop: -spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  forgotLinkText: {
+    color: colors.primary,
+    fontSize: 13,
     fontWeight: "600",
   },
   footerRow: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
     gap: 6,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   footerText: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: 14,
   },
   linkText: {

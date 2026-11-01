@@ -22,6 +22,21 @@ import {
   EligibleCredential,
   ClaimCredentialRequest,
   TrendAnalysisSummary,
+  MentorDashboardSummary,
+  AssignedStudent,
+  MentorFeedbackRequest,
+  AdminDashboardSummary,
+  AdminUser,
+  PlatformSettings,
+  RecruiterDashboardSummary,
+  CandidateSummary,
+  CandidateDossier,
+  ProfileShare,
+  ShareProfileRequest,
+  UserRole,
+  StudyAssistantRequest,
+  StudyAssistantResponse,
+  AppNotification,
 } from "../types";
 
 // Dynamic API base URL configuration:
@@ -38,6 +53,8 @@ export const API_BASE_URL =
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = await secureStorage.getToken();
+  const activeRole = await secureStorage.getActiveRole();
+  const userId = await secureStorage.getUserId();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -47,6 +64,12 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (activeRole) {
+    headers["X-Demo-Role"] = activeRole;
+  }
+  if (userId) {
+    headers["X-Demo-User-Id"] = userId;
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
@@ -72,6 +95,43 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const api = {
+  // Authentication
+  login: (data: { email: string; password: string }) =>
+    apiFetch<{ token: string; tokenType: string; userId: string; email: string; fullName: string; role: string }>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    ),
+  register: (data: {
+    fullName: string;
+    email: string;
+    password: string;
+    educationLevel?: string;
+    institution?: string;
+    branch?: string;
+    graduationYear?: number;
+    interests?: string;
+  }) =>
+    apiFetch<{ token: string; tokenType: string; userId: string; email: string; fullName: string; role: string }>(
+      "/api/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    ),
+  forgotPassword: (email: string) =>
+    apiFetch<{ message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (email: string, newPassword: string) =>
+    apiFetch<{ message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email, newPassword }),
+    }),
+
   // Profile
   getProfile: () => apiFetch<Profile>("/api/profiles/me"),
   updateProfile: (data: Partial<Profile>) =>
@@ -188,4 +248,111 @@ export const api = {
       method: "POST",
     });
   },
+
+  // ==========================================
+  // RBAC: MENTOR API
+  // ==========================================
+  getMentorDashboard: () =>
+    apiFetch<MentorDashboardSummary>("/api/mentor/dashboard"),
+
+  getAssignedStudents: () =>
+    apiFetch<AssignedStudent[]>("/api/mentor/students"),
+
+  getMentorStudentDetail: (studentId: string) =>
+    apiFetch<CandidateDossier>(`/api/mentor/students/${studentId}`),
+
+  submitMentorFeedback: (studentId: string, data: MentorFeedbackRequest) =>
+    apiFetch<AssignedStudent>(`/api/mentor/students/${studentId}/feedback`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // ==========================================
+  // RBAC: ADMIN API
+  // ==========================================
+  getAdminDashboard: () =>
+    apiFetch<AdminDashboardSummary>("/api/admin/dashboard"),
+
+  getAdminUsers: (role?: string) => {
+    const qs = role && role !== "ALL" ? `?role=${role}` : "";
+    return apiFetch<AdminUser[]>(`/api/admin/users${qs}`);
+  },
+
+  updateUserRole: (userId: string, role: string) =>
+    apiFetch<AdminUser>(`/api/admin/users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role }),
+    }),
+
+  getPlatformSettings: () =>
+    apiFetch<PlatformSettings>("/api/admin/settings"),
+
+  updatePlatformSettings: (settings: Partial<PlatformSettings>) =>
+    apiFetch<PlatformSettings>("/api/admin/settings", {
+      method: "PUT",
+      body: JSON.stringify(settings),
+    }),
+
+  // ==========================================
+  // RBAC: RECRUITER API
+  // ==========================================
+  getRecruiterDashboard: () =>
+    apiFetch<RecruiterDashboardSummary>("/api/recruiter/dashboard"),
+
+  getSharedCandidates: () =>
+    apiFetch<CandidateSummary[]>("/api/recruiter/candidates"),
+
+  getCandidateDossier: (studentId: string) =>
+    apiFetch<CandidateDossier>(`/api/recruiter/candidates/${studentId}`),
+
+  verifyRecruiterCertificate: (credentialId: string) =>
+    apiFetch<VerifyCredentialResponse>(`/api/recruiter/verify-certificate/${credentialId}`, {
+      method: "POST",
+    }),
+
+  // ==========================================
+  // RBAC: STUDENT PROFILE SHARING
+  // ==========================================
+  getMyProfileShares: () =>
+    apiFetch<ProfileShare[]>("/api/profiles/shares"),
+
+  shareProfileWithRecruiter: (data: ShareProfileRequest) =>
+    apiFetch<ProfileShare>("/api/profiles/shares", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getAvailableRecruiters: () =>
+    apiFetch<AdminUser[]>("/api/profiles/recruiters"),
+
+  // ==========================================
+  // AI STUDY ASSISTANT API
+  // ==========================================
+  askStudyAssistant: (data: StudyAssistantRequest) =>
+    apiFetch<StudyAssistantResponse>("/api/assistant/ask", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  explainTopic: (topic: string) =>
+    apiFetch<StudyAssistantResponse>(`/api/assistant/explain/${encodeURIComponent(topic)}`),
+
+  getQuizPrep: (skillId: string) =>
+    apiFetch<StudyAssistantResponse>(`/api/assistant/quiz-prep/${skillId}`),
+
+  // ==========================================
+  // NOTIFICATIONS API
+  // ==========================================
+  getNotifications: () =>
+    apiFetch<AppNotification[]>("/api/notifications"),
+
+  markNotificationAsRead: (id: string) =>
+    apiFetch<{ message: string }>(`/api/notifications/${id}/read`, {
+      method: "PUT",
+    }),
+
+  markAllNotificationsAsRead: () =>
+    apiFetch<{ message: string }>("/api/notifications/read-all", {
+      method: "PUT",
+    }),
 };

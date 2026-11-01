@@ -12,6 +12,7 @@ import java.util.UUID;
 @Repository
 public interface LearningResourceRepository extends JpaRepository<LearningResource, UUID> {
     List<LearningResource> findByActiveTrue();
+    List<LearningResource> findBySkillId(UUID skillId);
     List<LearningResource> findBySkillIdAndActiveTrue(UUID skillId);
 
     @Query("SELECT lr FROM LearningResource lr WHERE lr.skill.id IN :skillIds AND lr.active = true")

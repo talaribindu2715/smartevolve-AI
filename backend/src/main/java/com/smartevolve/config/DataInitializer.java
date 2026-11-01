@@ -25,12 +25,17 @@ public class DataInitializer implements CommandLineRunner {
     private final ProfileRepository profileRepository;
     private final StudentSkillRepository studentSkillRepository;
     private final YouTubeVideoRepository youTubeVideoRepository;
+    private final MentorStudentAssignmentRepository mentorAssignmentRepository;
+    private final RecruiterProfileShareRepository recruiterShareRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
+        initRbacProfiles();
+
         if (skillRepository.count() > 0) {
-            log.info("Database already contains data, skipping DataInitializer.");
+            log.info("Database already contains skills/careers data, skipping catalog seeding.");
             return;
         }
 
@@ -319,5 +324,136 @@ public class DataInitializer implements CommandLineRunner {
             .estimatedMinutes(minutes)
             .active(true)
             .build());
+    }
+
+    private void initRbacProfiles() {
+        UUID studentId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID mentorId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        UUID adminId = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        UUID recruiterId = UUID.fromString("00000000-0000-0000-0000-000000000004");
+
+        String defaultHash = passwordEncoder.encode("password123");
+
+        // 1. Student: Alex Chen
+        Profile student = profileRepository.findById(studentId).orElseGet(() ->
+            profileRepository.save(Profile.builder()
+                .id(studentId)
+                .fullName("Alex Chen")
+                .email("alex.chen@student.edu")
+                .passwordHash(defaultHash)
+                .educationLevel("Undergraduate B.Tech")
+                .institution("MIT Engineering")
+                .branch("Computer Science")
+                .graduationYear(2027)
+                .interests("AI & Machine Learning, Web Development, Cloud Systems")
+                .preferredLearningStyle("Hands-on Projects & Video Masterclasses")
+                .academicGoals("Master full-stack engineering and cloud-native AI pipelines")
+                .onboardingCompleted(true)
+                .role("STUDENT")
+                .build())
+        );
+        if (student.getEmail() == null || student.getPasswordHash() == null || !"STUDENT".equalsIgnoreCase(student.getRole())) {
+            student.setEmail("alex.chen@student.edu");
+            student.setPasswordHash(defaultHash);
+            student.setRole("STUDENT");
+            profileRepository.save(student);
+        }
+
+        // 2. Mentor / Faculty: Dr. Elena Rostova
+        Profile mentor = profileRepository.findById(mentorId).orElseGet(() ->
+            profileRepository.save(Profile.builder()
+                .id(mentorId)
+                .fullName("Dr. Elena Rostova")
+                .email("dr.elena.rostova@faculty.edu")
+                .passwordHash(defaultHash)
+                .educationLevel("Ph.D. Computer Science")
+                .institution("MIT Engineering")
+                .branch("Computer Science & AI Faculty")
+                .graduationYear(2015)
+                .interests("Academic Mentorship, Distributed Systems, AI Curriculum Design")
+                .preferredLearningStyle("Formal Specifications & Research")
+                .academicGoals("Guide undergraduate engineers to high-impact careers and research excellence")
+                .onboardingCompleted(true)
+                .role("MENTOR")
+                .build())
+        );
+        if (mentor.getEmail() == null || mentor.getPasswordHash() == null || !"MENTOR".equalsIgnoreCase(mentor.getRole())) {
+            mentor.setEmail("dr.elena.rostova@faculty.edu");
+            mentor.setPasswordHash(defaultHash);
+            mentor.setRole("MENTOR");
+            profileRepository.save(mentor);
+        }
+
+        // 3. Admin: Sarah Connor
+        Profile admin = profileRepository.findById(adminId).orElseGet(() ->
+            profileRepository.save(Profile.builder()
+                .id(adminId)
+                .fullName("Sarah Connor")
+                .email("admin@smartevolve.ai")
+                .passwordHash(defaultHash)
+                .educationLevel("Master of Engineering")
+                .institution("SmartEvolve Operations")
+                .branch("Platform Administration & Governance")
+                .graduationYear(2018)
+                .interests("System Administration, Career Benchmarks, Security Auditing")
+                .preferredLearningStyle("Executive Summaries & Metrics")
+                .academicGoals("Ensure 99.99% system reliability, benchmark accuracy, and student data privacy")
+                .onboardingCompleted(true)
+                .role("ADMIN")
+                .build())
+        );
+        if (admin.getEmail() == null || admin.getPasswordHash() == null || !"ADMIN".equalsIgnoreCase(admin.getRole())) {
+            admin.setEmail("admin@smartevolve.ai");
+            admin.setPasswordHash(defaultHash);
+            admin.setRole("ADMIN");
+            profileRepository.save(admin);
+        }
+
+        // 4. Recruiter / Employer: Marcus Vance
+        Profile recruiter = profileRepository.findById(recruiterId).orElseGet(() ->
+            profileRepository.save(Profile.builder()
+                .id(recruiterId)
+                .fullName("Marcus Vance")
+                .email("marcus.vance@techrecruiter.io")
+                .passwordHash(defaultHash)
+                .educationLevel("MBA & Talent Strategy")
+                .institution("Apex Talent Cloud & Google Partner")
+                .branch("Technical Recruitment & University Relations")
+                .graduationYear(2019)
+                .interests("Talent Acquisition, Credential Verification, Tech Hiring")
+                .preferredLearningStyle("Talent Analytics & Radar Charts")
+                .academicGoals("Source top percentile verified engineering talent for Staff AI roles")
+                .onboardingCompleted(true)
+                .role("RECRUITER")
+                .build())
+        );
+        if (recruiter.getEmail() == null || recruiter.getPasswordHash() == null || !"RECRUITER".equalsIgnoreCase(recruiter.getRole())) {
+            recruiter.setEmail("marcus.vance@techrecruiter.io");
+            recruiter.setPasswordHash(defaultHash);
+            recruiter.setRole("RECRUITER");
+            profileRepository.save(recruiter);
+        }
+
+        // 5. Mentor Assignment: Dr. Elena Rostova -> Alex Chen
+        if (mentorAssignmentRepository.findByMentorIdAndStudentId(mentorId, studentId).isEmpty()) {
+            mentorAssignmentRepository.save(MentorStudentAssignment.builder()
+                .mentor(mentor)
+                .student(student)
+                .status("ACTIVE")
+                .notes("Assigned for Senior Year AI Engineer specialization mentoring.")
+                .build());
+        }
+
+        // 6. Recruiter Profile Share: Marcus Vance -> Alex Chen
+        if (recruiterShareRepository.findByRecruiterIdAndStudentId(recruiterId, studentId).isEmpty()) {
+            recruiterShareRepository.save(RecruiterProfileShare.builder()
+                .recruiter(recruiter)
+                .student(student)
+                .status("ACTIVE")
+                .notes("Explicitly shared profile and blockchain credentials for 2027 AI Engineer role.")
+                .build());
+        }
+
+        log.info("Initialized real database RBAC profiles for STUDENT, MENTOR, ADMIN, and RECRUITER.");
     }
 }

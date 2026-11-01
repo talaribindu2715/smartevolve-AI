@@ -7,20 +7,21 @@ import { colors, spacing } from "../src/theme/colors";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, userRole, getDashboardRouteForRole } = useAuth();
 
   useEffect(() => {
     if (!isLoading) {
       const timer = setTimeout(() => {
         if (isAuthenticated) {
-          router.replace("/(tabs)");
+          const targetRoute = getDashboardRouteForRole(userRole);
+          router.replace(targetRoute as any);
         } else {
           router.replace("/onboarding");
         }
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, userRole]);
 
   return (
     <View style={styles.container}>

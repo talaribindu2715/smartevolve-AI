@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface CredentialRepository extends JpaRepository<Credential, UUID> {
     List<Credential> findByStudentIdOrderByIssuedAtDesc(UUID studentId);
+    long countByStudentId(UUID studentId);
     Optional<Credential> findByAchievementDataHash(String achievementDataHash);
     Optional<Credential> findByTransactionHash(String transactionHash);
 }
