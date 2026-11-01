@@ -85,6 +85,19 @@ export default function LoginScreen() {
     setValue("password", "SmartEvolve2026!");
   };
 
+  const signInAsDemo = async () => {
+    setLoading(true);
+    try {
+      const mockToken =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6ImFsZXguY2hlbkBzdHVkZW50LmVkdSIsInJvbGUiOiJhdXRoZW50aWNhdGVkIn0.smartevolve-demo-token";
+      const userId = "00000000-0000-0000-0000-000000000001";
+      await login(mockToken, userId);
+      router.replace("/(tabs)");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -164,13 +177,20 @@ export default function LoginScreen() {
             style={{ marginTop: spacing.sm }}
           />
 
+          <Button
+            title="⚡ One-Click Demo Student Sign In"
+            onPress={signInAsDemo}
+            loading={loading}
+            variant="outline"
+            size="md"
+            style={{ marginTop: spacing.xs }}
+          />
+
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Don't have an account?</Text>
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Create Account</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
+              <Text style={styles.linkText}>Create Account</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

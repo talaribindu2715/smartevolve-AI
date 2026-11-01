@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -125,18 +126,30 @@ export default function SettingsScreen() {
     updateProfileMutation.mutate();
   };
 
-  const handleLogout = () => {
-    Alert.alert("Confirm Sign Out", "Are you sure you want to sign out of SmartEvolve AI?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: async () => {
-          await logout();
-          router.replace("/(auth)/login");
+  const handleLogout = async () => {
+    const doLogout = async () => {
+      await logout();
+      router.replace("/(auth)/login");
+    };
+
+    if (Platform.OS === "web") {
+      const confirmed =
+        typeof window !== "undefined"
+          ? window.confirm("Are you sure you want to sign out of SmartEvolve AI?")
+          : true;
+      if (confirmed) {
+        await doLogout();
+      }
+    } else {
+      Alert.alert("Confirm Sign Out", "Are you sure you want to sign out of SmartEvolve AI?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: doLogout,
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   return (

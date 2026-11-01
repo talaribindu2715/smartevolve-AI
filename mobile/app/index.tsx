@@ -15,6 +15,15 @@ export default function SplashScreen() {
         if (isAuthenticated) {
           router.replace("/(tabs)");
         } else {
+          try {
+            if (
+              typeof window !== "undefined" &&
+              window.localStorage?.getItem("smartevolve_onboarding_completed") === "true"
+            ) {
+              router.replace("/(auth)/login");
+              return;
+            }
+          } catch (_) {}
           router.replace("/onboarding");
         }
       }, 1200);

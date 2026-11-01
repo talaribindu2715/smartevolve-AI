@@ -44,20 +44,31 @@ export const secureStorage = {
   async setToken(token: string): Promise<void> {
     if (Platform.OS === "web") {
       setWebStorage(ACCESS_TOKEN_KEY, token);
+      removeWebStorage("smartevolve_logged_out");
       return;
     }
     await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
+    try {
+      await SecureStore.deleteItemAsync("smartevolve_logged_out");
+    } catch (_) {}
   },
 
-  async getToken(): Promise<string> {
+  async getToken(): Promise<string | null> {
     if (Platform.OS === "web") {
-      return getWebStorage(ACCESS_TOKEN_KEY) || DEMO_ACCESS_TOKEN;
+      const isLoggedOut = getWebStorage("smartevolve_logged_out");
+      if (isLoggedOut === "true") {
+        return null;
+      }
+      return getWebStorage(ACCESS_TOKEN_KEY);
     }
     try {
-      const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
-      return token || DEMO_ACCESS_TOKEN;
+      const isLoggedOut = await SecureStore.getItemAsync("smartevolve_logged_out");
+      if (isLoggedOut === "true") {
+        return null;
+      }
+      return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
     } catch (_) {
-      return DEMO_ACCESS_TOKEN;
+      return null;
     }
   },
 
@@ -69,15 +80,22 @@ export const secureStorage = {
     await SecureStore.setItemAsync(USER_ID_KEY, id);
   },
 
-  async getUserId(): Promise<string> {
+  async getUserId(): Promise<string | null> {
     if (Platform.OS === "web") {
-      return getWebStorage(USER_ID_KEY) || DEMO_USER_ID;
+      const isLoggedOut = getWebStorage("smartevolve_logged_out");
+      if (isLoggedOut === "true") {
+        return null;
+      }
+      return getWebStorage(USER_ID_KEY);
     }
     try {
-      const id = await SecureStore.getItemAsync(USER_ID_KEY);
-      return id || DEMO_USER_ID;
+      const isLoggedOut = await SecureStore.getItemAsync("smartevolve_logged_out");
+      if (isLoggedOut === "true") {
+        return null;
+      }
+      return await SecureStore.getItemAsync(USER_ID_KEY);
     } catch (_) {
-      return DEMO_USER_ID;
+      return null;
     }
   },
 
@@ -86,12 +104,14 @@ export const secureStorage = {
       removeWebStorage(ACCESS_TOKEN_KEY);
       removeWebStorage(REFRESH_TOKEN_KEY);
       removeWebStorage(USER_ID_KEY);
+      setWebStorage("smartevolve_logged_out", "true");
       return;
     }
     try {
       await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
       await SecureStore.deleteItemAsync(USER_ID_KEY);
+      await SecureStore.setItemAsync("smartevolve_logged_out", "true");
     } catch (_) {}
   },
 };

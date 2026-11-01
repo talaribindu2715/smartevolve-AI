@@ -93,6 +93,11 @@ export default function OnboardingScreen() {
   };
 
   const finishOnboarding = () => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem("smartevolve_onboarding_completed", "true");
+      }
+    } catch (_) {}
     router.replace("/(auth)/login");
   };
 

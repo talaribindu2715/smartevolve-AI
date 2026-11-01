@@ -295,11 +295,9 @@ export default function RegisterScreen() {
 
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Already have an account?</Text>
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Sign In</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+              <Text style={styles.linkText}>Sign In</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
