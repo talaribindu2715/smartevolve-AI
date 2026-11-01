@@ -4,14 +4,11 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.smartevolve.entity.Profile;
-import com.smartevolve.repository.ProfileRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,7 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -35,12 +31,6 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
     @Value("${supabase.jwt.issuer:}")
     private String jwtIssuer;
 
-    private final ObjectProvider<ProfileRepository> profileRepositoryProvider;
-
-    public SupabaseJwtFilter(ObjectProvider<ProfileRepository> profileRepositoryProvider) {
-        this.profileRepositoryProvider = profileRepositoryProvider;
-    }
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -51,18 +41,25 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(token)) {
                 principal = validateAndExtractPrincipal(token);
             }
-
             if (principal == null) {
-                principal = resolveDemoPrincipal(request);
+                // Default demo student identity to enable seamless testing and guest browsing without 403
+                principal = UserPrincipal.builder()
+                        .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+                        .email("alex.chen@student.edu")
+                        .role("authenticated")
+                        .build();
             }
-
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception ex) {
-            log.warn("Failed to authenticate Supabase JWT, falling back to demo identity: {}", ex.getMessage());
-            UserPrincipal fallbackPrincipal = resolveDemoPrincipal(request);
+            log.warn("Failed to authenticate Supabase JWT, using demo student fallback: {}", ex.getMessage());
+            UserPrincipal fallbackPrincipal = UserPrincipal.builder()
+                    .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+                    .email("alex.chen@student.edu")
+                    .role("authenticated")
+                    .build();
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(fallbackPrincipal, null, fallbackPrincipal.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -97,14 +94,12 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
 
             UUID userId = UUID.fromString(sub);
             String email = jwt.getClaim("email").asString();
-
-            // Real database-backed role lookup
-            String role = resolveDatabaseRole(userId);
+            String role = jwt.getClaim("role").asString();
 
             return UserPrincipal.builder()
                     .id(userId)
                     .email(email != null ? email : userId.toString())
-                    .role(role)
+                    .role(role != null ? role : "authenticated")
                     .build();
         } catch (Exception ex) {
             // For development or testing where secret might be placeholder, decode without signature verification if needed
@@ -112,71 +107,17 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
                 DecodedJWT unverified = JWT.decode(token);
                 String sub = unverified.getSubject();
                 if (sub != null) {
-                    UUID userId = UUID.fromString(sub);
-                    String email = unverified.getClaim("email").asString();
-                    String role = resolveDatabaseRole(userId);
-
                     return UserPrincipal.builder()
-                            .id(userId)
-                            .email(email != null ? email : userId.toString())
-                            .role(role)
+                            .id(UUID.fromString(sub))
+                            .email(unverified.getClaim("email").asString())
+                            .role("authenticated")
                             .build();
                 }
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+                // fall through to return null
+            }
             log.debug("Token validation failed: {}", ex.getMessage());
             return null;
         }
-    }
-
-    private String resolveDatabaseRole(UUID userId) {
-        ProfileRepository repo = profileRepositoryProvider.getIfAvailable();
-        if (repo != null) {
-            Optional<Profile> profileOpt = repo.findById(userId);
-            if (profileOpt.isPresent() && profileOpt.get().getRole() != null) {
-                return profileOpt.get().getRole();
-            }
-        }
-        return UserRole.STUDENT.name();
-    }
-
-    private UserPrincipal resolveDemoPrincipal(HttpServletRequest request) {
-        String demoRoleHeader = request.getHeader("X-Demo-Role");
-        UserRole userRole = UserRole.fromString(demoRoleHeader);
-
-        String demoUserIdHeader = request.getHeader("X-Demo-User-Id");
-        if (StringUtils.hasText(demoUserIdHeader)) {
-            try {
-                UUID explicitId = UUID.fromString(demoUserIdHeader);
-                String dbRole = resolveDatabaseRole(explicitId);
-                return UserPrincipal.builder()
-                        .id(explicitId)
-                        .email("user." + explicitId.toString().substring(0, 8) + "@smartevolve.ai")
-                        .role(dbRole)
-                        .build();
-            } catch (IllegalArgumentException ignore) {}
-        }
-
-        return switch (userRole) {
-            case MENTOR -> UserPrincipal.builder()
-                    .id(SecurityUtils.DEMO_MENTOR_ID)
-                    .email("dr.elena.rostova@faculty.edu")
-                    .role(UserRole.MENTOR.name())
-                    .build();
-            case ADMIN -> UserPrincipal.builder()
-                    .id(SecurityUtils.DEMO_ADMIN_ID)
-                    .email("admin@smartevolve.ai")
-                    .role(UserRole.ADMIN.name())
-                    .build();
-            case RECRUITER -> UserPrincipal.builder()
-                    .id(SecurityUtils.DEMO_RECRUITER_ID)
-                    .email("marcus.vance@techrecruiter.io")
-                    .role(UserRole.RECRUITER.name())
-                    .build();
-            default -> UserPrincipal.builder()
-                    .id(SecurityUtils.DEMO_STUDENT_ID)
-                    .email("alex.chen@student.edu")
-                    .role(UserRole.STUDENT.name())
-                    .build();
-        };
     }
 }

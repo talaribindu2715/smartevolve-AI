@@ -52,7 +52,6 @@ public class ProfileService {
                     .preferredLearningStyle("Hands-on Projects & Video Masterclasses")
                     .academicGoals("Master full-stack engineering and cloud-native AI pipelines")
                     .onboardingCompleted(false)
-                    .role("STUDENT")
                     .build();
             return profileRepository.save(newProfile);
         });
@@ -78,21 +77,6 @@ public class ProfileService {
         if (request.getAcademicGoals() != null) profile.setAcademicGoals(request.getAcademicGoals().trim());
         if (request.getInterests() != null) {
             profile.setInterests(String.join(", ", request.getInterests()));
-        }
-
-        // Privilege escalation guard: Only verified administrators can change roles
-        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
-            String targetRole = request.getRole().trim().toUpperCase();
-            if (!targetRole.equalsIgnoreCase(profile.getRole())) {
-                if (com.smartevolve.security.SecurityUtils.isAdmin()) {
-                    profile.setRole(targetRole);
-                    log.info("Admin updated role for user {} to {}", studentId, targetRole);
-                } else {
-                    log.warn("Non-admin user {} attempted unauthorized role change to {}", studentId, targetRole);
-                    throw new com.smartevolve.exception.UnauthorizedException(
-                            "Privilege escalation denied: Only administrators can assign or alter role permissions.");
-                }
-            }
         }
 
         Profile saved = profileRepository.save(profile);
@@ -141,7 +125,6 @@ public class ProfileService {
                 .targetCareerId(targetCareerId)
                 .targetCareerName(targetCareerName)
                 .onboardingCompleted(Boolean.TRUE.equals(profile.getOnboardingCompleted()))
-                .role(profile.getRole() != null ? profile.getRole() : "STUDENT")
                 .createdAt(profile.getCreatedAt())
                 .build();
     }

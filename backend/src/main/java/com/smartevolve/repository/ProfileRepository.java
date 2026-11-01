@@ -8,8 +8,4 @@ import java.util.UUID;
 
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, UUID> {
-    long countByRole(String role);
-    java.util.List<Profile> findByRole(String role);
-    java.util.List<Profile> findAllByOrderByCreatedAtDesc();
-    java.util.Optional<Profile> findByEmail(String email);
 }

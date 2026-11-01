@@ -26,6 +26,5 @@ public class ProfileDto {
     private UUID targetCareerId;
     private String targetCareerName;
     private Boolean onboardingCompleted;
-    private String role;
     private OffsetDateTime createdAt;
 }

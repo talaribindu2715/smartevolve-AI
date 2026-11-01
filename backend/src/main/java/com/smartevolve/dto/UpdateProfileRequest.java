@@ -25,5 +25,4 @@ public class UpdateProfileRequest {
     private String academicGoals;
     private UUID targetCareerId;
     private Boolean onboardingCompleted;
-    private String role;
 }

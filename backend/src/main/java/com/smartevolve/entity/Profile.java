@@ -24,12 +24,6 @@ public class Profile {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "email")
-    private String email;
-
-    @Column(name = "password_hash")
-    private String passwordHash;
-
     @Column(name = "education_level")
     private String educationLevel;
 
@@ -54,10 +48,6 @@ public class Profile {
     @Column(name = "onboarding_completed")
     @Builder.Default
     private Boolean onboardingCompleted = false;
-
-    @Column(name = "role", nullable = false)
-    @Builder.Default
-    private String role = "STUDENT";
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

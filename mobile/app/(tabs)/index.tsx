@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -20,7 +20,6 @@ import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { VideoCard } from "../../src/components/VideoCard";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
-import { AiStudyAssistantModal } from "../../src/components/AiStudyAssistantModal";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function DashboardScreen() {
@@ -56,26 +55,6 @@ export default function DashboardScreen() {
     queryKey: ["evolutionTrends"],
     queryFn: () => api.getTrends(),
   });
-
-  const { data: notifications } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => api.getNotifications(),
-  });
-  const unreadNotifCount = (notifications || []).filter((n) => !n.read).length;
-
-  const [assistantVisible, setAssistantVisible] = useState(false);
-  const [dailyGoals, setDailyGoals] = useState([
-    { id: "1", title: "Topological Roadmap Milestone Review", completed: true },
-    { id: "2", title: "Complete 1 YouTube Masterclass", completed: true },
-    { id: "3", title: "Skill Assessment (>=80% for on-chain badge)", completed: false },
-    { id: "4", title: "AI Study Assistant Concept Consultation", completed: false },
-  ]);
-
-  const toggleDailyGoal = (id: string) => {
-    setDailyGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g))
-    );
-  };
 
   const handleRefreshAll = () => {
     refetchDashboard();
@@ -129,34 +108,15 @@ export default function DashboardScreen() {
             <Text style={styles.greetingSub}>SmartEvolve AI Profile</Text>
             <Text style={styles.greetingTitle}>Hello, {studentName} 👋</Text>
           </View>
-          <View style={styles.headerRightActions}>
-            <TouchableOpacity
-              onPress={() => router.push("/notifications")}
-              style={styles.notifBtn}
-            >
-              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2">
-                <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </Svg>
-              {unreadNotifCount > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>
-                    {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/settings")}
-              style={styles.settingsBtn}
-            >
-              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2">
-                <Circle cx="12" cy="12" r="3" />
-                <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </Svg>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/settings")}
+            style={styles.settingsBtn}
+          >
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2">
+              <Circle cx="12" cy="12" r="3" />
+              <Path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </Svg>
+          </TouchableOpacity>
         </View>
 
         {/* Backend Connectivity Notice if error */}
@@ -211,72 +171,20 @@ export default function DashboardScreen() {
               </View>
             </View>
 
-            <View style={styles.heroButtonRow}>
-              <Button
-                title={careerGoal === "Not Selected" ? "Choose Career Path" : "View Career Gap Analysis"}
-                onPress={() =>
-                  router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/(tabs)/careers")
-                }
-                size="sm"
-                style={{ flex: 1 }}
-              />
-              <Button
-                title="🤖 AI Tutor"
-                onPress={() => setAssistantVisible(true)}
-                size="sm"
-                variant="outline"
-                style={{ marginLeft: spacing.sm }}
-              />
-            </View>
+            <Button
+              title={careerGoal === "Not Selected" ? "Choose Career Path" : "View Career Gap Analysis"}
+              onPress={() =>
+                router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/(tabs)/careers")
+              }
+              size="sm"
+              style={{ marginTop: spacing.md }}
+            />
           </Card>
         )}
-
-        {/* Daily Learning Goals & Streaks Widget */}
-        <Card style={styles.streakCard}>
-          <View style={styles.streakHeader}>
-            <View style={styles.streakLeft}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <View>
-                <Text style={styles.streakTitle}>5-Day Active Streak</Text>
-                <Text style={styles.streakSub}>
-                  {dailyGoals.filter((g) => g.completed).length} of {dailyGoals.length} daily goals completed
-                </Text>
-              </View>
-            </View>
-            <Badge label="DAILY GOALS" variant="warning" />
-          </View>
-
-          <View style={styles.goalsList}>
-            {dailyGoals.map((g) => (
-              <TouchableOpacity
-                key={g.id}
-                style={styles.goalItem}
-                onPress={() => toggleDailyGoal(g.id)}
-              >
-                <View style={[styles.goalCheckbox, g.completed && styles.goalCheckboxDone]}>
-                  {g.completed && <Text style={styles.checkMarkText}>✓</Text>}
-                </View>
-                <Text style={[styles.goalText, g.completed && styles.goalTextDone]}>
-                  {g.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Card>
 
         {/* Quick Actions Bar */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
-          <TouchableOpacity
-            style={[styles.quickActionCard, { borderColor: colors.primary }]}
-            onPress={() => setAssistantVisible(true)}
-          >
-            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(99, 102, 241, 0.25)" }]}>
-              <Text style={{ fontSize: 18 }}>🤖</Text>
-            </View>
-            <Text style={[styles.qaTitle, { color: colors.primary }]}>AI Tutor</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.quickActionCard}
             onPress={() => router.push("/(tabs)/learn")}
@@ -613,12 +521,6 @@ export default function DashboardScreen() {
             ))}
           </View>
         )}
-
-        <AiStudyAssistantModal
-          visible={assistantVisible}
-          onClose={() => setAssistantVisible(false)}
-          initialTopic={careerGoal !== "Not Selected" ? careerGoal : "Software Engineering"}
-        />
       </View>
     </ScrollView>
   );
@@ -954,110 +856,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     fontFamily: "monospace",
-  },
-  headerRightActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  notifBtn: {
-    position: "relative",
-    padding: spacing.xs,
-    backgroundColor: colors.surface,
-    borderColor: colors.cardBorder,
-    borderWidth: 1,
-    borderRadius: radius.md,
-  },
-  notifBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: colors.primary,
-    borderRadius: 9,
-    width: 18,
-    height: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notifBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "900",
-  },
-  heroButtonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.md,
-  },
-  streakCard: {
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderColor: "rgba(245, 158, 11, 0.3)",
-    borderWidth: 1,
-    marginBottom: spacing.lg,
-  },
-  streakHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  streakLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  streakEmoji: {
-    fontSize: 28,
-  },
-  streakTitle: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  streakSub: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  goalsList: {
-    gap: 8,
-    marginTop: 4,
-    borderTopColor: colors.cardBorder,
-    borderTopWidth: 1,
-    paddingTop: spacing.sm,
-  },
-  goalItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  goalCheckbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  goalCheckboxDone: {
-    borderColor: colors.success,
-    backgroundColor: colors.success,
-  },
-  checkMarkText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  goalText: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "500",
-    flex: 1,
-  },
-  goalTextDone: {
-    color: colors.textMuted,
-    textDecorationLine: "line-through",
   },
 });
