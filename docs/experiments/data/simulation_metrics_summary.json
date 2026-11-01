@@ -1,0 +1,35 @@
+{
+  "Damped": {
+    "Initial_MAE": 6.655445774730431,
+    "Final_MAE": 1.8472361341401455,
+    "Final_MAE_Std": 0.03250703985345969,
+    "Initial_RMSE": 8.42762896422606,
+    "Final_RMSE": 2.3469132869989835,
+    "Final_RMSE_Std": 0.04723870218342594,
+    "Mean_Volatility": 0.6564456461521797,
+    "Volatility_Std": 0.004935106592566257,
+    "Convergence_Step_5Pct": 2
+  },
+  "Constant Rate": {
+    "Initial_MAE": 6.6373540204186785,
+    "Final_MAE": 3.2028008825807994,
+    "Final_MAE_Std": 0.0537418557376514,
+    "Initial_RMSE": 8.414491835447865,
+    "Final_RMSE": 4.054682845751612,
+    "Final_RMSE_Std": 0.06442028843771916,
+    "Mean_Volatility": 2.5285722407815148,
+    "Volatility_Std": 0.013722913588442303,
+    "Convergence_Step_5Pct": 2
+  },
+  "Running Mean": {
+    "Initial_MAE": 5.76068549639322,
+    "Final_MAE": 1.494140252517241,
+    "Final_MAE_Std": 0.014869395613587919,
+    "Initial_RMSE": 7.256257176529234,
+    "Final_RMSE": 1.870925673788734,
+    "Final_RMSE_Std": 0.015280646705573192,
+    "Mean_Volatility": 0.4285569691216688,
+    "Volatility_Std": 0.0025046819551324496,
+    "Convergence_Step_5Pct": 2
+  }
+}

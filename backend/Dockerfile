@@ -11,7 +11,7 @@ RUN mvn dependency:resolve -B
 
 # Copy application source and build production artifact (skipping tests and test dependencies)
 COPY src ./src
-RUN mvn package -Dmaven.test.skip=true -B
+RUN mvn package -DskipTests -B
 
 # Stage 2: Production JRE 21 Runtime (Optimized for 512MB RAM containers on Render free tier)
 FROM eclipse-temurin:21-jre-jammy
