@@ -41,6 +41,12 @@ supabase:
     secret: ${SUPABASE_JWT_SECRET:super-secret-jwt-token-with-minimum-256-bits-length-for-hmac-sha}
     issuer: ${SUPABASE_JWT_ISSUER:https://your-project.supabase.co/auth/v1}
 
+# Google Gemini AI API Configuration
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  base-url: https://generativelanguage.googleapis.com/v1beta/models
+
 # Web3j Blockchain Configuration
 blockchain:
   enabled: true

@@ -43,6 +43,7 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
     "Content-Type": "application/json",
     Accept: "application/json",
     ...(options.headers as Record<string, string>),
+
   };
 
   if (token) {
@@ -188,4 +189,16 @@ export const api = {
       method: "POST",
     });
   },
-};
+  // AI Advisor & Gemini Mentor Integration
+  getAiSkillAnalysis: () =>
+    apiFetch<any>("/api/ai/skill-analysis"),
+
+  getAiCareerGuidance: (careerId: string) =>
+    apiFetch<any>(`/api/ai/career-guidance/${careerId}`),
+
+  askAiMentor: (message: string, currentCareerContext?: string) =>
+    apiFetch<any>("/api/ai/chat", {
+      method: "POST",
+      body: JSON.stringify({ message, currentCareerContext }),
+    }),
+  };
