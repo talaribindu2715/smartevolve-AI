@@ -35,8 +35,8 @@ spring:
   mail:
     host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME:smartevolve.ai@gmail.com}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${SPRING_MAIL_USERNAME:talaribindu767@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:jopowjfvvfuuauul}
     properties:
       mail:
         smtp:

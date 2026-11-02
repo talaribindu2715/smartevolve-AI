@@ -22,7 +22,7 @@ public class EmailOtpService {
     private final JavaMailSender mailSender;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    @Value("${spring.mail.username:smartevolve.ai@gmail.com}")
+    @Value("${spring.mail.username:talaribindu767@gmail.com}")
     private String mailFrom;
 
     @Value("${spring.mail.password:}")
