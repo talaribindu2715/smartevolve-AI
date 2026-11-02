@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
@@ -88,14 +89,6 @@ export default function LandingScreen() {
 
         {/* Hero Section */}
         <View style={styles.heroSection}>
-          {/* Top Pill Announcement */}
-          <View style={styles.announcementPill}>
-            <View style={styles.liveDot} />
-            <Text style={styles.announcementText}>
-              IEEE Research-Validated • Blockchain Enabled Self-Evolving AI
-            </Text>
-          </View>
-
           {/* Hero Big Headlines */}
           <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
             One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
@@ -118,43 +111,21 @@ export default function LandingScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Key Value Proposition Badges */}
-          <View style={styles.featuresGrid}>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🛡️</Text>
-              <Text style={styles.featureTitle}>Attempt-Damped AI</Text>
-              <Text style={styles.featureDesc}>
-                Limits score inflation by 39% using mathematical damping while preserving genuine progress.
-              </Text>
-            </View>
-
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>⛓️</Text>
-              <Text style={styles.featureTitle}>Blockchain Credentials</Text>
-              <Text style={styles.featureDesc}>
-                Dual-hash Keccak-256 and SHA-256 on-chain minting on EVM networks for instant tamper-evident verification.
-              </Text>
-            </View>
-
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🗺️</Text>
-              <Text style={styles.featureTitle}>Kahn DAG Roadmaps</Text>
-              <Text style={styles.featureDesc}>
-                Automated prerequisite graph resolution ensures you never get blocked by circular dependencies.
-              </Text>
-            </View>
-
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🤖</Text>
-              <Text style={styles.featureTitle}>99.04% ML Matcher</Text>
-              <Text style={styles.featureDesc}>
-                Random Forest & Centroid Cosine engine predicting your exact industry role across 32 skill dimensions.
-              </Text>
-            </View>
+          {/* Seamless Borderless 8K Fluid AI Showcase (No boxed containers or borders) */}
+          <View style={styles.heroImageWrapper}>
+            <Image
+              source={{
+                uri: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2560&q=90",
+              }}
+              style={[styles.hero8kImage, isDesktop && styles.hero8kImageDesktop]}
+              resizeMode="cover"
+            />
+            {/* Ambient Lighting Glow without any borders */}
+            <View style={styles.ambientGlowOverlay} />
           </View>
         </View>
 
-        {/* Footer */}
+        {/* Minimal Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             SmartEvolve AI Platform • K.S.R.M. College of Engineering (Autonomous)
@@ -171,14 +142,14 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#070B14", // Deep rich dark navy background matching Image 1
+    backgroundColor: "#070B14",
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
-    maxWidth: 1200,
     width: "100%",
+    maxWidth: 1400,
     alignSelf: "center",
   },
   navbar: {
@@ -188,7 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   brandGroup: {
     flexDirection: "row",
@@ -257,51 +228,29 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   heroSection: {
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
     alignItems: "flex-start",
-  },
-  announcementPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(99, 102, 241, 0.12)",
-    borderColor: "rgba(99, 102, 241, 0.3)",
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    marginBottom: spacing.xl,
-  },
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.success,
-  },
-  announcementText: {
-    color: "#A5B4FC",
-    fontSize: 12,
-    fontWeight: "700",
+    width: "100%",
   },
   heroHeadline: {
     color: "#FFFFFF",
-    fontSize: 40,
+    fontSize: 38,
     fontWeight: "900",
-    lineHeight: 48,
+    lineHeight: 46,
     letterSpacing: -1,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   heroHeadlineDesktop: {
-    fontSize: 68,
-    lineHeight: 76,
+    fontSize: 64,
+    lineHeight: 72,
     letterSpacing: -2,
   },
   heroSub: {
     color: "#94A3B8",
     fontSize: 16,
     lineHeight: 26,
-    maxWidth: 680,
-    marginBottom: spacing.xxl,
+    maxWidth: 720,
+    marginBottom: spacing.xl,
   },
   heroSubDesktop: {
     fontSize: 18,
@@ -311,7 +260,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 14,
     width: "100%",
-    marginBottom: spacing.xxl * 1.5,
+    marginBottom: spacing.xl * 1.5,
   },
   ctaRowDesktop: {
     flexDirection: "row",
@@ -344,39 +293,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  featuresGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
+  // Seamless Borderless 8K Visual Showcase
+  heroImageWrapper: {
     width: "100%",
-    marginTop: spacing.xl,
-    paddingTop: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    position: "relative",
+    borderRadius: 20,
+    overflow: "hidden",
+    marginTop: spacing.md,
+    // Zero border, zero box styling
+    borderWidth: 0,
+    backgroundColor: "transparent",
   },
-  featureItem: {
-    flex: 1,
-    minWidth: 240,
-    backgroundColor: "rgba(19, 27, 46, 0.6)",
-    borderColor: "rgba(255, 255, 255, 0.07)",
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
+  hero8kImage: {
+    width: "100%",
+    height: 320,
+    borderRadius: 20,
   },
-  featureIcon: {
-    fontSize: 24,
-    marginBottom: 10,
+  hero8kImageDesktop: {
+    height: 540,
   },
-  featureTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-  featureDesc: {
-    color: "#94A3B8",
-    fontSize: 13,
-    lineHeight: 19,
+  ambientGlowOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
   },
   footer: {
     marginTop: spacing.xxl,

@@ -97,22 +97,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             />
           )}
         </View>
-
-        {/* Video Player Meta & Controls */}
-        <View style={styles.controlsBar}>
-          <View style={styles.streamingMeta}>
-            <View style={styles.liveDot} />
-            <Text style={styles.streamingText}>SmartEvolve Academy • 🛡️ Ad-Free Focus Mode</Text>
-          </View>
-          <TouchableOpacity onPress={handleOpenExternal} style={styles.externalBtn}>
-            <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF0000" strokeWidth="2.5">
-              <Path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <Path d="M15 3h6v6" />
-              <Path d="M10 14L21 3" />
-            </Svg>
-            <Text style={styles.externalBtnText}>Open Stream</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     );
   }
@@ -201,22 +185,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             </View>
           </TouchableOpacity>
         )}
-      </View>
-
-      {/* Meta Footer */}
-      <View style={styles.controlsBar}>
-        <View style={styles.streamingMeta}>
-          <View style={styles.liveDot} />
-          <Text style={styles.streamingText}>SmartEvolve Academy • 🛡️ Ad-Free Focus Mode</Text>
-        </View>
-        <TouchableOpacity onPress={handleOpenExternal} style={styles.externalBtn}>
-          <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF0000" strokeWidth="2.5">
-            <Path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <Path d="M15 3h6v6" />
-            <Path d="M10 14L21 3" />
-          </Svg>
-          <Text style={styles.externalBtnText}>Open External Stream</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

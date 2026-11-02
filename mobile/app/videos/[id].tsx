@@ -33,241 +33,616 @@ interface QuizQuestion {
 }
 
 const QUESTION_BANK: Record<string, QuizQuestion[]> = {
-  springboot: [
+  "springboot": [
     {
-      id: 1,
-      question: "Which annotation in Spring Boot combines @Controller and @ResponseBody to create RESTful JSON endpoints?",
-      options: ["@RestController", "@Service", "@Repository", "@Component"],
-      correctIndex: 0,
-      explanation: "@RestController is a convenience annotation that combines @Controller and @ResponseBody, ensuring every handler method automatically serializes return values directly into HTTP response bodies as JSON.",
+      "id": 1,
+      "question": "Which annotation in Spring Boot combines @Controller and @ResponseBody to create RESTful JSON endpoints?",
+      "options": [
+        "@RestController",
+        "@Service",
+        "@Repository",
+        "@Component"
+      ],
+      "correctIndex": 0,
+      "explanation": "@RestController combines @Controller and @ResponseBody, ensuring every handler method automatically serializes return values directly into HTTP response bodies as JSON."
     },
     {
-      id: 2,
-      question: "What is the primary role of Spring Boot Auto-Configuration?",
-      options: [
+      "id": 2,
+      "question": "What is the primary role of Spring Boot Auto-Configuration?",
+      "options": [
         "Automatically configures Spring beans based on jar dependencies on the classpath",
         "Compiles Java source files into bytecode",
         "Deploys application containers directly to cloud clusters",
-        "Formats and checks Java indentation styles",
+        "Formats and checks Java indentation styles"
       ],
-      correctIndex: 0,
-      explanation: "Auto-Configuration inspects your project dependencies (e.g., spring-boot-starter-web) and automatically registers sensible default beans so you don't have to write verbose XML or Java configuration.",
+      "correctIndex": 0,
+      "explanation": "Auto-Configuration inspects your project dependencies (e.g., spring-boot-starter-web) and automatically registers default beans without verbose XML or Java configuration."
     },
     {
-      id: 3,
-      question: "Which Spring Data interface provides built-in pagination, sorting, and standard CRUD operations?",
-      options: ["JpaRepository", "JdbcTemplate", "CrudEngine", "SessionManager"],
-      correctIndex: 0,
-      explanation: "JpaRepository extends PagingAndSortingRepository and CrudRepository, providing out-of-the-box support for pagination, sorting, batch operations, and common persistence queries.",
+      "id": 3,
+      "question": "Which Spring Data interface provides built-in pagination, sorting, and standard CRUD operations?",
+      "options": [
+        "JpaRepository",
+        "JdbcTemplate",
+        "CrudEngine",
+        "SessionManager"
+      ],
+      "correctIndex": 0,
+      "explanation": "JpaRepository extends PagingAndSortingRepository and CrudRepository, providing out-of-the-box support for pagination, sorting, and batch operations."
     },
     {
-      id: 4,
-      question: "Where are environment configurations primarily defined in standard Spring Boot projects?",
-      options: [
+      "id": 4,
+      "question": "Where are environment configurations primarily defined in standard Spring Boot projects?",
+      "options": [
         "application.yml or application.properties",
         "pom.xml or build.gradle",
         "web.xml under WEB-INF",
-        "beans.xml in root classpath",
+        "beans.xml in root classpath"
       ],
-      correctIndex: 0,
-      explanation: "application.yml (or application.properties) in src/main/resources is the canonical location for configuring port, datasource, JPA dialects, mail, and custom properties in Spring Boot.",
+      "correctIndex": 0,
+      "explanation": "application.yml (or application.properties) in src/main/resources is the canonical location for configuring port, datasource, JPA dialects, and custom properties."
     },
     {
-      id: 5,
-      question: "Which HTTP status code should a REST endpoint return when a new entity is successfully created?",
-      options: ["201 Created", "200 OK", "204 No Content", "202 Accepted"],
-      correctIndex: 0,
-      explanation: "RFC 7231 specifies HTTP 201 Created as the correct standard response for POST requests that successfully result in the creation of a new persistent resource.",
+      "id": 5,
+      "question": "Which HTTP status code should a REST endpoint return when a new entity is successfully created?",
+      "options": [
+        "201 Created",
+        "200 OK",
+        "204 No Content",
+        "202 Accepted"
+      ],
+      "correctIndex": 0,
+      "explanation": "RFC 7231 specifies HTTP 201 Created as the correct standard response for POST requests that successfully result in the creation of a new persistent resource."
     },
+    {
+      "id": 6,
+      "question": "Which annotation is used in Spring Boot to map HTTP GET requests onto specific handler methods?",
+      "options": [
+        "@GetMapping",
+        "@PostMapping",
+        "@PutMapping",
+        "@DeleteMapping"
+      ],
+      "correctIndex": 0,
+      "explanation": "@GetMapping is a composed annotation that acts as a shortcut for @RequestMapping(method = RequestMethod.GET)."
+    },
+    {
+      "id": 7,
+      "question": "What is the default embedded servlet web container provided by spring-boot-starter-web?",
+      "options": [
+        "Apache Tomcat",
+        "Eclipse Jetty",
+        "Red Hat Undertow",
+        "GlassFish"
+      ],
+      "correctIndex": 0,
+      "explanation": "Spring Boot web starter embeds Apache Tomcat by default listening on port 8080."
+    },
+    {
+      "id": 8,
+      "question": "In Spring Boot Dependency Injection, which annotation marks a service class holding core business logic?",
+      "options": [
+        "@Service",
+        "@Controller",
+        "@Configuration",
+        "@Aspect"
+      ],
+      "correctIndex": 0,
+      "explanation": "@Service is a specialization of the @Component annotation that marks classes containing business logic and domain calculations."
+    },
+    {
+      "id": 9,
+      "question": "Which annotation ensures database operations inside a method execute inside a single transaction with automatic rollback?",
+      "options": [
+        "@Transactional",
+        "@Async",
+        "@Modifying",
+        "@Synchronized"
+      ],
+      "correctIndex": 0,
+      "explanation": "@Transactional manages transaction boundaries declaratively, automatically committing on return and rolling back on runtime exceptions."
+    },
+    {
+      "id": 10,
+      "question": "What Spring Boot actuator endpoint provides real-time application health metrics and liveness probes?",
+      "options": [
+        "/actuator/health",
+        "/actuator/info",
+        "/actuator/metrics",
+        "/actuator/beans"
+      ],
+      "correctIndex": 0,
+      "explanation": "/actuator/health provides health check status used by container orchestrators and monitoring tools."
+    }
   ],
-  python: [
+  "python": [
     {
-      id: 1,
-      question: "What is the output of `[x**2 for x in range(4) if x % 2 == 0]` in Python?",
-      options: ["[0, 4]", "[0, 1, 4, 9]", "[4, 16]", "[0, 2]"],
-      correctIndex: 0,
-      explanation: "The range is 0, 1, 2, 3. The even numbers are 0 and 2. Squaring them yields 0**2 = 0 and 2**2 = 4, resulting in the list [0, 4].",
+      "id": 1,
+      "question": "What is the output of `[x**2 for x in range(4) if x % 2 == 0]` in Python?",
+      "options": [
+        "[0, 4]",
+        "[0, 1, 4, 9]",
+        "[4, 16]",
+        "[0, 2]"
+      ],
+      "correctIndex": 0,
+      "explanation": "The range is 0, 1, 2, 3. The even numbers are 0 and 2. Squaring them yields 0**2 = 0 and 2**2 = 4, resulting in the list [0, 4]."
     },
     {
-      id: 2,
-      question: "Which Python data structure is immutable and defined with parentheses?",
-      options: ["Tuple", "List", "Dictionary", "Set"],
-      correctIndex: 0,
-      explanation: "Tuples are immutable sequence types in Python; once initialized, their elements cannot be appended, removed, or reassigned.",
+      "id": 2,
+      "question": "Which Python data structure is immutable and defined with parentheses?",
+      "options": [
+        "Tuple",
+        "List",
+        "Dictionary",
+        "Set"
+      ],
+      "correctIndex": 0,
+      "explanation": "Tuples are immutable sequence types in Python; once initialized, their elements cannot be appended, removed, or reassigned."
     },
     {
-      id: 3,
-      question: "Which library is the standard foundation for high-performance multidimensional array math in Python?",
-      options: ["NumPy", "Requests", "Flask", "BeautifulSoup"],
-      correctIndex: 0,
-      explanation: "NumPy provides the contiguous C-level ndarray object and optimized vector math routines fundamental to Python scientific computing.",
+      "id": 3,
+      "question": "Which library is the standard foundation for high-performance multidimensional array math in Python?",
+      "options": [
+        "NumPy",
+        "Requests",
+        "Flask",
+        "BeautifulSoup"
+      ],
+      "correctIndex": 0,
+      "explanation": "NumPy provides the contiguous C-level ndarray object and optimized vector math routines fundamental to Python scientific computing."
     },
     {
-      id: 4,
-      question: "In Python, which keyword is used to create an anonymous single-expression function?",
-      options: ["lambda", "def", "inline", "anon"],
-      correctIndex: 0,
-      explanation: "The `lambda` keyword defines anonymous single-expression functions in Python (e.g. `lambda x: x * 2`).",
+      "id": 4,
+      "question": "In Python, which keyword is used to create an anonymous single-expression function?",
+      "options": [
+        "lambda",
+        "def",
+        "inline",
+        "anon"
+      ],
+      "correctIndex": 0,
+      "explanation": "The `lambda` keyword defines anonymous single-expression functions in Python (e.g. `lambda x: x * 2`)."
     },
     {
-      id: 5,
-      question: "What does the GIL (Global Interpreter Lock) enforce in CPython?",
-      options: [
+      "id": 5,
+      "question": "What does the GIL (Global Interpreter Lock) enforce in CPython?",
+      "options": [
         "Only one native OS thread executes Python bytecode at any given instant",
         "Encrypts variables stored in shared memory",
         "Automatically terminates deadlocked processes",
-        "Enforces strict type annotations at compile time",
+        "Enforces strict type annotations at compile time"
       ],
-      correctIndex: 0,
-      explanation: "The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes simultaneously in CPython.",
+      "correctIndex": 0,
+      "explanation": "The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes simultaneously in CPython."
     },
+    {
+      "id": 6,
+      "question": "Which Python keyword transforms a standard function into a memory-efficient generator iterator?",
+      "options": [
+        "yield",
+        "return",
+        "generate",
+        "iter"
+      ],
+      "correctIndex": 0,
+      "explanation": "The `yield` statement suspends function execution and returns an intermediate value, maintaining state across calls."
+    },
+    {
+      "id": 7,
+      "question": "What is the average time complexity of looking up a key in a Python dictionary?",
+      "options": [
+        "O(1)",
+        "O(n)",
+        "O(log n)",
+        "O(n^2)"
+      ],
+      "correctIndex": 0,
+      "explanation": "Python dictionaries are implemented as dynamic hash tables, yielding O(1) average lookup and insertion time complexity."
+    },
+    {
+      "id": 8,
+      "question": "What special protocol method is executed when an object is entered using the 'with' statement?",
+      "options": [
+        "__enter__",
+        "__init__",
+        "__call__",
+        "__open__"
+      ],
+      "correctIndex": 0,
+      "explanation": "The context management protocol invokes `__enter__` upon entering a `with` block and `__exit__` upon exiting."
+    },
+    {
+      "id": 9,
+      "question": "Which built-in Python module is standard for serialization and deserialization of Python object hierarchies?",
+      "options": [
+        "pickle",
+        "json",
+        "marshal",
+        "copy"
+      ],
+      "correctIndex": 0,
+      "explanation": "The `pickle` module implements binary protocols for serializing and de-serializing a Python object structure."
+    },
+    {
+      "id": 10,
+      "question": "What is the result of `type(None)` in Python 3?",
+      "options": [
+        "<class 'NoneType'>",
+        "<class 'null'>",
+        "<class 'void'>",
+        "<class 'undefined'>"
+      ],
+      "correctIndex": 0,
+      "explanation": "In Python, `None` is a singleton instance of the `NoneType` class representing the absence of a value."
+    }
   ],
-  machinelearning: [
+  "machinelearning": [
     {
-      id: 1,
-      question: "What mathematical function maps real numbers to probabilities between 0 and 1 in binary classification?",
-      options: ["Sigmoid function", "Linear function", "ReLU", "Step function"],
-      correctIndex: 0,
-      explanation: "The Sigmoid (logistic) function σ(z) = 1 / (1 + e^(-z)) smoothly squashes any real value into the (0, 1) probability range.",
+      "id": 1,
+      "question": "What mathematical function maps real numbers to probabilities between 0 and 1 in binary classification?",
+      "options": [
+        "Sigmoid function",
+        "Linear function",
+        "ReLU",
+        "Step function"
+      ],
+      "correctIndex": 0,
+      "explanation": "The Sigmoid (logistic) function \u03c3(z) = 1 / (1 + e^(-z)) smoothly squashes any real value into the (0, 1) probability range."
     },
     {
-      id: 2,
-      question: "Which technique is primarily used to prevent overfitting in complex machine learning models?",
-      options: [
+      "id": 2,
+      "question": "Which technique is primarily used to prevent overfitting in complex machine learning models?",
+      "options": [
         "L1/L2 Regularization, dropout, and pruning",
         "Increasing the learning rate infinitely",
         "Removing validation and test sets",
-        "Artificially duplicating training examples",
+        "Artificially duplicating training examples"
       ],
-      correctIndex: 0,
-      explanation: "Regularization penalizes extreme weight magnitudes, preventing the model from fitting training noise and improving generalization.",
+      "correctIndex": 0,
+      "explanation": "Regularization penalizes extreme weight magnitudes, preventing the model from fitting training noise and improving generalization."
     },
     {
-      id: 3,
-      question: "In Cosine Similarity, what does a score of 1.0 indicate between two skill vectors?",
-      options: [
+      "id": 3,
+      "question": "In Cosine Similarity, what does a score of 1.0 indicate between two skill vectors?",
+      "options": [
         "Identical direction / perfect profile alignment",
         "Vectors are orthogonal (completely independent)",
         "Vectors point in opposite directions",
-        "Zero data points exist",
+        "Zero data points exist"
       ],
-      correctIndex: 0,
-      explanation: "Cosine similarity measures the cosine of the angle between two multi-dimensional vectors. Cos(0°) = 1.0, representing exact alignment.",
+      "correctIndex": 0,
+      "explanation": "Cosine similarity measures the cosine of the angle between two multi-dimensional vectors. Cos(0\u00b0) = 1.0, representing exact alignment."
     },
     {
-      id: 4,
-      question: "What is the primary evaluation metric recommended when assessing models on heavily imbalanced datasets?",
-      options: ["F1-Score / PR-AUC", "Accuracy", "Mean Absolute Error", "R-squared"],
-      correctIndex: 0,
-      explanation: "Accuracy can be deceptively high if the majority class dominates; F1-Score balances Precision and Recall for minority class detection.",
+      "id": 4,
+      "question": "What is the primary evaluation metric recommended when assessing models on heavily imbalanced datasets?",
+      "options": [
+        "F1-Score / PR-AUC",
+        "Accuracy",
+        "Mean Absolute Error",
+        "R-squared"
+      ],
+      "correctIndex": 0,
+      "explanation": "Accuracy can be deceptively high if the majority class dominates; F1-Score balances Precision and Recall for minority class detection."
     },
     {
-      id: 5,
-      question: "What does the Attempt-Damped Proficiency formula λ(n) = 1 / √(max(1, n)) achieve in SmartEvolve AI?",
-      options: [
+      "id": 5,
+      "question": "What does the Attempt-Damped Proficiency formula \u03bb(n) = 1 / \u221a(max(1, n)) achieve in SmartEvolve AI?",
+      "options": [
         "Dampens proficiency increments on repeated attempts to limit score inflation by 39%",
         "Doubles user scores on every retry",
         "Randomly shifts questions on each assessment",
-        "Deletes failed attempts from the database",
+        "Deletes failed attempts from the database"
       ],
-      correctIndex: 0,
-      explanation: "As validated in the SmartEvolve research paper, attempt damping ensures genuine mastery is required by decelerating score accumulation on repeated attempts.",
+      "correctIndex": 0,
+      "explanation": "As validated in the SmartEvolve research paper, attempt damping ensures genuine mastery is required by decelerating score accumulation on repeated attempts."
     },
+    {
+      "id": 6,
+      "question": "In Gradient Descent optimization, what hyperparameter controls the step size taken towards the minimum?",
+      "options": [
+        "Learning Rate (\u03b1)",
+        "Momentum Coefficient",
+        "Batch Size",
+        "Epoch Count"
+      ],
+      "correctIndex": 0,
+      "explanation": "The learning rate dictates the step size at each iteration while moving toward a minimum of a loss function."
+    },
+    {
+      "id": 7,
+      "question": "What ensemble learning method combines multiple independently trained Decision Trees via bootstrap aggregating (bagging)?",
+      "options": [
+        "Random Forest",
+        "Gradient Boosting Machine",
+        "Linear Discriminant Analysis",
+        "Support Vector Machine"
+      ],
+      "correctIndex": 0,
+      "explanation": "Random Forest builds multiple decision trees on bootstrapped data subsets and merges them to obtain a more accurate and stable prediction."
+    },
+    {
+      "id": 8,
+      "question": "What problem occurs when a model performs exceptionally well on training data but poorly on unseen test data?",
+      "options": [
+        "High Variance (Overfitting)",
+        "High Bias (Underfitting)",
+        "Data Leakage",
+        "Feature Collinearity"
+      ],
+      "correctIndex": 0,
+      "explanation": "Overfitting happens when a model learns the detailed patterns and noise in the training data to the extent that it negatively impacts test performance."
+    },
+    {
+      "id": 9,
+      "question": "Which cross-validation technique divides the dataset into 'k' equal subsets to evaluate model stability?",
+      "options": [
+        "K-Fold Cross-Validation",
+        "Monte Carlo Sampling",
+        "Leave-P-Out Testing",
+        "Bootstrapping"
+      ],
+      "correctIndex": 0,
+      "explanation": "K-Fold cross-validation splits the dataset into k folds, training on k-1 and validating on the remaining fold across k iterations."
+    },
+    {
+      "id": 10,
+      "question": "What does an Area Under the ROC Curve (AUC-ROC) of 0.5 represent?",
+      "options": [
+        "Performance equivalent to random guessing",
+        "Perfect classification ability",
+        "Severe inverse correlation",
+        "Zero false positives"
+      ],
+      "correctIndex": 0,
+      "explanation": "An AUC-ROC score of 0.5 represents a model with no discrimination capacity, performing no better than random guessing."
+    }
   ],
-  sql: [
+  "sql": [
     {
-      id: 1,
-      question: "Which SQL clause is used to filter records after performing an aggregate GROUP BY operation?",
-      options: ["HAVING", "WHERE", "ORDER BY", "QUALIFY"],
-      correctIndex: 0,
-      explanation: "WHERE filters rows before grouping; HAVING filters the aggregated groups created by GROUP BY.",
+      "id": 1,
+      "question": "Which SQL clause is used to filter records after performing an aggregate GROUP BY operation?",
+      "options": [
+        "HAVING",
+        "WHERE",
+        "ORDER BY",
+        "QUALIFY"
+      ],
+      "correctIndex": 0,
+      "explanation": "WHERE filters rows before grouping; HAVING filters the aggregated groups created by GROUP BY."
     },
     {
-      id: 2,
-      question: "What does ACID stand for in database transaction theory?",
-      options: [
+      "id": 2,
+      "question": "What does ACID stand for in database transaction theory?",
+      "options": [
         "Atomicity, Consistency, Isolation, Durability",
         "Asynchronous, Concurrent, Indexed, Distributed",
         "Access, Control, Identity, Data",
-        "Active, Cached, Insert, Delete",
+        "Active, Cached, Insert, Delete"
       ],
-      correctIndex: 0,
-      explanation: "ACID principles guarantee reliable transaction processing in relational database management systems.",
+      "correctIndex": 0,
+      "explanation": "ACID principles guarantee reliable transaction processing in relational database management systems."
     },
     {
-      id: 3,
-      question: "Which JOIN returns all rows from the left table and matching rows from the right table?",
-      options: ["LEFT OUTER JOIN", "INNER JOIN", "CROSS JOIN", "RIGHT OUTER JOIN"],
-      correctIndex: 0,
-      explanation: "LEFT JOIN retains every record from the left table; if no match exists in the right table, NULLs are returned for right columns.",
+      "id": 3,
+      "question": "Which JOIN returns all rows from the left table and matching rows from the right table?",
+      "options": [
+        "LEFT OUTER JOIN",
+        "INNER JOIN",
+        "CROSS JOIN",
+        "RIGHT OUTER JOIN"
+      ],
+      "correctIndex": 0,
+      "explanation": "LEFT JOIN retains every record from the left table; if no match exists in the right table, NULLs are returned for right columns."
     },
     {
-      id: 4,
-      question: "What is the index data structure used by most relational engines for high-performance B-tree indexing?",
-      options: ["B+ Tree", "Linked List", "Binary Heap", "Hash Ring"],
-      correctIndex: 0,
-      explanation: "B+ Trees store all actual record pointers in leaf nodes linked sequentially, facilitating both fast point lookups and range scans.",
+      "id": 4,
+      "question": "What is the index data structure used by most relational engines for high-performance B-tree indexing?",
+      "options": [
+        "B+ Tree",
+        "Linked List",
+        "Binary Heap",
+        "Hash Ring"
+      ],
+      "correctIndex": 0,
+      "explanation": "B+ Trees store all actual record pointers in leaf nodes linked sequentially, facilitating both fast point lookups and range scans."
     },
     {
-      id: 5,
-      question: "What is the primary purpose of database normalization (1NF through 3NF)?",
-      options: [
+      "id": 5,
+      "question": "What is the primary purpose of database normalization (1NF through 3NF)?",
+      "options": [
         "Minimize data redundancy and avoid update anomalies",
         "Compress database disk files",
         "Encrypt sensitive passwords",
-        "Speed up network packet transfer",
+        "Speed up network packet transfer"
       ],
-      correctIndex: 0,
-      explanation: "Normalization decomposes relations to ensure each fact is stored only once, eliminating insertion, update, and deletion anomalies.",
+      "correctIndex": 0,
+      "explanation": "Normalization decomposes relations to ensure each fact is stored only once, eliminating insertion, update, and deletion anomalies."
     },
+    {
+      "id": 6,
+      "question": "Which constraint uniquely identifies each record in a database table while enforcing NOT NULL?",
+      "options": [
+        "PRIMARY KEY",
+        "FOREIGN KEY",
+        "CHECK",
+        "DEFAULT"
+      ],
+      "correctIndex": 0,
+      "explanation": "A PRIMARY KEY constraint uniquely identifies each record in a table and cannot contain NULL values."
+    },
+    {
+      "id": 7,
+      "question": "What technique is most effective in preventing SQL Injection vulnerabilities in application code?",
+      "options": [
+        "Parameterized queries (Prepared Statements)",
+        "Escaping single quotes with regex",
+        "Hashing SQL queries",
+        "Using GET requests only"
+      ],
+      "correctIndex": 0,
+      "explanation": "Prepared Statements separate query structure from untrusted user parameters, making SQL injection impossible."
+    },
+    {
+      "id": 8,
+      "question": "Which SQL window function assigns a sequential unique integer to rows within a partition starting from 1?",
+      "options": [
+        "ROW_NUMBER()",
+        "RANK()",
+        "DENSE_RANK()",
+        "LEAD()"
+      ],
+      "correctIndex": 0,
+      "explanation": "ROW_NUMBER() outputs an incremental sequential integer for each row without gaps or duplicate values."
+    },
+    {
+      "id": 9,
+      "question": "Which SQL command is used to permanently remove all rows from a table rapidly without logging row-by-row deletions?",
+      "options": [
+        "TRUNCATE TABLE",
+        "DELETE FROM",
+        "DROP TABLE",
+        "REMOVE TABLE"
+      ],
+      "correctIndex": 0,
+      "explanation": "TRUNCATE TABLE deallocates the data pages directly, making it significantly faster than DELETE which writes undo logs for each row."
+    },
+    {
+      "id": 10,
+      "question": "What transaction isolation level completely prevents Dirty Reads, Non-Repeatable Reads, and Phantom Reads?",
+      "options": [
+        "SERIALIZABLE",
+        "REPEATABLE READ",
+        "READ COMMITTED",
+        "READ UNCOMMITTED"
+      ],
+      "correctIndex": 0,
+      "explanation": "SERIALIZABLE is the highest ANSI SQL isolation level, executing transactions as if they occurred serially."
+    }
   ],
-  general: [
+  "general": [
     {
-      id: 1,
-      question: "What is the time complexity of searching for an element in a balanced Binary Search Tree (AVL / Red-Black)?",
-      options: ["O(log n)", "O(n)", "O(1)", "O(n log n)"],
-      correctIndex: 0,
-      explanation: "Because a balanced BST halves the search space at each comparison, search operations execute in O(log n) time.",
+      "id": 1,
+      "question": "What is the time complexity of searching for an element in a balanced Binary Search Tree (AVL / Red-Black)?",
+      "options": [
+        "O(log n)",
+        "O(n)",
+        "O(1)",
+        "O(n log n)"
+      ],
+      "correctIndex": 0,
+      "explanation": "Because a balanced BST halves the search space at each comparison, search operations execute in O(log n) time."
     },
     {
-      id: 2,
-      question: "In Kahn's Algorithm for Topological Sorting, what prerequisite condition must the graph satisfy?",
-      options: [
+      "id": 2,
+      "question": "In Kahn's Algorithm for Topological Sorting, what prerequisite condition must the graph satisfy?",
+      "options": [
         "Directed Acyclic Graph (DAG) with no circular cycles",
         "Fully connected undirected graph",
         "Weighted complete bipartite graph",
-        "Binary tree with degree at most 2",
+        "Binary tree with degree at most 2"
       ],
-      correctIndex: 0,
-      explanation: "Topological sorting can only be performed on Directed Acyclic Graphs (DAGs) because cycles prevent establishing a valid prerequisite sequence.",
+      "correctIndex": 0,
+      "explanation": "Topological sorting can only be performed on Directed Acyclic Graphs (DAGs) because cycles prevent establishing a valid prerequisite sequence."
     },
     {
-      id: 3,
-      question: "Which cryptographic hash function is used to produce EVM 32-byte dual-hash verifiable credentials in SmartEvolve AI?",
-      options: ["Keccak-256", "MD5", "DES", "CRC32"],
-      correctIndex: 0,
-      explanation: "SmartEvolve AI uses Keccak-256 (the Ethereum standard) combined with student profile and achievement hashes for on-chain credential integrity.",
+      "id": 3,
+      "question": "Which cryptographic hash function is used to produce EVM 32-byte dual-hash verifiable credentials in SmartEvolve AI?",
+      "options": [
+        "Keccak-256",
+        "MD5",
+        "DES",
+        "CRC32"
+      ],
+      "correctIndex": 0,
+      "explanation": "SmartEvolve AI uses Keccak-256 (the Ethereum standard) combined with student profile and achievement hashes for on-chain credential integrity."
     },
     {
-      id: 4,
-      question: "Which HTTP status code signifies that a client must authenticate itself to get the requested response?",
-      options: ["401 Unauthorized", "403 Forbidden", "404 Not Found", "500 Internal Server Error"],
-      correctIndex: 0,
-      explanation: "401 indicates missing or invalid authentication credentials; 403 indicates authentication was recognized but authorization is forbidden.",
+      "id": 4,
+      "question": "Which HTTP status code signifies that a client must authenticate itself to get the requested response?",
+      "options": [
+        "401 Unauthorized",
+        "403 Forbidden",
+        "404 Not Found",
+        "500 Internal Server Error"
+      ],
+      "correctIndex": 0,
+      "explanation": "401 indicates missing or invalid authentication credentials; 403 indicates authentication was recognized but authorization is forbidden."
     },
     {
-      id: 5,
-      question: "What is the primary role of a container runtime like Docker in modern microservices architectures?",
-      options: [
+      "id": 5,
+      "question": "What is the primary role of a container runtime like Docker in modern microservices architectures?",
+      "options": [
         "Package applications with their entire runtime dependencies into portable, isolated containers",
         "Replace operating systems with custom hardware drivers",
         "Automatically write unit tests for backend controllers",
-        "Format code before committing to Git",
+        "Format code before committing to Git"
       ],
-      correctIndex: 0,
-      explanation: "Docker containers encapsulate code, libraries, and runtime dependencies together, guaranteeing uniform execution across dev and production.",
+      "correctIndex": 0,
+      "explanation": "Docker containers encapsulate code, libraries, and runtime dependencies together, guaranteeing uniform execution across dev and production."
     },
-  ],
+    {
+      "id": 6,
+      "question": "Which sorting algorithm guarantees O(n log n) worst-case time complexity using a divide-and-conquer strategy?",
+      "options": [
+        "Merge Sort",
+        "Quick Sort",
+        "Bubble Sort",
+        "Insertion Sort"
+      ],
+      "correctIndex": 0,
+      "explanation": "Merge Sort always splits arrays in half and merges sorted halves, guaranteeing O(n log n) even in worst-case scenarios."
+    },
+    {
+      "id": 7,
+      "question": "In RESTful API design, what does it mean for an HTTP method to be 'idempotent'?",
+      "options": [
+        "Making multiple identical requests produces the exact same server state as making a single request",
+        "The request never requires an authentication token",
+        "The response is always returned within 10 milliseconds",
+        "The endpoint only accepts encrypted payloads"
+      ],
+      "correctIndex": 0,
+      "explanation": "Methods like GET, PUT, and DELETE are idempotent because executing them repeatedly results in identical persistent state."
+    },
+    {
+      "id": 8,
+      "question": "What is the primary mechanism of asymmetric public-key cryptography?",
+      "options": [
+        "A mathematically linked public key for encryption and private key for decryption",
+        "A single shared secret password across all endpoints",
+        "Randomly swapping bytes in network packets",
+        "Storing plain text tokens in client cookies"
+      ],
+      "correctIndex": 0,
+      "explanation": "Asymmetric encryption pairs a public key (openly distributed) with a private key (held secret) for secure signatures and data encryption."
+    },
+    {
+      "id": 9,
+      "question": "What is the core purpose of a Continuous Integration / Continuous Deployment (CI/CD) pipeline?",
+      "options": [
+        "Automate building, testing, and deploying code changes reliably into production",
+        "Write documentation automatically from Jira tickets",
+        "Replace cloud database servers with flat files",
+        "Automatically generate Google SMTP app passwords"
+      ],
+      "correctIndex": 0,
+      "explanation": "CI/CD pipelines automate regression testing, container packaging, and release deployments whenever commits are pushed."
+    },
+    {
+      "id": 10,
+      "question": "Which data structure follows the Last-In, First-Out (LIFO) order of element retrieval?",
+      "options": [
+        "Stack",
+        "Queue",
+        "Priority Queue",
+        "Circular Buffer"
+      ],
+      "correctIndex": 0,
+      "explanation": "A Stack operates on a LIFO basis where the most recently pushed element is the first to be popped."
+    }
+  ]
 };
 
 function getTopicKey(skillName?: string, title?: string): string {
