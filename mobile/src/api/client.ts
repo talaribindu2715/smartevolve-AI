@@ -22,6 +22,7 @@ import {
   EligibleCredential,
   ClaimCredentialRequest,
   TrendAnalysisSummary,
+  CareerMlPrediction,
 } from "../types";
 
 // Dynamic API base URL configuration:
@@ -44,7 +45,9 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
     Accept: "application/json",
     ...(options.headers as Record<string, string>),
 
-  };
+
+
+};
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -201,4 +204,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ message, currentCareerContext }),
     }),
-  };
+
+  // Machine Learning Career Path Prediction & Simulation
+  getMlCareerPrediction: () =>
+    apiFetch<CareerMlPrediction>("/api/careers/ml-predict"),
+
+  simulateMlCareerPrediction: (simulatedSkillOverrides: Record<string, number>) =>
+    apiFetch<CareerMlPrediction>("/api/careers/ml-simulate", {
+      method: "POST",
+      body: JSON.stringify({ simulatedSkillOverrides }),
+    }),
+};

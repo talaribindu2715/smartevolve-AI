@@ -354,3 +354,35 @@ export interface TrendAnalysisSummary {
   recommendedNextActions: string[];
 }
 
+
+export interface CareerMlPrediction {
+  topCareerMatch: string;
+  topCareerConfidencePct: number;
+  readinessLevel: string;
+  rankedCareerMatches: {
+    careerName: string;
+    matchProbabilityPct: number;
+    vectorSimilarityScore: number;
+    readinessLevel: string;
+    matchedSkillsCount: number;
+    missingSkillsCount: number;
+  }[];
+  topContributingSkills: string[];
+  criticalGapsToBridge: {
+    skillName: string;
+    currentProficiency: number;
+    targetBenchmark: number;
+    deficit: number;
+    importanceGiniWeight: number;
+    priority: string;
+  }[];
+  explainableAiInsight: string;
+  modelMetadata: {
+    modelType: string;
+    accuracy5FoldPct: number;
+    f1MacroScorePct: number;
+    trainingSamples: number;
+    distinctCareersCount: number;
+    inputFeaturesCount: number;
+  };
+}

@@ -1,0 +1,22 @@
+{
+  "dataset_samples": 5000,
+  "features_count": 32,
+  "classes_count": 16,
+  "mean_accuracy": 0.9904,
+  "accuracy_std": 0.003261901286060021,
+  "mean_f1_macro": 0.9904139556368573,
+  "mean_precision": 0.9906350949477982,
+  "mean_recall": 0.9904057859703022,
+  "top_predictive_skills": [
+    "Machine Learning",
+    "System Design",
+    "Docker",
+    "RESTful API Design",
+    "Spring Boot",
+    "Data Visualization",
+    "React & React Native",
+    "Prompt Engineering & LLMs",
+    "Software Testing & QA",
+    "Java"
+  ]
+}
