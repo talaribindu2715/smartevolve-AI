@@ -52,7 +52,6 @@ export default function RegisterScreen() {
   // Google SMTP OTP Verification Modal State
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [expectedOtp, setExpectedOtp] = useState("");
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -81,73 +80,16 @@ export default function RegisterScreen() {
   const onSubmit = async (data: RegisterFormData) => {
     setAuthError(null);
     setPendingFormData(data);
-    
-    // Always generate a reliable fallback 6-digit OTP so testing is never blocked
-    const fallbackOtp = String(Math.floor(100000 + Math.random() * 900000));
-    setExpectedOtp(fallbackOtp);
-    setOtpCode(fallbackOtp);
-    
+    setOtpCode(""); // User will enter the real OTP received in their email
     setOtpModalVisible(true);
     setOtpSending(true);
     setOtpError(null);
 
-    // Send verification OTP via Google SMTP (Spring Boot backend)
     try {
-      const res = await api.sendSignupOtp(data.email.trim());
-      if (res && res.debugOtp) {
-        setOtpCode(res.debugOtp);
-        setExpectedOtp(res.debugOtp);
-      }
-    } catch (e: any) {
-      console.warn("Backend SMTP offline or building, using fallback OTP:", e);
-    } finally {
-      setOtpSending(false);
-    }
-  };
-
-  const handleVerifyOtpAndRegister = async () => {
-    if (!pendingFormData) return;
-    if (otpCode.trim().length < 6) {
-      setOtpError("Please enter the complete 6-digit verification code");
-      return;
-    }
-
-    setOtpVerifying(true);
-    setOtpError(null);
-
-    try {
-      // 1. Verify OTP with Backend (with graceful fallback if Render is still building)
-      try {
-        await api.verifySignupOtp(pendingFormData.email.trim(), otpCode.trim());
-      } catch (e: any) {
-        // If backend returns error, verify against local fallback OTP
-        if (otpCode.trim() !== expectedOtp && otpCode.trim() !== "000000") {
-          setOtpError("Invalid verification code. Please check and try again.");
-          setOtpVerifying(false);
-          return;
-        }
-      }
-
-      // 2. Complete Account Registration
-      setOtpModalVisible(false);
-      setLoading(true);
-      await executeFinalRegistration(pendingFormData);
-    } catch (err: any) {
-      setAuthError(err.message || "Failed to register account");
-    } finally {
-      setOtpVerifying(false);
-      setLoading(false);
-    }
-  };
-
-  const executeFinalRegistration = async (data: RegisterFormData) => {
-    try {
-      let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6IiIgKyBkYXRhLmVtYWlsLCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.fake";
-      let userId = "00000000-0000-0000-0000-000000000001";
-
+      // 1. Dispatch real Supabase verification email with 6-digit OTP via Google SMTP
       if (isSupabaseConfigured()) {
-        const { data: authData, error } = await supabase.auth.signUp({
-          email: data.email,
+        const { error } = await supabase.auth.signUp({
+          email: data.email.trim(),
           password: data.password,
           options: {
             data: {
@@ -161,35 +103,115 @@ export default function RegisterScreen() {
         });
 
         if (error) {
-          throw new Error(error.message);
-        }
-
-        if (authData.session) {
-          token = authData.session.access_token;
-          userId = authData.session.user.id;
-        } else if (authData.user) {
-          userId = authData.user.id;
+          if (error.message.toLowerCase().includes("already registered")) {
+            // If already registered, resend the signup OTP
+            await supabase.auth.resend({
+              type: "signup",
+              email: data.email.trim(),
+            });
+          } else {
+            console.warn("Supabase signUp notice:", error.message);
+          }
         }
       }
 
+      // 2. Also notify Spring Boot backend
+      api.sendSignupOtp(data.email.trim()).catch(() => {});
+    } catch (e: any) {
+      console.warn("Error sending signup OTP:", e);
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtpAndRegister = async () => {
+    if (!pendingFormData) return;
+    if (otpCode.trim().length < 6) {
+      setOtpError("Please enter the complete 6-digit verification code from your email");
+      return;
+    }
+
+    setOtpVerifying(true);
+    setOtpError(null);
+
+    try {
+      let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake";
+      let userId = "00000000-0000-0000-0000-000000000001";
+      let verified = false;
+
+      // 1. Verify OTP with Supabase
+      if (isSupabaseConfigured()) {
+        const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+          email: pendingFormData.email.trim(),
+          token: otpCode.trim(),
+          type: "signup",
+        });
+
+        if (verifyError) {
+          // Retry with type "email"
+          const { data: retryData, error: retryError } = await supabase.auth.verifyOtp({
+            email: pendingFormData.email.trim(),
+            token: otpCode.trim(),
+            type: "email",
+          });
+
+          if (!retryError && retryData) {
+            verified = true;
+            if (retryData.session) {
+              token = retryData.session.access_token;
+              userId = retryData.session.user.id;
+            } else if (retryData.user) {
+              userId = retryData.user.id;
+            }
+          }
+        } else if (verifyData) {
+          verified = true;
+          if (verifyData.session) {
+            token = verifyData.session.access_token;
+            userId = verifyData.session.user.id;
+          } else if (verifyData.user) {
+            userId = verifyData.user.id;
+          }
+        }
+      }
+
+      // 2. Check Backend if Supabase verify had an issue
+      if (!verified) {
+        try {
+          await api.verifySignupOtp(pendingFormData.email.trim(), otpCode.trim());
+          verified = true;
+        } catch (_) {}
+      }
+
+      // If still not verified, show error
+      if (!verified && isSupabaseConfigured()) {
+        setOtpError("Invalid verification code. Please check your inbox or spam folder.");
+        setOtpVerifying(false);
+        return;
+      }
+
+      // 3. Complete Session & Login
+      setOtpModalVisible(false);
+      setLoading(true);
       await login(token, userId);
 
-      // Save initial profile details
+      // 4. Save initial profile details
       try {
         await api.updateProfile({
-          fullName: data.fullName,
-          educationLevel: data.educationLevel,
-          institution: data.institution || "Engineering College",
-          branch: data.branch,
-          graduationYear: data.graduationYear ? parseInt(data.graduationYear, 10) : 2027,
+          fullName: pendingFormData.fullName,
+          educationLevel: pendingFormData.educationLevel,
+          institution: pendingFormData.institution || "Engineering College",
+          branch: pendingFormData.branch,
+          graduationYear: pendingFormData.graduationYear ? parseInt(pendingFormData.graduationYear, 10) : 2027,
           onboardingCompleted: true,
         });
       } catch (_) {}
 
       router.replace("/(tabs)");
     } catch (err: any) {
-      setAuthError(err.message || "Failed to register account");
+      setOtpError(err.message || "Failed to verify code and register account");
     } finally {
+      setOtpVerifying(false);
       setLoading(false);
     }
   };
@@ -413,16 +435,9 @@ export default function RegisterScreen() {
                 We sent a 6-digit verification code via Google SMTP to:
               </Text>
               <Text style={styles.modalEmailText}>{pendingFormData?.email}</Text>
-              {otpCode.length === 6 && (
-                <View style={{ backgroundColor: "rgba(16, 185, 129, 0.12)", borderColor: colors.success, borderWidth: 1, borderRadius: radius.sm, padding: 8, marginBottom: 10 }}>
-                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700", textAlign: "center" }}>
-                    ⚡ Code Auto-Filled: {otpCode}
-                  </Text>
-                  <Text style={{ color: colors.textMuted, fontSize: 10, textAlign: "center", marginTop: 2 }}>
-                    (Check inbox or click verify below)
-                  </Text>
-                </View>
-              )}
+              <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: "center", marginBottom: 12 }}>
+                Please check your Gmail inbox (and Spam folder) for the 6-digit verification code.
+              </Text>
 
               {otpError ? (
                 <View style={styles.otpErrorBanner}>
@@ -434,7 +449,7 @@ export default function RegisterScreen() {
                 <View style={{ paddingVertical: 20, alignItems: "center" }}>
                   <ActivityIndicator size="small" color={colors.primary} />
                   <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>
-                    Dispatching verification email...
+                    Dispatching verification email via Google SMTP...
                   </Text>
                 </View>
               ) : (
@@ -465,12 +480,22 @@ export default function RegisterScreen() {
 
               <TouchableOpacity
                 style={styles.resendOtpBtn}
-                onPress={() => {
+                onPress={async () => {
                   if (pendingFormData) {
                     setOtpSending(true);
-                    api.sendSignupOtp(pendingFormData.email.trim())
-                      .catch(() => {})
-                      .finally(() => setOtpSending(false));
+                    setOtpError(null);
+                    try {
+                      if (isSupabaseConfigured()) {
+                        await supabase.auth.resend({
+                          type: "signup",
+                          email: pendingFormData.email.trim(),
+                        });
+                      }
+                      await api.sendSignupOtp(pendingFormData.email.trim());
+                    } catch (_) {}
+                    finally {
+                      setOtpSending(false);
+                    }
                   }
                 }}
               >
