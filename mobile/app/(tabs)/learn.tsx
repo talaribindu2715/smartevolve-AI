@@ -307,7 +307,7 @@ export default function LearnScreen() {
                 {dailyTasksCompleted.task2 && <Text style={styles.checkmark}>✓</Text>}
               </View>
               <Text style={[styles.taskText, dailyTasksCompleted.task2 && styles.taskTextDone]}>
-                Watch 1 recommended YouTube deep-dive video masterclass
+                Watch 1 recommended SmartEvolve deep-dive video masterclass
               </Text>
             </TouchableOpacity>
 

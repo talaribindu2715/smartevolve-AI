@@ -110,7 +110,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               <Path d="M15 3h6v6" />
               <Path d="M10 14L21 3" />
             </Svg>
-            <Text style={styles.externalBtnText}>Open YouTube</Text>
+            <Text style={styles.externalBtnText}>Open Stream</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -179,7 +179,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             {isLoading && (
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>Connecting to YouTube...</Text>
+                <Text style={styles.loadingText}>Connecting to SmartEvolve Player...</Text>
               </View>
             )}
           </>
@@ -197,7 +197,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               </Svg>
             </View>
             <View style={styles.watchBadge}>
-              <Text style={styles.watchBadgeText}>Tap to Watch on YouTube</Text>
+              <Text style={styles.watchBadgeText}>Tap to Play Masterclass</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -215,7 +215,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             <Path d="M15 3h6v6" />
             <Path d="M10 14L21 3" />
           </Svg>
-          <Text style={styles.externalBtnText}>Open YouTube App</Text>
+          <Text style={styles.externalBtnText}>Open External Stream</Text>
         </TouchableOpacity>
       </View>
     </View>

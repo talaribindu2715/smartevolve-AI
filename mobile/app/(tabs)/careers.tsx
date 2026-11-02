@@ -848,7 +848,7 @@ export default function CareersScreen() {
               </View>
               <Text style={styles.formulaDesc}>
                 • Critical foundational competencies carry higher Gini multipliers (up to 2.0x).{"\n"}
-                • Proficiency is empirically updated through assessments, YouTube video milestones, and verifiable on-chain credentials.{"\n"}
+                • Proficiency is empirically updated through assessments, SmartEvolve Academy video milestones, and verifiable on-chain credentials.{"\n"}
                 • Job readiness thresholds: Ready (≥80%), High Potential (≥60%), Developing (≥40%), Exploring (&lt;40%).
               </Text>
               <Button

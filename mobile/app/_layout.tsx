@@ -73,7 +73,7 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="videos/index"
-                options={{ title: "YouTube Academy", headerShown: true }}
+                options={{ title: "SmartEvolve Academy", headerShown: true }}
               />
               <Stack.Screen
                 name="videos/[id]"

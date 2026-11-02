@@ -445,12 +445,12 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Recommended YouTube Video Masterclasses */}
+        {/* Recommended SmartEvolve Video Masterclasses */}
         {recommendedVideos && recommendedVideos.length > 0 && (
           <View style={styles.sectionWrap}>
             <View style={styles.sectionHeader}>
               <View>
-                <Text style={styles.sectionTitle}>YouTube Video Academy</Text>
+                <Text style={styles.sectionTitle}>SmartEvolve Academy</Text>
                 <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
                   Video lessons mapped to your active skill gaps
                 </Text>
