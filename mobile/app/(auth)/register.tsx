@@ -8,8 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
-import { useRouter, Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -44,6 +46,17 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Google SMTP OTP Verification Modal State
+  const [otpModalVisible, setOtpModalVisible] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [pendingFormData, setPendingFormData] = useState<RegisterFormData | null>(null);
+
   const {
     control,
     handleSubmit,
@@ -65,9 +78,55 @@ export default function RegisterScreen() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    setLoading(true);
     setAuthError(null);
+    setPendingFormData(data);
+    setOtpModalVisible(true);
+    setOtpSending(true);
+    setOtpError(null);
 
+    // Send verification OTP via Google SMTP
+    try {
+      await api.sendSignupOtp(data.email.trim());
+    } catch (e: any) {
+      console.warn("Could not dispatch signup OTP:", e);
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtpAndRegister = async () => {
+    if (!pendingFormData) return;
+    if (otpCode.trim().length < 6) {
+      setOtpError("Please enter the complete 6-digit verification code");
+      return;
+    }
+
+    setOtpVerifying(true);
+    setOtpError(null);
+
+    try {
+      // 1. Verify OTP with Backend
+      try {
+        await api.verifySignupOtp(pendingFormData.email.trim(), otpCode.trim());
+      } catch (e: any) {
+        setOtpError(e.message || "Invalid verification code. Please try again.");
+        setOtpVerifying(false);
+        return;
+      }
+
+      // 2. Complete Account Registration
+      setOtpModalVisible(false);
+      setLoading(true);
+      await executeFinalRegistration(pendingFormData);
+    } catch (err: any) {
+      setAuthError(err.message || "Failed to register account");
+    } finally {
+      setOtpVerifying(false);
+      setLoading(false);
+    }
+  };
+
+  const executeFinalRegistration = async (data: RegisterFormData) => {
     try {
       let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJlbWFpbCI6IiIgKyBkYXRhLmVtYWlsLCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.fake";
       let userId = "00000000-0000-0000-0000-000000000001";
@@ -157,7 +216,9 @@ export default function RegisterScreen() {
                 />
               )}
             />
-            {errors.fullName && <Text style={styles.fieldError}>{errors.fullName.message}</Text>}
+            {errors.fullName?.message ? (
+              <Text style={styles.fieldError}>{errors.fullName.message}</Text>
+            ) : null}
           </View>
 
           {/* Email */}
@@ -179,51 +240,73 @@ export default function RegisterScreen() {
                 />
               )}
             />
-            {errors.email && <Text style={styles.fieldError}>{errors.email.message}</Text>}
+            {errors.email?.message ? (
+              <Text style={styles.fieldError}>{errors.email.message}</Text>
+            ) : null}
           </View>
 
-          {/* Password */}
+          {/* Password with View Toggle */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Password *</Text>
             <Controller
               control={control}
               name="password"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="••••••••••••"
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <View style={[styles.passwordInputWrap, errors.password && styles.inputError]}>
+                  <TextInput
+                    style={styles.passwordInputField}
+                    placeholder="••••••••••••"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showPassword}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeToggleBtn}
+                    onPress={() => setShowPassword(!showPassword)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.eyeToggleText}>{showPassword ? "Hide" : "Show"}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             />
-            {errors.password && <Text style={styles.fieldError}>{errors.password.message}</Text>}
+            {errors.password?.message ? (
+              <Text style={styles.fieldError}>{errors.password.message}</Text>
+            ) : null}
           </View>
 
-          {/* Confirm Password */}
+          {/* Confirm Password with View Toggle */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Confirm Password *</Text>
             <Controller
               control={control}
               name="confirmPassword"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.confirmPassword && styles.inputError]}
-                  placeholder="••••••••••••"
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <View style={[styles.passwordInputWrap, errors.confirmPassword && styles.inputError]}>
+                  <TextInput
+                    style={styles.passwordInputField}
+                    placeholder="••••••••••••"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showConfirmPassword}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeToggleBtn}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.eyeToggleText}>{showConfirmPassword ? "Hide" : "Show"}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             />
-            {errors.confirmPassword && (
+            {errors.confirmPassword?.message ? (
               <Text style={styles.fieldError}>{errors.confirmPassword.message}</Text>
-            )}
+            ) : null}
           </View>
 
           {/* Degree & Branch */}
@@ -275,7 +358,7 @@ export default function RegisterScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={styles.input}
-                  placeholder="National Institute of Technology"
+                  placeholder="K.S.R.M. College of Engineering"
                   placeholderTextColor={colors.textMuted}
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -286,7 +369,7 @@ export default function RegisterScreen() {
           </View>
 
           <Button
-            title="Create Student Profile"
+            title="Create Student Profile & Verify Email"
             onPress={handleSubmit(onSubmit)}
             loading={loading}
             size="lg"
@@ -300,6 +383,78 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Google SMTP Email OTP Verification Modal */}
+        <Modal visible={otpModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBody}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Verify Academic Email</Text>
+                <TouchableOpacity onPress={() => setOtpModalVisible(false)}>
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.modalSub}>
+                We sent a 6-digit verification code via Google SMTP to:
+              </Text>
+              <Text style={styles.modalEmailText}>{pendingFormData?.email}</Text>
+
+              {otpError ? (
+                <View style={styles.otpErrorBanner}>
+                  <Text style={styles.otpErrorText}>{otpError}</Text>
+                </View>
+              ) : null}
+
+              {otpSending ? (
+                <View style={{ paddingVertical: 20, alignItems: "center" }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>
+                    Dispatching verification email...
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ marginVertical: spacing.md }}>
+                  <Text style={styles.otpLabel}>Enter 6-Digit OTP</Text>
+                  <TextInput
+                    style={styles.otpInput}
+                    placeholder="000000"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    value={otpCode}
+                    onChangeText={(val) => {
+                      setOtpCode(val);
+                      setOtpError(null);
+                    }}
+                  />
+                </View>
+              )}
+
+              <Button
+                title="Verify Code & Complete Registration"
+                onPress={handleVerifyOtpAndRegister}
+                loading={otpVerifying}
+                size="md"
+                style={{ width: "100%", marginTop: spacing.xs }}
+              />
+
+              <TouchableOpacity
+                style={styles.resendOtpBtn}
+                onPress={() => {
+                  if (pendingFormData) {
+                    setOtpSending(true);
+                    api.sendSignupOtp(pendingFormData.email.trim())
+                      .catch(() => {})
+                      .finally(() => setOtpSending(false));
+                  }
+                }}
+              >
+                <Text style={styles.resendOtpText}>Didn't receive email? Tap to resend code</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -376,6 +531,30 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
   },
+  passwordInputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    borderRadius: radius.md,
+  },
+  passwordInputField: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    color: colors.textPrimary,
+    fontSize: 14,
+  },
+  eyeToggleBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+  },
+  eyeToggleText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   inputError: {
     borderColor: colors.error,
   },
@@ -398,5 +577,91 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.md,
+  },
+  modalBody: {
+    width: "100%",
+    maxWidth: 440,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  modalTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  modalCloseText: {
+    color: colors.textMuted,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  modalSub: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+  },
+  modalEmailText: {
+    color: colors.accent,
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: spacing.sm,
+  },
+  otpLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  otpInput: {
+    backgroundColor: colors.background,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: 12,
+    fontSize: 24,
+    letterSpacing: 8,
+    textAlign: "center",
+    color: colors.textPrimary,
+    fontFamily: "monospace",
+  },
+  otpErrorBanner: {
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderColor: colors.error,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    padding: spacing.xs,
+    marginVertical: spacing.xs,
+  },
+  otpErrorText: {
+    color: colors.error,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  resendOtpBtn: {
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  resendOtpText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

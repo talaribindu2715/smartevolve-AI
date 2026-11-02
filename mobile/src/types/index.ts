@@ -386,3 +386,11 @@ export interface CareerMlPrediction {
     inputFeaturesCount: number;
   };
 }
+
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  email?: string;
+  expiresInMinutes?: number;
+  resetToken?: string;
+}

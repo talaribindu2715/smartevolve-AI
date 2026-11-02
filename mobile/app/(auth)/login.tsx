@@ -8,9 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from "react-native";
-import { useRouter, Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,6 +30,7 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -136,32 +136,46 @@ export default function LoginScreen() {
                 />
               )}
             />
-            {errors.email && (
+            {errors.email?.message ? (
               <Text style={styles.fieldError}>{errors.email.message}</Text>
-            )}
+            ) : null}
           </View>
 
-          {/* Password */}
+          {/* Password with View Toggle & Forgot Password Link */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordHeaderRow}>
+              <Text style={styles.label}>Password</Text>
+              <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+                <Text style={styles.forgotPasswordLink}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
             <Controller
               control={control}
               name="password"
               render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="••••••••••••"
-                  placeholderTextColor={colors.textMuted}
-                  secureTextEntry
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <View style={[styles.passwordInputWrap, errors.password && styles.inputError]}>
+                  <TextInput
+                    style={styles.passwordInputField}
+                    placeholder="••••••••••••"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showPassword}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeToggleBtn}
+                    onPress={() => setShowPassword(!showPassword)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.eyeToggleText}>{showPassword ? "Hide" : "Show"}</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             />
-            {errors.password && (
+            {errors.password?.message ? (
               <Text style={styles.fieldError}>{errors.password.message}</Text>
-            )}
+            ) : null}
           </View>
 
           {/* Quick Demo Fill button */}
@@ -264,6 +278,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     color: colors.textPrimary,
     fontSize: 15,
+  },
+  passwordHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  forgotPasswordLink: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  passwordInputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    borderRadius: radius.md,
+  },
+  passwordInputField: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    color: colors.textPrimary,
+    fontSize: 15,
+  },
+  eyeToggleBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+  },
+  eyeToggleText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "700",
   },
   inputError: {
     borderColor: colors.error,

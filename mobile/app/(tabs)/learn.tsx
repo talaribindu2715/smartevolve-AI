@@ -353,8 +353,8 @@ export default function LearnScreen() {
                 </Svg>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.ytBannerTitle}>YouTube Video Academy</Text>
-                <Text style={styles.ytBannerSub}>Targeted video masterclasses aligned with your skill gaps</Text>
+                <Text style={styles.ytBannerTitle}>SmartEvolve Academy</Text>
+                <Text style={styles.ytBannerSub}>Curated ad-free video masterclasses aligned with your skill gaps</Text>
               </View>
             </View>
             <Text style={styles.ytBannerArrow}>→</Text>

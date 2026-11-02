@@ -49,7 +49,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const videoId = useMemo(() => extractYouTubeVideoId(videoIdOrUrl), [videoIdOrUrl]);
   const fallbackThumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
   const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
 
   const handleOpenExternal = () => {
     Linking.openURL(youtubeUrl).catch((err) => {
@@ -83,7 +83,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             // Standard iframe for web
             <iframe
               src={embedUrl}
-              title={title || "YouTube Video"}
+              title={title || "SmartEvolve Academy Masterclass"}
               style={{
                 width: "100%",
                 height: "100%",
@@ -91,6 +91,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
                 borderRadius: radius.md,
                 backgroundColor: "#000",
               }}
+              sandbox="allow-scripts allow-same-origin allow-presentation"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
@@ -101,7 +102,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         <View style={styles.controlsBar}>
           <View style={styles.streamingMeta}>
             <View style={styles.liveDot} />
-            <Text style={styles.streamingText}>YouTube HD Interactive Stream</Text>
+            <Text style={styles.streamingText}>SmartEvolve Academy • 🛡️ Ad-Free Focus Mode</Text>
           </View>
           <TouchableOpacity onPress={handleOpenExternal} style={styles.externalBtn}>
             <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF0000" strokeWidth="2.5">
@@ -137,11 +138,21 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       </head>
       <body>
         <iframe 
-          src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1" 
+          src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3" 
           frameborder="0" 
+          sandbox="allow-scripts allow-same-origin allow-presentation"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
           allowfullscreen>
         </iframe>
+        <script>
+          // Automatic Ad-Bypass & Overlay Filter
+          setInterval(function() {
+            var skip = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
+            if (skip) skip.click();
+            var overlays = document.querySelectorAll('.ytp-ad-overlay-container, .ytp-ad-message-container, .video-ads');
+            overlays.forEach(function(el) { el.style.display = 'none'; });
+          }, 300);
+        </script>
       </body>
     </html>
   `;
@@ -196,7 +207,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       <View style={styles.controlsBar}>
         <View style={styles.streamingMeta}>
           <View style={styles.liveDot} />
-          <Text style={styles.streamingText}>YouTube HD Educational Stream</Text>
+          <Text style={styles.streamingText}>SmartEvolve Academy • 🛡️ Ad-Free Focus Mode</Text>
         </View>
         <TouchableOpacity onPress={handleOpenExternal} style={styles.externalBtn}>
           <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF0000" strokeWidth="2.5">

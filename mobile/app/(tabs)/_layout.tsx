@@ -112,7 +112,7 @@ function ResponsiveTabBar({ state, descriptors, navigation }: any) {
                 <Rect x="2" y="4" width="20" height="16" rx="2.18" ry="2.18" />
                 <Path d="M10 8.5v7l5-3.5-5-3.5z" />
               </Svg>
-              <Text style={styles.sidebarItemLabel}>YouTube Academy</Text>
+              <Text style={styles.sidebarItemLabel}>SmartEvolve Academy</Text>
             </View>
           </TouchableOpacity>
 

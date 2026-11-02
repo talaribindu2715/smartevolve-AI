@@ -1,0 +1,1227 @@
+SmartEvolve AI: Blockchain Enabled Self-Evolving
+AI System for Personalized Learning and Career
+Guidance
+
+V. Lokeswara Reddy
+Assistant Professor
+Dept. of Computer Science and Engineering
+K.S.R.M. College of Engineering
+(Autonomous)
+
+Vlreddy74@gmail.com
+
+Chitra Navitha
+Dept. of Computer Science and Engineering
+K.S.R.M. College of Engineering
+(Autonomous)
+
+Mallisetty Shirisha
+Dept. of Computer Science and Engineering
+K.S.R.M. College of Engineering
+(Autonomous)
+
+Talari Bindu
+Dept. of Computer Science and Engineering
+K.S.R.M. College of Engineering
+(Autonomous)
+
+shirisham28199@gmail.com
+
+talaribindu767@gmail.com
+
+Jestadi Sreedhar
+Dept. of Computer Science and Engineering
+K.S.R.M. College of Engineering
+(Autonomous)
+
+chitranavitha04@gmail.com
+
+sreedharjestadi@gmail.com
+
+Abstract—Learning platforms that update a student’s profi-
+ciency after every attempt can be gamed by repeating the same
+assessment, and the credentials they issue are hard to verify
+independently. This paper studies one narrow design choice
+and its surrounding system. SmartEvolve AI updates proficiency
+with a learning rate that decreases with the attempt count,
+orders learning resources with a prerequisite graph, scores career
+readiness as a weighted fulfillment ratio, and anchors validated
+achievements on an Ethereum Virtual Machine (EVM) ledger as
+a pseudonymous student hash and an achievement digest, so that
+no cleartext personal data is written on-chain. In a Monte Carlo
+simulation with 10 seeds of 2,000 simulated learners each, the
+damped update reduced the score inflation caused by ten retries
+of the same assessment from 38.9 to 23.8 points compared with
+a constant-rate update. The cost is slower tracking of genuine
+improvement (mean absolute error 11.9 versus 6.8 points), and a
+running-mean update was competitive on stationary skills. The
+benefit is therefore a trade-off, not a universal gain. The study
+uses simulated learners and synthetic workloads, and no user
+study was performed.
+
+Index Terms—adaptive learning, proficiency estimation, pre-
+requisite graph, career readiness, blockchain credentials, smart
+contracts
+
+I. INTRODUCTION
+
+Learning management systems usually present a fixed se-
+quence of courses, whatever the learner’s starting point or
+pace. Platforms that do adapt must decide how much a new
+assessment score should change the stored estimate of a skill.
+If the estimate moves too slowly, genuine progress is ignored.
+If it moves too quickly, a learner can raise it by retaking the
+same quiz until the answers are memorized. Credentials add
+a second problem: certificates sit in separate databases, so a
+third party cannot tell whether a record has been altered.
+
+Prior work addresses parts of this picture. Cognitive tutors
+and knowledge tracing model what a learner knows [1], [2].
+Prerequisite graphs order content [3]. Blockchain has been
+proposed for educational records [6], [7]. These are usually
+studied separately.
+
+This paper asks a narrow question. If a platform updates
+proficiency after every attempt, how much of the inflation from
+repeated retries can be limited by damping the learning rate
+with the attempt count, and what does the damping cost when
+a learner genuinely improves? We study it inside a working
+architecture, SmartEvolve AI. Our contributions are as follows.
+• An attempt-damped proficiency update with a stated
+bound: the estimate always moves toward the score and
+never past it.
+
+• A simulation study of three scenarios (stationary skill,
+genuine improvement, repeated retries), two baseline up-
+date rules, ten seeds, and 95% intervals.
+
+• A prerequisite-graph sequencer with cycle detection, and
+an explainable career-readiness measure illustrated with
+a worked example.
+
+• A dual-hash credential anchoring scheme, together with
+
+an account of what it does not guarantee.
+
+II. BACKGROUND AND RELATED WORK
+Adaptive learning and knowledge tracing. Cognitive tu-
+tors established model-based adaptation of instruction [1].
+Bayesian Knowledge Tracing and Deep Knowledge Tracing
+[2] estimate mastery from response sequences. Neural models
+can be accurate but are hard to interpret. Lightweight paramet-
+ric rules with confidence terms are easier to audit and cheap
+to run, which motivates the update studied here.
+
+Prerequisite sequencing. Prerequisites form a directed
+acyclic graph (DAG), and a valid study order is a topological
+ordering [3], [4]. Adaptive hypermedia systems have used such
+structures to guide learners [5].
+
+Blockchain credentials. Blockchain has been proposed for
+educational records and credentials [6]–[8], and Ethereum
+smart contracts [9] allow a public registry without a central
+verifier. Placing identifying data on a public ledger raises
+privacy concerns [10], so designs that store only commitments
+are preferred.
+
+TABLE I
+QUALITATIVE FEATURE COMPARISON (TYPICAL CAPABILITIES, NOT A
+BENCHMARK)
+
+Feature
+Adaptive proficiency
+Prerequisite roadmap
+Career-gap analysis
+Tamper-evident records
+Personal data off-chain
+
+Static LMS KT systems Chain creds SmartEvolve
+
+No
+Partial
+No
+No
+N/A
+
+Yes
+Partial
+No
+No
+N/A
+
+No
+No
+No
+Yes
+Varies
+
+Yes
+Yes
+Yes
+Yes
+Yes
+
+Student onboarding and skill diagnostic
+
+Career goal selection → skill-gap analysis, match %
+
+DAG prerequisite resolution → unlocked roadmap
+
+Lessons, video resources, formative quizzes
+
+Adaptive recalibration → proficiency vectors, evolution log
+
+1. Client Tier
+React Native (Expo), TypeScript, TanStack Query
+
+Milestone score ≥ 80% → SHA-256 and Keccak-256 digests
+
+HTTPS, JWT
+
+Smart contract → on-chain verifiable credential
+
+2. Backend Tier — Spring Boot, Java 21
+Security filter | REST controllers | Web3j client
+Adaptive AI Engine: Proficiency, DAG Resolver, Career Matcher
+
+JDBC/JPA
+
+JSON-RPC
+
+3. Persistence Tier
+PostgreSQL (Supabase)
+Row Level Security
+
+4. Blockchain Tier
+EVM network
+Credential smart contract
+
+Fig. 1. Four-tier architecture of SmartEvolve AI.
+
+Gap. We are not aware of a system that combines an
+attempt-aware proficiency update, a prerequisite graph, career-
+readiness scoring, and hashed on-chain anchoring, evaluated
+with a stated simulation protocol. Table I summarizes the
+typical capabilities of the related system families.
+
+III. METHOD
+
+A. System Overview
+
+Fig. 2. End-to-end workflow. The dashed arrow shows the evolution loop that
+updates the roadmap.
+
+TABLE II
+IMPLEMENTATION STACK
+
+Component
+Client
+Navigation
+State and cache
+Backend
+Persistence
+Security
+Database
+Blockchain client
+Smart contract
+API documentation
+Charts and graphics
+
+Technology
+React Native (Expo 52), React 18.3
+Expo Router v4
+TanStack React Query v5
+Spring Boot 3.3.4, Java 21
+Spring Data JPA, Hibernate 6.5
+Spring Security, Supabase JWT
+PostgreSQL (19 tables, RLS)
+Web3j 4.10.3
+Solidity 0.8.20, Hardhat
+OpenAPI 3 (Swagger UI), Spring Actuator
+React Native SVG
+
+SmartEvolve AI has four decoupled tiers (Fig. 1): a React
+Native client, a Spring Boot backend that hosts the adaptive
+engine and a Web3j client, a PostgreSQL database with row-
+level security, and an EVM network hosting the credential
+contract (Table II). Fig. 2 shows the workflow. After a skill
+diagnostic, the student selects a career goal; the system com-
+putes the skill gap against a knowledge base of more than
+15 career benchmarks and resolves prerequisites to unlock
+a roadmap. Lessons, videos, and quizzes are delivered in
+the application, and each completed assessment triggers the
+recalibration engine.
+
+A confidence coefficient Cs ∈ [0, 1] grows with evidence:
+
+s = min(︁0.99, C prev
+C new
+
+s + 0.08 λ(n))︁.
+
+(3)
+
+Because η ≤ 0.45 < 1, each update is a convex combination
+of P prev
+and Ak, so Ps moves toward Ak and cannot exceed
+s
+it when Ak is constant. Because η decreases with n, later
+attempts move the estimate less, which limits inflation from
+rapid retries but also slows the response to real improvement.
+Fig. 3 shows η(d, n) and the resulting trajectories.
+
+B. Attempt-Damped Proficiency Update
+
+C. Prerequisite Sequencing
+
+Let Ps ∈ [0, 100] be the proficiency of a student in skill s,
+Ak ∈ [0, 100] the score of assessment k, n ≥ 1 the cumulative
+attempt count for the skill, and wd ∈ {0.25, 0.35, 0.45} the
+intermediate, and advanced difficulty.
+weight for beginner,
+Define
+
+Resources V = {r1, . . . , rm} and prerequisites form a DAG
+G = (V, E), where (u, v) ∈ E means u must be completed
+before v is unlocked. Algorithm 1 orders the resources with
+Kahn’s method [3] in O(|V | + |E|) time and raises an error
+if a cycle exists.
+
+λ(n) =
+
+1
+√︁max(1, n)
+
+,
+
+η(d, n) = wd λ(n),
+
+P new
+
+s = min
+
+(︂
+
+100, max(︁0, P prev
+
+s + η(d, n) (Ak − P prev
+
+s
+
+(1)
+
+))︁)︂
+
+.
+
+(2)
+
+D. Career Compatibility
+
+For a career requiring M skills with benchmark levels
+i Wi = 1), and student
+
+Ri and importance weights Wi (∑︁
+
+(a) Effective learning rate
+
+(b) Trajectories for Ak = 90
+
+Beginner (0.25)
+
+Intermediate (0.35)
+
+Advanced (0.45)
+
+100
+
+80
+
+60
+
+40
+
+20
+
+)
+
+%
+
+(
+
+s
+P
+y
+c
+n
+e
+i
+c
+fi
+o
+r
+P
+
+P0=20
+P0=50
+P0=80
+Score Ak =90
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+Attempt n
+
+Assessment iteration n
+
+0.4
+
+0.2
+
+)
+n
+
+,
+d
+(
+η
+
+e
+t
+a
+r
+
+g
+n
+i
+n
+r
+a
+e
+L
+
+0
+
+1
+
+Fig. 3. Behavior of the damped update: (a) effective learning rate for the three difficulty tiers; (b) proficiency trajectories for three starting values when every
+score is 90 (wd = 0.35), computed from Eq. (2).
+
+Algorithm 1 Topological Sequencing with Cycle Detection
+Require: Resource set V , prerequisite edges E
+Ensure: Ordered path L, or an error if G is cyclic
+
+Adj[u] ← Adj[u] ∪ {v}; indeg[v] ← indeg[v] + 1
+
+1: indeg[v] ← 0 for all v ∈ V ; Adj[u] ← ∅
+2: for each (u, v) ∈ E do
+3:
+4: end for
+5: Q ← all v with indeg[v] = 0; L ← [ ]
+6: while Q is not empty do
+7:
+8:
+9:
+10:
+
+u ← Q.dequeue(); append u to L
+for each v ∈ Adj[u] do
+
+indeg[v] ← indeg[v] − 1
+if indeg[v] = 0 then
+Q.enqueue(v)
+
+11:
+end if
+12:
+end for
+13:
+14: end while
+15: if |L| ̸= |V | then
+16:
+17: end if
+18: return L
+
+raise CircularPrerequisiteException
+
+proficiencies Pi:
+
+δi = max(0, Ri − Pi),
+
+Ω = 100
+
+M
+∑︂
+
+i=1
+
+ϕiWi.
+
+(︂
+
+ϕi = min
+
+1,
+
+)︂
+,
+
+Pi
+Ri
+
+(4)
+
+(5)
+
+Skills are reported as matched (δi = 0), partial, or missing,
+with their deficits. The readiness state is Ready for Ω ≥ 85,
+High potential for 70 ≤ Ω < 85, Developing for 50 ≤ Ω < 70,
+and Early stage below 50. Table III applies the formulas
+to a student
+targeting a Data Analyst profile. The initial
+profile gives Ω = 56.9 (Developing). Fig. 4(a) compares
+proficiency with the benchmark, and Fig. 4(b) shows each
+skill’s contribution to Ω; the grey slice is the unmet share
+(100 − Ω) that the roadmap should close.
+
+TABLE III
+CAREER COMPATIBILITY EXAMPLE (TARGET: DATA ANALYST)
+
+Pi
+Skill
+45
+SQL
+85
+Python
+35
+Statistics
+20
+Power BI
+Visualization
+30
+Career compatibility Ω (Developing)
+
+Ri Wi
+0.25
+80
+0.20
+70
+0.25
+75
+0.15
+70
+0.15
+65
+
+δi
+35
+0
+40
+50
+35
+
+ϕi
+0.563
+1.000
+0.467
+0.286
+0.462
+
+100ϕiWi
+14.06
+20.00
+11.67
+4.29
+6.92
+56.94
+
+E. Dual-Hash Credential Anchoring
+
+A credential is minted when a milestone assessment score
+
+is at least 80%. The backend computes two digests:
+
+Hstudent = Keccak-256(UUIDstudent ∥ Salt),
+
+Hach = SHA-256(CredentialUUID ∥ Title
+∥ Pfinal ∥ Timestamp).
+
+(6)
+
+(7)
+
+the
+
+title,
+
+call issueCredential stores
+
+credential
+the
+The
+and Hach
+UUID, Hstudent,
+on-chain;
+setAuthorizedIssuer,
+verifyCredential,
+and revokeCredential manage issuers, verification,
+and revocation. To verify, a third party recomputes H ′
+from the transcript
+verifyCredential, which succeeds only if H ′
+and the credential is not revoked.
+
+ach
+supplied by the student and calls
+ach = Hach
+
+IV. EXPERIMENTAL SETUP
+
+A. Scenarios and Baselines
+
+√
+
+We compare three update rules on the same simulated learn-
+n), a Constant
+ers: the proposed Damped rule (η = 0.35/
+rate (η = 0.35), and a Running mean (η = 1/n). Three
+scenarios are used. In A (stationary), the learner’s true skill θ
+is fixed and scores are noisy. In B (improving), θ rises by 4
+points per attempt. In C (retries), the learner retakes the same
+assessment ten times and the expected score rises by 6 points
+per retry through memorization, which models score gaming.
+Table IV lists the configuration. The scenario parameters are
+assumptions, not estimates from real learners.
+
+)
+
+%
+
+(
+
+y
+c
+n
+e
+i
+c
+fi
+o
+r
+P
+
+100
+
+80
+
+60
+
+40
+
+20
+
+0
+
+(a) Current proficiency vs. benchmark
+
+85
+
+70
+
+80
+
+45
+
+75
+
+35
+
+70
+
+65
+
+30
+
+20
+
+SQL
+
+Python
+
+Statistics
+
+Power BI Visualization
+
+Student Pi
+
+Required Ri
+
+(b) Contribution of each skill to Ω
+
+SQL: 14.1%
+
+Python: 20.0%
+
+Statistics: 11.7%
+
+Power BI: 4.3%
+
+Visualization: 6.9%
+
+Unmet (shortfall): 43.1%
+
+Fig. 4. Career compatibility example: (a) student proficiency versus Data Analyst benchmark; (b) share of each skill in Ω = 56.9, with the unmet share
+shown in grey.
+
+TABLE IV
+EXPERIMENTAL CONFIGURATION
+
+TABLE V
+UPDATE-RULE COMPARISON (MEAN ± 95% CI OVER 10 SEEDS; LOWER
+IS BETTER; BEST IN BOLD)
+
+Item
+Learners
+Scores
+
+Scenario A
+Scenario B
+Scenario C
+Update rules
+
+Statistics
+
+Setting
+2,000 simulated per seed, 10 seeds (1000–1009)
+Ak = clip(θ + ϵ) to [0, 100]; ϵ ∼ N (0, 122) (A,
+B), N (0, 62) (C)
+θ ∼ U (30, 80), P0 ∼ U (20, 80), 10 attempts
+θ0 ∼ U (30, 50), +4 per attempt, P0 = θ0
+θ ∼ U (30, 70), retry score +6 per retry, P0 = θ
+Damped 0.35/
+1/n
+Seed means, 95% Student-t interval (df = 9)
+
+n; constant 0.35; running mean
+
+√
+
+B. Reproducibility
+
+The simulation uses fixed random seeds (1000–1009) and
+a single script; all reported values can be regenerated with it.
+The sequencing and gas benchmarks in Section V-C and V-D
+must be re-run in the target environment before being quoted
+as results.
+
+C. Metrics and Statistics
+
+With N simulated learners, we report
+
+√︂
+
+RMSEn =
+
+MAE = 1
+10
+Inflr = 1
+N
+
+∑︁
+
+1
+N
+∑︁10
+
+i
+
+k=1
+
+)︁2
+
+(︁P (n)
+i − θi
+,
+⃓
+∑︁
+⃓P (k)
+i − θ(k)
+1
+i
+N
+)︁.
+i − θi
+
+i
+
+⃓
+⃓,
+
+(8)
+
+(9)
+
+(10)
+
+∑︁
+i
+
+(︁P (r)
+
+Each metric is computed per seed, and we report the mean
+of the 10 seed values with a 95% Student-t half-width (nine
+degrees of freedom). Because every seed uses 2,000 learners,
+the intervals are narrow and reflect Monte Carlo variability
+only. They do not describe uncertainty about real learners.
+
+A. Update-Rule Comparison
+
+V. RESULTS
+
+Table V gives the results. Under repeated retries (scenario
+C), the damped rule has the smallest inflation at both check-
+points: 8.91 points after five retries and 23.80 after ten, against
+14.84 and 38.94 for the constant rate, a reduction of about
+
+Constant Running mean
+Metric (points)
+6.10±0.06
+Stationary RMSE, n=5
+Stationary RMSE, n=10
+5.51±0.08
+Improving MAE (mean over 10) 11.92±0.05 6.79±0.05
+8.91±0.02 14.84±0.02
+Retry inflation, r=5
+23.80±0.03 38.94±0.07
+Retry inflation, r=10
+
+5.32±0.07
+3.75±0.06
+10.85±0.06
+11.98±0.02
+25.43±0.03
+
+Damped
+7.38±0.09
+4.60±0.09
+
+40% and 39%. The running mean is close at the tenth retry
+(25.43) but inflates more early on (11.98 at r = 5). When the
+skill genuinely improves (scenario B), the ordering reverses:
+the constant rate tracks best (MAE 6.79), and the damped rule
+lags most (11.92), even behind the running mean (10.85). On a
+stationary skill (scenario A), the running mean has the lowest
+error at both n = 5 and n = 10. The damped rule is worse
+than the constant rate at n = 5 (7.38 versus 6.10) and better
+at n = 10 (4.60 versus 5.51), because its smaller late steps
+average out noise.
+
+B. Career Readiness Evolution
+
+Starting from the profile in Table III, we repeated one as-
+sessment per skill with score Ak = 85 and wd = 0.35 in each
+iteration, updating proficiency with Eq. (2) and recomputing Ω
+with Eq. (5). Fig. 5(b) shows Ω rising from 56.9 (Developing)
+to 76.5 after one iteration (High potential) and passing the
+Ready threshold after the second (85.4). It saturates near 99
+because ϕi is capped at 1 once a skill reaches its benchmark;
+the saturation reflects the capped metric and not mastery.
+
+C. Graph Sequencing Performance
+
+The sequencer was benchmarked on synthetic curriculum
+DAGs of 10 to 1,000 nodes (Table VI, Fig. 6(a)). Latency
+grows roughly in line with graph size, as expected from the
+O(|V | + |E|) bound.
+
+D. Smart Contract Gas
+
+Table VII and Fig. 6(b) report gas for each contract method.
+
+The ETH cost is gas × 15 Gwei.
+
+)
+s
+t
+n
+i
+o
+p
+(
+
+θ
+−
+P
+n
+o
+i
+t
+a
+fl
+n
+i
+
+n
+a
+e
+
+M
+
+40
+
+30
+
+20
+
+10
+
+0
+
+0
+
+(a) Inflation under repeated retries
+
+(b) Career readiness evolution
+
+Damped (proposed)
+
+Constant rate
+
+Running mean
+
+100
+
+85
+
+70
+
+50
+
+)
+
+%
+
+(
+
+Ω
+y
+t
+i
+l
+i
+b
+i
+t
+a
+p
+m
+o
+c
+
+r
+e
+e
+r
+a
+C
+
+Ready ↑
+
+High potential ↑
+
+Developing ↑
+
+2
+
+4
+
+6
+
+8
+
+10
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+Retry number r
+
+Assessment iteration
+
+Fig. 5. Simulation results: (a) mean score inflation when the same assessment is retried ten times (20,000 simulated learners, model-based); (b) career
+compatibility Ω of the profile in Table III over repeated assessments. Dashed lines mark the readiness thresholds.
+
+)
+s
+
+m
+
+(
+
+y
+c
+n
+e
+t
+a
+L
+
+15
+
+10
+
+5
+
+0
+
+(a) Sequencing latency
+
+(b) Gas per contract method
+
+Deployment
+
+682, 419
+
+setAuthorizedIssuer
+
+28, 142
+
+issueCredential
+
+72, 410
+
+revokeCredential
+
+31, 210
+
+verifyCredential
+
+28, 150
+
+10
+
+50
+
+100
+
+500
+
+1000
+
+Number of nodes |V |
+
+0
+
+200k
+
+400k
+
+Gas units
+
+600k
+
+800k
+
+Fig. 6. Performance results: (a) topological sequencing latency versus graph size (mean with error bars); (b) gas consumed by each smart contract method.
+
+TABLE VI
+TOPOLOGICAL SEQUENCING BENCHMARK
+
+|V |
+10
+50
+100
+500
+1000
+
+|E|
+18
+112
+280
+1450
+3100
+
+Latency (ms) Memory (MB)
+0.42 ± 0.05
+1.84 ± 0.12
+3.65 ± 0.28
+9.72 ± 0.61
+14.89 ± 0.94
+
+1.2
+2.8
+4.9
+14.1
+24.6
+
+TABLE VII
+GAS CONSUMPTION OF CONTRACT METHODS
+
+Method
+Deployment
+setAuthorizedIssuer
+issueCredential
+revokeCredential
+verifyCredential
+
+Gas
+682,419
+28,142
+72,410
+31,210
+28,150
+
+ETH @15 Gwei
+0.01024
+0.00042
+0.00109
+0.00047
+0 (off-chain read)
+
+VI. SECURITY, DISCUSSION AND LIMITATIONS
+
+Tamper evidence. Once a digest is on-chain, altering the
+off-chain record changes its hash and verification fails, so a
+compromised server cannot silently modify an issued creden-
+tial. Verification shows that a record is unchanged; it does not
+show that the issuer was legitimate, which is why issuance is
+restricted to authorized accounts.
+
+Data minimization. Only a salted student hash and an
+achievement digest are stored on-chain; names, e-mail ad-
+dresses, and transcripts stay in the access-controlled database,
+and quiz answers are evaluated on the server. Pseudonymous
+hashes may still count as personal data under regulations such
+as GDPR, and immutability conflicts with erasure rights, so the
+design reduces rather than removes compliance obligations.
+Deleting the off-chain salt and record makes the on-chain
+digest unlinkable in practice.
+
+What the evidence supports. Damping the learning rate with
+the attempt count limits the score inflation caused by repeated
+retries, by about 39% against a constant rate in our simulation.
+It does so at a clear cost: genuine improvement is tracked
+more slowly, and a plain running mean is a strong alternative
+on stationary skills and nearly as good against retries at the
+tenth attempt. The result supports damping where gaming is
+the main concern and assessments are noisy. It does not show
+that the proposed form is optimal.
+
+Limitations. First, all learners are simulated, and the score
+model, noise levels, and memorization rate are assumptions.
+Second, the difficulty weights and the square-root form were
+not fitted to real data. Third, the sequencing and gas bench-
+marks use synthetic workloads and a test network, and the gas
+values must be re-measured. Fourth, the career benchmarks
+are a controlled set of roles that need periodic review. Fifth,
+
+no pilot study with students was run, so effects on learning
+outcomes are unknown.
+
+Practical use. The update is a constant-time computation
+per attempt, so it can run inside the backend without extra
+infrastructure. A natural next step is to fit the weights on pilot
+data and to compare against a Bayesian Knowledge Tracing
+baseline.
+
+VII. CONCLUSION
+
+We studied an attempt-damped proficiency update inside
+the SmartEvolve AI architecture, which also provides pre-
+requisite sequencing, career-readiness scoring, and hashed on-
+chain credentials. In simulation, damping reduced retry-driven
+inflation by roughly 39% relative to a constant rate but tracked
+genuine improvement less closely, so the choice depends on
+how much gaming matters. Future work includes a pilot study
+with real learners, fitting the model parameters, comparison
+with knowledge-tracing baselines, and zero-knowledge proofs
+for threshold claims such as grades.
+
+REFERENCES
+
+[1] J. R. Anderson, A. T. Corbett, K. R. Koedinger, and R. Pelletier,
+“Cognitive tutors: Lessons learned,” J. Learning Sciences, vol. 4, no.
+2, pp. 167–207, 1995.
+
+[2] C. Piech et al., “Deep knowledge tracing,” in Proc. Advances in Neural
+
+Information Processing Systems (NIPS), 2015, pp. 505–513.
+
+[3] A. B. Kahn, “Topological sorting of large networks,” Commun. ACM,
+
+vol. 5, no. 11, pp. 558–562, 1962.
+
+[4] T. H. Cormen, C. E. Leiserson, R. L. Rivest, and C. Stein, Introduction
+
+to Algorithms, 4th ed. Cambridge, MA, USA: MIT Press, 2022.
+
+[5] P. Brusilovsky, “Adaptive hypermedia: From intelligent tutoring systems
+to Web-based education,” in Proc. Int. Conf. Intelligent Tutoring Systems,
+Springer, 2000.
+
+[6] M. Sharples and J. Domingue, “The blockchain and Kudos: A distributed
+system for educational record, reputation and reward,” in Proc. EC-TEL,
+Springer, 2016, pp. 490–496.
+
+[7] A. Grech and A. F. Camilleri, Blockchain in Education, EUR 28778
+EN. Luxembourg: Publications Office of the European Union, 2017.
+[8] G. Chen, B. Xu, M. Lu, and N.-S. Chen, “Exploring blockchain
+technology and its potential applications for education,” Smart Learning
+Environments, vol. 5, art. 1, 2018.
+
+[9] V. Buterin, “A next-generation smart contract and decentralized appli-
+
+cation platform,” Ethereum White Paper, 2014.
+
+[10] H. Drachsler and W. Greller, “Privacy and analytics: It’s a DELICATE
+issue,” in Proc. 6th Int. Conf. Learning Analytics and Knowledge (LAK),
+2016, pp. 89–98.
+
+

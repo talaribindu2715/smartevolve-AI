@@ -23,6 +23,7 @@ import {
   ClaimCredentialRequest,
   TrendAnalysisSummary,
   CareerMlPrediction,
+  AuthResponse,
 } from "../types";
 
 // Dynamic API base URL configuration:
@@ -213,5 +214,30 @@ export const api = {
     apiFetch<CareerMlPrediction>("/api/careers/ml-simulate", {
       method: "POST",
       body: JSON.stringify({ simulatedSkillOverrides }),
+    }),
+
+  // Authentication, Google SMTP OTP & Password Reset
+  sendSignupOtp: (email: string) =>
+    apiFetch<AuthResponse>("/api/auth/send-signup-otp", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  verifySignupOtp: (email: string, otp: string) =>
+    apiFetch<AuthResponse>("/api/auth/verify-signup-otp", {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
+    }),
+
+  sendForgotPassword: (email: string) =>
+    apiFetch<AuthResponse>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (email: string, token: string, newPassword: string) =>
+    apiFetch<AuthResponse>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ email, token, newPassword }),
     }),
 };

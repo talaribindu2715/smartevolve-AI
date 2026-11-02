@@ -122,7 +122,7 @@ export default function VideoDetailScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={styles.loadingText}>Loading YouTube Masterclass...</Text>
+        <Text style={styles.loadingText}>Loading SmartEvolve Masterclass...</Text>
       </View>
     );
   }
@@ -137,7 +137,7 @@ export default function VideoDetailScreen() {
       <View style={styles.responsiveWrapper}>
         {/* Back Link */}
         <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
-          <Text style={styles.backBtnText}>← Return to Video Academy</Text>
+          <Text style={styles.backBtnText}>← Return to SmartEvolve Academy</Text>
         </TouchableOpacity>
 
         {/* Embedded YouTube Player */}
