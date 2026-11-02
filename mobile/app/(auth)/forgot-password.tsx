@@ -44,7 +44,11 @@ export default function ForgotPasswordScreen() {
       setSuccessInfo({
         sent: true,
         resetToken: res.resetToken,
+        otp: res.debugOtp,
       });
+      if (res.debugOtp) {
+        setEnteredOtp(res.debugOtp);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to send password reset email. Please try again.");
     } finally {

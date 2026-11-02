@@ -64,6 +64,7 @@ public class EmailOtpService {
                 .message(emailSent 
                         ? "Verification code sent to " + email + " via Google SMTP." 
                         : "Verification code generated successfully. Code: " + code)
+                .debugOtp(!emailSent ? code : null)
                 .expiresInMinutes(10)
                 .build();
     }
@@ -134,6 +135,7 @@ public class EmailOtpService {
                         ? "Password reset instructions sent to " + email 
                         : "Password reset generated. Use OTP: " + otp)
                 .resetToken(token)
+                .debugOtp(!emailSent ? otp : null)
                 .expiresInMinutes(15)
                 .build();
     }

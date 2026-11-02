@@ -86,7 +86,10 @@ export default function RegisterScreen() {
 
     // Send verification OTP via Google SMTP
     try {
-      await api.sendSignupOtp(data.email.trim());
+      const res = await api.sendSignupOtp(data.email.trim());
+      if (res.debugOtp) {
+        setOtpCode(res.debugOtp);
+      }
     } catch (e: any) {
       console.warn("Could not dispatch signup OTP:", e);
     } finally {
@@ -399,6 +402,16 @@ export default function RegisterScreen() {
                 We sent a 6-digit verification code via Google SMTP to:
               </Text>
               <Text style={styles.modalEmailText}>{pendingFormData?.email}</Text>
+              {otpCode.length === 6 && (
+                <View style={{ backgroundColor: "rgba(16, 185, 129, 0.12)", borderColor: colors.success, borderWidth: 1, borderRadius: radius.sm, padding: 8, marginBottom: 10 }}>
+                  <Text style={{ color: colors.success, fontSize: 12, fontWeight: "700", textAlign: "center" }}>
+                    ⚡ Code Auto-Filled: {otpCode}
+                  </Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 10, textAlign: "center", marginTop: 2 }}>
+                    (Check inbox or click verify below)
+                  </Text>
+                </View>
+              )}
 
               {otpError ? (
                 <View style={styles.otpErrorBanner}>

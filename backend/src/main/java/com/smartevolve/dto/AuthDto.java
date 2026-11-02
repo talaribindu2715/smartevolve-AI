@@ -73,6 +73,7 @@ public class AuthDto {
         private String email;
         private Integer expiresInMinutes;
         private String resetToken;
+        private String debugOtp;
     }
 }
 

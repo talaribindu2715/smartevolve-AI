@@ -393,4 +393,5 @@ export interface AuthResponse {
   email?: string;
   expiresInMinutes?: number;
   resetToken?: string;
+  debugOtp?: string;
 }
