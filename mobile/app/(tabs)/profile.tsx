@@ -309,8 +309,7 @@ const styles = StyleSheet.create({
   },
   responsiveWrapper: {
     width: "100%",
-    maxWidth: 820,
-    alignSelf: "center",
+    alignSelf: "stretch",
   },
   profileHeaderCard: {
     alignItems: "center",

@@ -873,8 +873,7 @@ const styles = StyleSheet.create({
   responsiveWrapper: {
     flex: 1,
     width: "100%",
-    maxWidth: 820,
-    alignSelf: "center",
+    alignSelf: "stretch",
   },
   topHeader: {
     padding: spacing.md,
