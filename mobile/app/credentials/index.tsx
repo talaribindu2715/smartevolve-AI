@@ -570,8 +570,8 @@ const styles = StyleSheet.create({
   },
   responsiveWrapper: {
     width: "100%",
-    maxWidth: 820,
-    alignSelf: "center",
+    
+    alignSelf: "stretch",
   },
   header: {
     marginBottom: spacing.lg,
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   certSealWrap: {
-    alignSelf: "center",
+    alignSelf: "stretch",
     backgroundColor: "rgba(245, 158, 11, 0.15)",
     paddingHorizontal: 12,
     paddingVertical: 4,

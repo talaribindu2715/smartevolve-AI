@@ -274,8 +274,8 @@ const styles = StyleSheet.create({
   },
   responsiveWrapper: {
     width: "100%",
-    maxWidth: 820,
-    alignSelf: "center",
+    
+    alignSelf: "stretch",
   },
   navBar: {
     flexDirection: "row",
