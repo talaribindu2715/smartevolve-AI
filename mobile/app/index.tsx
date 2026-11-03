@@ -15,8 +15,14 @@ import { colors, radius, spacing } from "../src/theme/colors";
 export default function LandingScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const isDesktop = width >= 768;
+
+  React.useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated, isLoading]);
 
   const navigateToLogin = () => {
     if (isAuthenticated) {

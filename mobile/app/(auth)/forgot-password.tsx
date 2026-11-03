@@ -87,7 +87,7 @@ export default function ForgotPasswordScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace("/(auth)/login")}>
           <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2">
             <Path d="M19 12H5M12 19l-7-7 7-7" />
           </Svg>
