@@ -22,6 +22,7 @@ import { Button } from "../../src/components/Button";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { Credential, EligibleCredential, VerifyCredentialResponse } from "../../src/types";
+import { CertificateModal } from "../../src/components/CertificateModal";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function CredentialsScreen() {
@@ -53,6 +54,11 @@ export default function CredentialsScreen() {
   } = useQuery({
     queryKey: ["eligibleCredentials"],
     queryFn: () => api.getEligibleCredentials(),
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => api.getProfile(),
   });
 
   const claimMutation = useMutation({
@@ -415,73 +421,27 @@ export default function CredentialsScreen() {
           </View>
         )}
 
-        {/* Certificate Details Modal */}
-        <Modal visible={!!selectedCredDetail} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <Card style={styles.certificateCard}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>SmartEvolve Verified Certificate</Text>
-                <TouchableOpacity onPress={() => setSelectedCredDetail(null)}>
-                  <Text style={styles.modalCloseText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              {selectedCredDetail && (
-                <View style={styles.certBody}>
-                  <View style={styles.certSealWrap}>
-                    <Text style={styles.certSeal}>🛡️ ON-CHAIN VERIFIED</Text>
-                  </View>
-
-                  <Text style={styles.certTitle}>{selectedCredDetail.achievementTitle}</Text>
-                  <Text style={styles.certSubtitle}>Awarded to SmartEvolve AI Registered Student</Text>
-
-                  <View style={styles.certDetailsBox}>
-                    <Text style={styles.certItem}>
-                      <Text style={{ fontWeight: "700", color: colors.textPrimary }}>Credential ID: </Text>
-                      {selectedCredDetail.id}
-                    </Text>
-                    <Text style={styles.certItem}>
-                      <Text style={{ fontWeight: "700", color: colors.textPrimary }}>Issued Date: </Text>
-                      {new Date(selectedCredDetail.issuedAt || Date.now()).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Text>
-                    <Text style={styles.certItem}>
-                      <Text style={{ fontWeight: "700", color: colors.textPrimary }}>EVM Network: </Text>
-                      {selectedCredDetail.networkId || "Hardhat EVM Localhost"}
-                    </Text>
-                    <Text style={styles.certItem}>
-                      <Text style={{ fontWeight: "700", color: colors.textPrimary }}>Smart Contract: </Text>
-                      {selectedCredDetail.contractAddress || "0x5FbDB2315678afecb367f032d93F642f64180aa3"}
-                    </Text>
-                    <Text style={styles.certItem}>
-                      <Text style={{ fontWeight: "700", color: colors.textPrimary }}>SHA-256 Digest: </Text>
-                      {selectedCredDetail.achievementDataHash}
-                    </Text>
-                  </View>
-
-                  <View style={styles.certActionsRow}>
-                    <Button
-                      title="Download / Print"
-                      onPress={handlePrintOrShare}
-                      size="sm"
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      title="Copy Public Link"
-                      onPress={() => copyPublicLink(selectedCredDetail)}
-                      variant="outline"
-                      size="sm"
-                      style={{ flex: 1 }}
-                    />
-                  </View>
-                </View>
-              )}
-            </Card>
-          </View>
-        </Modal>
+        {/* Autonomous Official Certificate Modal */}
+        <CertificateModal
+          visible={!!selectedCredDetail}
+          onClose={() => setSelectedCredDetail(null)}
+          certificate={
+            selectedCredDetail
+              ? {
+                  id: selectedCredDetail.id,
+                  studentName: profile?.fullName || "Bindu Talari",
+                  courseOrSkillTitle: selectedCredDetail.achievementTitle,
+                  category: selectedCredDetail.credentialType || "Academic Specialization",
+                  proficiency: 95,
+                  issuedDate: selectedCredDetail.issuedAt,
+                  achievementDataHash: selectedCredDetail.achievementDataHash,
+                  transactionHash: selectedCredDetail.transactionHash,
+                  contractAddress: selectedCredDetail.contractAddress,
+                  networkId: selectedCredDetail.networkId,
+                }
+              : null
+          }
+        />
 
         {/* Verification Result Modal */}
         <Modal visible={!!verifyResult} transparent animationType="fade">

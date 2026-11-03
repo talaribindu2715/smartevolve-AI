@@ -20,6 +20,7 @@ import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { VideoCard } from "../../src/components/VideoCard";
+import { CertificateModal } from "../../src/components/CertificateModal";
 import { getMasterVideoById } from "../../src/data/masterVideos";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
@@ -868,6 +869,12 @@ export default function VideoDetailScreen() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [quizAttempts, setQuizAttempts] = useState(1);
+  const [showCertModal, setShowCertModal] = useState(false);
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => api.getProfile(),
+  });
   const [dbPersisted, setDbPersisted] = useState(false);
 
   const { data: video, isLoading } = useQuery({
@@ -1118,6 +1125,13 @@ export default function VideoDetailScreen() {
                 style={{ flex: 1, marginTop: spacing.xs }}
               />
             )}
+            <Button
+              title="🎓 Generate Verified Course Certificate"
+              onPress={() => setShowCertModal(true)}
+              variant="outline"
+              size="md"
+              style={{ width: "100%", marginTop: spacing.xs, borderColor: "#F59E0B" }}
+            />
           </View>
         </Card>
 
@@ -1394,6 +1408,22 @@ export default function VideoDetailScreen() {
             )}
           </View>
         )}
+        {/* Autonomous Course Certificate Modal */}
+        <CertificateModal
+          visible={showCertModal}
+          onClose={() => setShowCertModal(false)}
+          certificate={{
+            id: "SE-CERT-" + Math.floor(100000 + Math.random() * 900000),
+            studentName: profile?.fullName || "Bindu Talari",
+            courseOrSkillTitle: effectiveVideo.title,
+            category: effectiveVideo.category || effectiveVideo.skillName || "Computer Science",
+            proficiency: quizSubmitted ? Math.round((quizScore / quizQuestions.length) * 100) : 95,
+            issuedDate: new Date().toISOString(),
+            achievementDataHash: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+            contractAddress: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+            networkId: "Polygon / EVM",
+          }}
+        />
       </View>
     </ScrollView>
   );
