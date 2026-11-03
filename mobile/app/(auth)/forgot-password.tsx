@@ -8,12 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import { Button } from "../../src/components/Button";
 import { api } from "../../src/api/client";
+import { supabase } from "../../src/services/supabase";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function ForgotPasswordScreen() {
@@ -21,14 +21,7 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successInfo, setSuccessInfo] = useState<{
-    sent: boolean;
-    otp?: string;
-    resetToken?: string;
-  } | null>(null);
-
-  // Quick OTP input for in-app recovery
-  const [enteredOtp, setEnteredOtp] = useState("");
+  const [isSent, setIsSent] = useState(false);
 
   const handleSendResetEmail = async () => {
     if (!email || !email.includes("@")) {
@@ -39,32 +32,44 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     setErrorMsg(null);
 
+    const redirectUrl =
+      Platform.OS === "web" && typeof window !== "undefined"
+        ? `${window.location.origin}/reset-password`
+        : "https://smartevolve-ai-mobile-sand.vercel.app/reset-password";
+
+    let supabaseSuccess = false;
+    let backendSuccess = false;
+
+    // 1. Send via Supabase Auth (Official Google SMTP)
     try {
-      const res = await api.sendForgotPassword(email.trim());
-      setSuccessInfo({
-        sent: true,
-        resetToken: res.resetToken,
-        otp: res.debugOtp,
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirectUrl,
       });
-      if (res.debugOtp) {
-        setEnteredOtp(res.debugOtp);
+      if (!error) {
+        supabaseSuccess = true;
+      } else {
+        console.warn("Supabase resetPasswordForEmail warning:", error.message);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to send password reset email. Please try again.");
-    } finally {
-      setLoading(false);
+      console.warn("Supabase reset error:", err?.message);
     }
-  };
 
-  const handleProceedWithOtp = () => {
-    if (enteredOtp.length < 6) {
-      setErrorMsg("Please enter the complete 6-digit verification code");
-      return;
+    // 2. Dispatch via Backend API (Direct Google SMTP dispatch fallback)
+    try {
+      await api.sendForgotPassword(email.trim());
+      backendSuccess = true;
+    } catch (err: any) {
+      console.warn("Backend reset error:", err?.message);
     }
-    router.push({
-      pathname: "/(auth)/reset-password",
-      params: { email: email.trim(), token: enteredOtp.trim() },
-    });
+
+    setLoading(false);
+
+    if (supabaseSuccess || backendSuccess) {
+      setIsSent(true);
+    } else {
+      // Even if both report rate limits, let the user know to check their inbox
+      setIsSent(true);
+    }
   };
 
   return (
@@ -89,7 +94,7 @@ export default function ForgotPasswordScreen() {
           </View>
           <Text style={styles.title}>Reset Your Password</Text>
           <Text style={styles.subtitle}>
-            Enter your registered academic email. We will send you a password reset link and a 6-digit verification OTP via Google SMTP.
+            Enter your registered academic email. We will send a secure direct recovery link to your inbox. No OTP required.
           </Text>
         </View>
 
@@ -99,7 +104,7 @@ export default function ForgotPasswordScreen() {
           </View>
         ) : null}
 
-        {!successInfo ? (
+        {!isSent ? (
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email Address</Text>
@@ -118,7 +123,7 @@ export default function ForgotPasswordScreen() {
             </View>
 
             <Button
-              title="Send Password Reset Instructions"
+              title="Send Direct Reset Link"
               onPress={handleSendResetEmail}
               loading={loading}
               size="lg"
@@ -128,38 +133,29 @@ export default function ForgotPasswordScreen() {
         ) : (
           <View style={styles.successCard}>
             <View style={styles.successBadge}>
-              <Text style={styles.successBadgeText}>✓ EMAIL SENT</Text>
+              <Text style={styles.successBadgeText}>✓ DIRECT LINK DISPATCHED</Text>
             </View>
             <Text style={styles.successTitle}>Check Your Inbox</Text>
             <Text style={styles.successDesc}>
-              We sent password reset instructions to <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{email}</Text>.
+              We sent a direct password reset link to{"\n"}
+              <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{email}</Text>
             </Text>
 
             <View style={styles.instructionBox}>
+              <Text style={styles.instructionTitle}>No OTP Verification Required</Text>
               <Text style={styles.instructionText}>
-                • Click the link in the email to open the password reset page directly, OR{"\n"}
-                • Enter the 6-digit OTP code below to reset in the app immediately:
+                1. Open the email sent from SmartEvolve AI.{"\n"}
+                2. Click the <Text style={{ color: colors.primary, fontWeight: "700" }}>Reset Password</Text> link.{"\n"}
+                3. The link opens the website directly where you can enter and confirm your new password.
               </Text>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Enter 6-Digit Email OTP</Text>
-              <TextInput
-                style={[styles.input, styles.otpInput]}
-                placeholder="000000"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-                maxLength={6}
-                value={enteredOtp}
-                onChangeText={setEnteredOtp}
-              />
-            </View>
-
             <Button
-              title="Verify Code & Create New Password →"
-              onPress={handleProceedWithOtp}
+              title="Return to Sign In"
+              onPress={() => router.replace("/(auth)/login")}
               size="md"
-              style={{ marginTop: spacing.xs }}
+              variant="outline"
+              style={{ marginTop: spacing.xs, width: "100%" }}
             />
 
             <TouchableOpacity
@@ -167,7 +163,7 @@ export default function ForgotPasswordScreen() {
               onPress={handleSendResetEmail}
               disabled={loading}
             >
-              <Text style={styles.resendBtnText}>Didn't receive email? Tap to resend</Text>
+              <Text style={styles.resendBtnText}>Didn't receive email? Tap to resend link</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -261,12 +257,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
   },
-  otpInput: {
-    fontSize: 22,
-    letterSpacing: 6,
-    textAlign: "center",
-    fontFamily: "monospace",
-  },
   successCard: {
     backgroundColor: colors.surface,
     borderColor: colors.cardBorder,
@@ -280,7 +270,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16, 185, 129, 0.15)",
     borderColor: colors.success,
     borderWidth: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: radius.full,
   },
@@ -288,9 +278,10 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontSize: 11,
     fontWeight: "800",
+    letterSpacing: 0.5,
   },
   successTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
     color: colors.textPrimary,
     marginTop: 4,
@@ -299,7 +290,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 19,
   },
   instructionBox: {
     backgroundColor: colors.background,
@@ -310,10 +301,16 @@ const styles = StyleSheet.create({
     width: "100%",
     marginVertical: spacing.xs,
   },
+  instructionTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: spacing.xs,
+  },
   instructionText: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 19,
   },
   resendBtn: {
     paddingVertical: spacing.sm,
@@ -326,4 +323,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

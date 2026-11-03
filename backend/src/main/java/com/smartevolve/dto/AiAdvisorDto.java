@@ -21,6 +21,7 @@ public class AiAdvisorDto {
         private String cognitiveAnalysis;
         private String personalizedStudyStrategy;
         private boolean isGeminiPowered;
+        private String aiProvider;
     }
 
     @Data
@@ -36,6 +37,7 @@ public class AiAdvisorDto {
         private List<String> interviewPreparationAdvice;
         private String motivationalSummary;
         private boolean isGeminiPowered;
+        private String aiProvider;
     }
 
     @Data
@@ -68,6 +70,7 @@ public class AiAdvisorDto {
         private String reply;
         private List<String> followUpQuestions;
         private boolean isGeminiPowered;
+        private String aiProvider;
     }
 }
 

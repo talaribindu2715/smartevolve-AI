@@ -31,6 +31,15 @@ public class GeminiAiService {
     @Value("${gemini.base-url:https://generativelanguage.googleapis.com/v1beta/models}")
     private String geminiBaseUrl;
 
+    @Value("${openai.api-key:}")
+    private String openAiApiKey;
+
+    @Value("${openai.model:gpt-4o-mini}")
+    private String openAiModel;
+
+    @Value("${openai.base-url:https://api.openai.com/v1}")
+    private String openAiBaseUrl;
+
     private final StudentSkillRepository studentSkillRepository;
     private final StudentCareerPreferenceRepository careerPreferenceRepository;
     private final CareerRepository careerRepository;
@@ -48,8 +57,41 @@ public class GeminiAiService {
         this.objectMapper = new ObjectMapper();
     }
 
+    private static class AiResult {
+        final String text;
+        final String provider;
+
+        AiResult(String text, String provider) {
+            this.text = text;
+            this.provider = provider;
+        }
+    }
+
     /**
-     * Executes deep cognitive skill analysis using Google Gemini API or intelligent heuristic fallback.
+     * Executes prompt across Gemini, OpenAI, or falls back to intelligent heuristics.
+     */
+    private AiResult executeAiPrompt(String prompt) {
+        // 1. Prioritize Google Gemini if API key configured
+        if (geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey)) {
+            String res = callGeminiApi(prompt);
+            if (res != null && !res.isBlank()) {
+                return new AiResult(res, "GEMINI");
+            }
+        }
+
+        // 2. Prioritize OpenAI if API key configured
+        if (openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey)) {
+            String res = callOpenAiApi(prompt);
+            if (res != null && !res.isBlank()) {
+                return new AiResult(res, "OPENAI");
+            }
+        }
+
+        return new AiResult(null, "HEURISTIC");
+    }
+
+    /**
+     * Executes deep cognitive skill analysis using Gemini, OpenAI, or intelligent heuristic fallback.
      */
     public AiAdvisorDto.SkillAnalysisResponse analyzeStudentSkills(UUID studentId) {
         List<StudentSkill> skills = studentSkillRepository.findByStudentId(studentId);
@@ -82,16 +124,16 @@ public class GeminiAiService {
                 targetCareer, String.join(", ", strengths), String.join(", ", growthAreas), targetCareer
         );
 
-        String geminiResponse = callGeminiApi(prompt);
-        boolean isGemini = geminiResponse != null && !geminiResponse.isBlank();
+        AiResult aiResult = executeAiPrompt(prompt);
+        boolean isAiPowered = !"HEURISTIC".equals(aiResult.provider);
 
-        String cognitiveText = isGemini ? geminiResponse : String.format(
+        String cognitiveText = isAiPowered ? aiResult.text : String.format(
                 "Based on the SmartEvolve Adaptive AI profile, your core strengths in %s provide a solid foundation. " +
                 "Your priority for achieving career readiness in %s is closing intermediate gaps in %s.",
                 strengths.get(0), targetCareer, growthAreas.get(0)
         );
 
-        String strategyText = isGemini ? "Integrated in AI evaluation." : String.format(
+        String strategyText = isAiPowered ? "Integrated in AI evaluation." : String.format(
                 "Phase 1: Complete hands-on interactive exercises in %s (2 weeks).\n" +
                 "Phase 2: Build a production-grade portfolio project linking your skills.\n" +
                 "Phase 3: Take milestone skill diagnostic quizzes to trigger on-chain credential certification.",
@@ -105,12 +147,13 @@ public class GeminiAiService {
                 .criticalGrowthAreas(growthAreas)
                 .cognitiveAnalysis(cognitiveText)
                 .personalizedStudyStrategy(strategyText)
-                .isGeminiPowered(isGemini)
+                .isGeminiPowered(isAiPowered)
+                .aiProvider(aiResult.provider)
                 .build();
     }
 
     /**
-     * Generates rich career guidance and resume advice using Google Gemini API.
+     * Generates rich career guidance and resume advice using Gemini or OpenAI API.
      */
     public AiAdvisorDto.CareerGuidanceResponse generateCareerGuidance(UUID studentId, UUID careerId) {
         Career career = careerRepository.findById(careerId)
@@ -130,8 +173,8 @@ public class GeminiAiService {
                 skills.stream().map(s -> s.getSkill().getName() + " (" + s.getProficiency() + "%)").collect(Collectors.joining(", "))
         );
 
-        String geminiResponse = callGeminiApi(prompt);
-        boolean isGemini = geminiResponse != null && !geminiResponse.isBlank();
+        AiResult aiResult = executeAiPrompt(prompt);
+        boolean isAiPowered = !"HEURISTIC".equals(aiResult.provider);
 
         List<String> projectIdeas = Arrays.asList(
                 "Build a Real-Time Analytics Pipeline with Automated ETL",
@@ -147,20 +190,21 @@ public class GeminiAiService {
 
         List<String> milestones = Arrays.asList(
                 "Week 1-3: Core Foundational Mastery & Interactive Quizzes",
-                "Week 4-6: Intermediate Module Completion & YouTube Video Deep Dives",
+                "Week 4-6: Intermediate Module Completion & Video Masterclass Deep Dives",
                 "Week 7-9: Capstone Portfolio Development & Blockchain Certification",
                 "Week 10+: Mock Interviews & Technical Assessment Drills"
         );
 
         return AiAdvisorDto.CareerGuidanceResponse.builder()
                 .careerName(career.getName())
-                .readinessAssessment(isGemini ? geminiResponse : "High Potential. Completing target milestones will accelerate full qualification.")
+                .readinessAssessment(isAiPowered ? aiResult.text : "High Potential. Completing target milestones will accelerate full qualification.")
                 .estimatedWeeksToReadiness(8)
                 .prioritizedLearningMilestones(milestones)
                 .portfolioProjectIdeas(projectIdeas)
                 .interviewPreparationAdvice(interviewTips)
                 .motivationalSummary(String.format("You are on track to master the required competencies for %s! Stay consistent with daily roadmap modules.", career.getName()))
-                .isGeminiPowered(isGemini)
+                .isGeminiPowered(isAiPowered)
+                .aiProvider(aiResult.provider)
                 .build();
     }
 
@@ -175,10 +219,10 @@ public class GeminiAiService {
                 userMessage, (careerContext != null ? careerContext : "Software Engineering")
         );
 
-        String geminiResponse = callGeminiApi(prompt);
-        boolean isGemini = geminiResponse != null && !geminiResponse.isBlank();
+        AiResult aiResult = executeAiPrompt(prompt);
+        boolean isAiPowered = !"HEURISTIC".equals(aiResult.provider);
 
-        String reply = isGemini ? geminiResponse : String.format(
+        String reply = isAiPowered ? aiResult.text : String.format(
                 "That is a great question regarding %s! In SmartEvolve AI, we recommend focusing on conceptual understanding first, followed immediately by code practice. " +
                 "Check your active Roadmap in the Learn tab to unlock the next milestone, and complete the diagnostic quiz to calibrate your proficiency.",
                 (careerContext != null ? careerContext : "your learning path")
@@ -193,7 +237,8 @@ public class GeminiAiService {
         return AiAdvisorDto.MentorChatResponse.builder()
                 .reply(reply)
                 .followUpQuestions(followUps)
-                .isGeminiPowered(isGemini)
+                .isGeminiPowered(isAiPowered)
+                .aiProvider(aiResult.provider)
                 .build();
     }
 
@@ -202,7 +247,6 @@ public class GeminiAiService {
      */
     private String callGeminiApi(String prompt) {
         if (geminiApiKey == null || geminiApiKey.isBlank() || "demo-key".equalsIgnoreCase(geminiApiKey)) {
-            log.debug("Gemini API key is not configured; using high-grade heuristic advisor fallback.");
             return null;
         }
 
@@ -229,6 +273,47 @@ public class GeminiAiService {
             }
         } catch (Exception ex) {
             log.warn("Gemini API invocation encountered an issue (falling back gracefully): {}", ex.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Direct HTTP call to OpenAI Chat Completions REST API.
+     */
+    private String callOpenAiApi(String prompt) {
+        if (openAiApiKey == null || openAiApiKey.isBlank() || "demo-key".equalsIgnoreCase(openAiApiKey)) {
+            return null;
+        }
+
+        try {
+            String url = openAiBaseUrl + "/chat/completions";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(openAiApiKey.trim());
+
+            Map<String, Object> message = Map.of("role", "user", "content", prompt);
+            Map<String, Object> requestBody = Map.of(
+                    "model", openAiModel,
+                    "messages", List.of(message),
+                    "temperature", 0.7,
+                    "max_tokens", 800
+            );
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode choices = root.path("choices");
+                if (choices.isArray() && choices.size() > 0) {
+                    JsonNode contentNode = choices.get(0).path("message").path("content");
+                    return contentNode.asText();
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("OpenAI API invocation encountered an issue (falling back gracefully): {}", ex.getMessage());
         }
 
         return null;

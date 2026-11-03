@@ -63,6 +63,12 @@ gemini:
   model: ${GEMINI_MODEL:gemini-1.5-flash}
   base-url: https://generativelanguage.googleapis.com/v1beta/models
 
+# OpenAI API Configuration
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-4o-mini}
+  base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+
 # Web3j Blockchain Configuration
 blockchain:
   enabled: true
