@@ -20,6 +20,7 @@ import { Badge } from "../../src/components/Badge";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { YouTubeVideo } from "../../src/types";
+import { MASTER_VIDEOS, MASTER_SKILLS_SUMMARY } from "../../src/data/masterVideos";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 const DIFFICULTIES = ["All Difficulties", "BEGINNER", "INTERMEDIATE", "ADVANCED"];
@@ -77,26 +78,74 @@ export default function VideoAcademyScreen() {
     router.push(`/videos/${video.id || video.videoId}`);
   };
 
+  // Merge backend videos with full 36+ Masterclass catalog
+  const mergedVideos = useMemo(() => {
+    const backendList = videos || [];
+    const map = new Map<string, YouTubeVideo>();
+    MASTER_VIDEOS.forEach((v) => map.set(v.videoId, { ...v }));
+    backendList.forEach((v) => {
+      const existing = map.get(v.videoId);
+      if (existing) {
+        map.set(v.videoId, { ...existing, ...v, id: v.id || existing.id });
+      } else {
+        map.set(v.videoId, v);
+      }
+    });
+
+    let list = Array.from(map.values());
+
+    if (selectedSkillId && selectedSkillId !== "all") {
+      list = list.filter(
+        (v) =>
+          v.skillId === selectedSkillId ||
+          v.category?.toLowerCase() === selectedSkillId.toLowerCase() ||
+          v.skillName?.toLowerCase().includes(selectedSkillId.toLowerCase())
+      );
+    }
+
+    if (selectedDifficulty && selectedDifficulty !== "All Difficulties") {
+      list = list.filter((v) => v.difficulty === selectedDifficulty);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (v) =>
+          v.title.toLowerCase().includes(q) ||
+          v.channelTitle.toLowerCase().includes(q) ||
+          (v.skillName && v.skillName.toLowerCase().includes(q)) ||
+          (v.category && v.category.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [videos, selectedSkillId, selectedDifficulty, searchQuery]);
+
+  const effectiveSkillsSummary = useMemo(() => {
+    if (skillsSummary && skillsSummary.length >= 6) return skillsSummary;
+    return MASTER_SKILLS_SUMMARY;
+  }, [skillsSummary]);
+
   const inProgressVideos = useMemo(() => {
-    return (videos || []).filter((v) => v.watchStatus === "IN_PROGRESS");
-  }, [videos]);
+    return mergedVideos.filter((v) => v.watchStatus === "IN_PROGRESS");
+  }, [mergedVideos]);
 
   const completedVideos = useMemo(() => {
-    return (videos || []).filter((v) => v.watchStatus === "COMPLETED");
-  }, [videos]);
+    return mergedVideos.filter((v) => v.watchStatus === "COMPLETED");
+  }, [mergedVideos]);
 
   const savedVideos = useMemo(() => {
-    return (videos || []).filter(
+    return mergedVideos.filter(
       (v) => savedVideoIds.includes(v.id) || savedVideoIds.includes(v.videoId)
     );
-  }, [videos, savedVideoIds]);
+  }, [mergedVideos, savedVideoIds]);
 
   const displayedVideos = useMemo(() => {
     if (activeViewTab === "continue") return inProgressVideos;
     if (activeViewTab === "completed") return completedVideos;
     if (activeViewTab === "saved") return savedVideos;
-    return videos || [];
-  }, [activeViewTab, videos, inProgressVideos, completedVideos, savedVideos]);
+    return mergedVideos;
+  }, [activeViewTab, mergedVideos, inProgressVideos, completedVideos, savedVideos]);
 
   return (
     <ScrollView
@@ -169,7 +218,7 @@ export default function VideoAcademyScreen() {
             onPress={() => setActiveViewTab("all")}
           >
             <Text style={[styles.viewTabText, activeViewTab === "all" && styles.viewTabTextActive]}>
-              All ({videos?.length || 0})
+              All ({mergedVideos.length})
             </Text>
           </TouchableOpacity>
 
@@ -218,12 +267,15 @@ export default function VideoAcademyScreen() {
                     selectedSkillId === null && styles.filterPillTextActive,
                   ]}
                 >
-                  All Topics ({videos?.length || 0})
+                  All Topics ({mergedVideos.length})
                 </Text>
               </TouchableOpacity>
 
-              {(skillsSummary || []).map((skill) => {
-                const isSelected = selectedSkillId === skill.skillId;
+              {effectiveSkillsSummary.filter((s) => s.skillId !== "all").map((skill) => {
+                const isSelected = selectedSkillId === skill.skillId || selectedSkillId === skill.category;
+                const count = mergedVideos.filter(
+                  (v) => v.category === skill.category || (v.skillName && v.skillName.toLowerCase().includes(skill.skillName.toLowerCase()))
+                ).length;
                 return (
                   <TouchableOpacity
                     key={skill.skillId}
@@ -231,7 +283,7 @@ export default function VideoAcademyScreen() {
                       styles.filterPill,
                       isSelected && styles.filterPillActive,
                     ]}
-                    onPress={() => setSelectedSkillId(isSelected ? null : skill.skillId)}
+                    onPress={() => setSelectedSkillId(isSelected ? null : (skill.category || skill.skillId))}
                   >
                     <Text
                       style={[
@@ -239,7 +291,7 @@ export default function VideoAcademyScreen() {
                         isSelected && styles.filterPillTextActive,
                       ]}
                     >
-                      {skill.skillName} ({skill.videoCount})
+                      {skill.skillName} ({count || skill.videoCount})
                     </Text>
                   </TouchableOpacity>
                 );

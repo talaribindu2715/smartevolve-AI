@@ -242,13 +242,22 @@ public class DataInitializer implements CommandLineRunner {
                 "Build full-scale Spring Boot REST microservices with Spring Data JPA, PostgreSQL, Docker, and Spring Security.",
                 skills.get("Spring Boot"), "INTERMEDIATE", "Amigoscode", "2:15:30", 135, "1.1M views");
 
-        // React & React Native
+        // React, Next.js & Frontend
         saveVideo("0-S5a0eXPoc", "React Native Crash Course 2024 - Build Mobile Apps",
                 "Build iOS and Android applications with Expo Router, state management, animated components, and native APIs.",
                 skills.get("React & React Native"), "INTERMEDIATE", "freeCodeCamp.org", "2:40:00", 160, "980K views");
         saveVideo("Tn6-PIqc4UM", "React in 100 Seconds // Quickstart Architecture",
                 "High-velocity overview of React components, virtual DOM, hooks, and architectural patterns.",
                 skills.get("React & React Native"), "BEGINNER", "Fireship", "2:24", 3, "2.4M views");
+        saveVideo("wm5gMKuwSYk", "Next.js 14 Full Course - Server Components & Actions",
+                "Master Next.js App Router, React Server Components, server actions, authentication, and SSR optimization.",
+                skills.get("React & React Native"), "INTERMEDIATE", "JavaScript Mastery", "5:32:10", 332, "1.4M views");
+        saveVideo("BwuLxPH8IDs", "TypeScript Full Course for Beginners - 2024 Edition",
+                "Static type checking, interfaces, generic types, utility types, and compiler configuration for enterprise codebases.",
+                skills.get("TypeScript"), "BEGINNER", "freeCodeCamp.org", "1:34:25", 94, "1.2M views");
+        saveVideo("W6NZfCO5SIk", "JavaScript Tutorial for Beginners: 1 Hour Crash Course",
+                "Core JavaScript fundamentals: variables, operators, functions, DOM manipulation, and asynchronous callbacks.",
+                skills.get("JavaScript"), "BEGINNER", "Programming with Mosh", "1:07:00", 67, "12M views");
 
         // Artificial Intelligence & Machine Learning
         saveVideo("i_LwzRVP7bg", "Machine Learning for Beginners - Full Mathematical Course",
@@ -260,6 +269,9 @@ public class DataInitializer implements CommandLineRunner {
         saveVideo("bZQun8Y4L2A", "State of GPT: Large Language Models Explained",
                 "Andrej Karpathy details tokenizer internals, pre-training, fine-tuning, RLHF, and thinking models.",
                 skills.get("Prompt Engineering & LLMs"), "INTERMEDIATE", "Andrej Karpathy", "42:01", 42, "1.9M views");
+        saveVideo("uj_Q6sQfDls", "Generative AI Engineering - Agents, LangChain & RAG",
+                "Build enterprise AI applications using retrieval augmented generation, vector databases, and multi-agent systems.",
+                skills.get("Prompt Engineering & LLMs"), "ADVANCED", "freeCodeCamp.org", "6:20:00", 380, "1.3M views");
 
         // SQL & Databases
         saveVideo("HXV3zeRR3h4", "SQL Tutorial - Full Database Course for Beginners",
@@ -268,14 +280,78 @@ public class DataInitializer implements CommandLineRunner {
         saveVideo("qw--VYLpxG4", "PostgreSQL Crash Course - Relational Architecture",
                 "PostgreSQL setup, indexes, constraints, foreign keys, window functions, and query optimization.",
                 skills.get("PostgreSQL"), "INTERMEDIATE", "Traversy Media", "45:10", 45, "750K views");
+        saveVideo("bb6nm4pWb4o", "MongoDB Full Course - Aggregations & Schema Design",
+                "NoSQL document storage, indexing strategies, replica sets, and aggregation pipelines in MongoDB.",
+                skills.get("MongoDB"), "INTERMEDIATE", "freeCodeCamp.org", "3:02:00", 182, "920K views");
+        saveVideo("jgpVd5VaAlg", "Redis Crash Course - In-Memory Caching & Pub/Sub",
+                "Ultra-fast in-memory key-value data structures, TTL eviction policies, distributed session locks, and pub/sub message queues.",
+                skills.get("Redis"), "INTERMEDIATE", "Traversy Media", "48:30", 48, "650K views");
 
         // Cloud & DevOps
         saveVideo("3c-iBn73dDE", "Docker Tutorial for Beginners - Full Course Hands-On",
                 "Containerization fundamentals, Dockerfiles, images, containers, networks, volumes, and Docker Compose.",
                 skills.get("Docker"), "BEGINNER", "TechWorld with Nana", "3:10:48", 190, "4.2M views");
+        saveVideo("X48VuDVv0do", "Kubernetes Tutorial for Beginners - Full Course",
+                "Cluster orchestration, Pods, Deployments, Services, ConfigMaps, Secrets, Ingress, and Helm charts.",
+                skills.get("Kubernetes"), "ADVANCED", "TechWorld with Nana", "3:34:00", 214, "3.8M views");
+        saveVideo("Ia-UEYYR44s", "AWS Certified Cloud Practitioner - Full Course",
+                "Comprehensive review of AWS Cloud architecture, EC2 compute, S3 storage, IAM security, VPC networking, and pricing models.",
+                skills.get("AWS Cloud Core"), "BEGINNER", "freeCodeCamp.org", "13:58:00", 838, "2.7M views");
+        saveVideo("RBSGKlAnoiM", "GitHub Actions CI/CD Pipeline - Complete Workflow",
+                "Automate build verification, automated testing suites, container packaging, and production deployments with GitHub Actions.",
+                skills.get("CI/CD Pipelines"), "INTERMEDIATE", "TechWorld with Nana", "1:42:00", 102, "890K views");
+        saveVideo("Z1Yd7upQsXY", "Linux for Beginners - Full Course & Shell Commands",
+                "Master terminal command line navigation, user permissions, process management, Bash scripting, and SSH configurations.",
+                skills.get("Linux Administration"), "BEGINNER", "freeCodeCamp.org", "5:45:00", 345, "4.9M views");
+
+        // System Design & Architecture
         saveVideo("m8Icp_Cid5o", "System Design Interview - Complete Engineering Guide",
                 "Scalability, load balancing, caching tiers, message queues, horizontal partitioning, and CAP theorem.",
                 skills.get("System Design"), "ADVANCED", "NeetCode", "1:15:00", 75, "890K views");
+        saveVideo("R8rmfD9Y5-c", "Apache Kafka Full Course - Event-Driven Systems",
+                "Distributed streaming, topics, partitions, consumer groups, offsets, and high-throughput real-time data pipelines.",
+                skills.get("System Design"), "ADVANCED", "freeCodeCamp.org", "3:30:00", 210, "1.4M views");
+        saveVideo("F9g_DEZ3j6s", "Microservices Architecture - High-Level Patterns",
+                "Domain-Driven Design, API gateways, service discovery, distributed tracing, and fault-tolerant communication.",
+                skills.get("System Design"), "ADVANCED", "Defog Tech", "1:20:00", 80, "950K views");
+
+        // Data Structures & Algorithms
+        saveVideo("8ext9G7xspg", "Data Structures and Algorithms - 8 Hour Masterclass",
+                "Comprehensive guide to Arrays, Linked Lists, Trees, Graphs, Sorting algorithms, and Big-O asymptotic analysis.",
+                skills.get("Data Structures & Algorithms"), "INTERMEDIATE", "freeCodeCamp.org", "8:03:00", 483, "2.5M views");
+        saveVideo("oBt53YbR9K3", "Dynamic Programming - Learn to Solve Algorithmic DP",
+                "Memoization, tabulation, grid traveler, knapsack problem, and longest common subsequence patterns.",
+                skills.get("Data Structures & Algorithms"), "ADVANCED", "freeCodeCamp.org", "5:10:00", 310, "3.4M views");
+
+        // Cyber Security & QA
+        saveVideo("inN8seMm7UI", "Cybersecurity Full Course for Beginners - 2024",
+                "Network security, cryptography, zero trust architecture, malware detection, and vulnerability mitigation.",
+                skills.get("Cybersecurity Fundamentals"), "BEGINNER", "Simplilearn", "11:24:00", 684, "1.8M views");
+        saveVideo("U_P23uqErP4", "OWASP Top 10 Web Application Security Threats",
+                "Deep dive into SQL injection, Broken Authentication, Cross-Site Scripting (XSS), and insecure deserialization.",
+                skills.get("Cybersecurity Fundamentals"), "INTERMEDIATE", "freeCodeCamp.org", "2:15:00", 135, "780K views");
+        saveVideo("JtTdfhnY4fE", "Software Testing & QA Fundamentals - Unit to E2E",
+                "Automated test suites, unit testing with Jest/JUnit, integration tests, mock objects, and CI test pipelines.",
+                skills.get("Software Testing & QA"), "BEGINNER", "freeCodeCamp.org", "4:00:00", 240, "620K views");
+
+        // Data Analysis & Analytics
+        saveVideo("gp5H0Vw39yw", "Pandas & NumPy Full Data Analysis Bootcamp",
+                "Vectorized array calculations, DataFrame indexing, missing data imputation, grouping, and aggregations.",
+                skills.get("Pandas & NumPy"), "BEGINNER", "freeCodeCamp.org", "10:15:00", 615, "2.1M views");
+        saveVideo("Vn_Uptk2xKA", "Statistics for Data Science - Full Course",
+                "Descriptive statistics, probability distributions, central limit theorem, hypothesis testing, and ANOVA.",
+                skills.get("Statistics"), "INTERMEDIATE", "freeCodeCamp.org", "8:42:00", 522, "1.7M views");
+        saveVideo("3u7EIcyqLao", "Power BI Full Course 2024 - Beginner to Pro DAX",
+                "Star schema data modeling, interactive dashboard design, DAX measures, and business reporting.",
+                skills.get("Power BI"), "BEGINNER", "Edureka", "4:30:00", 270, "1.1M views");
+
+        // Backend & Web3
+        saveVideo("Oe421EPjeBE", "Node.js and Express.js Full Course",
+                "Event-driven asynchronous backend development, Express middleware, routing, and REST services.",
+                skills.get("Node.js"), "INTERMEDIATE", "freeCodeCamp.org", "8:16:00", 496, "3.1M views");
+        saveVideo("c3yd93ZlS18", "RESTful API Design & Best Practices",
+                "HTTP verbs, idempotent requests, OpenAPI specifications, status codes, and API versioning strategies.",
+                skills.get("RESTful API Design"), "BEGINNER", "Traversy Media", "42:15", 42, "840K views");
     }
 
     private void saveVideo(String videoId, String title, String desc, Skill skill, String diff, String channel, String duration, int mins, String views) {
