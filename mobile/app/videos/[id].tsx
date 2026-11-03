@@ -1008,6 +1008,12 @@ export default function VideoDetailScreen() {
     setQuizScore(correctCount);
     setQuizSubmitted(true);
 
+    const isPassing = correctCount >= Math.ceil(quizQuestions.length * 0.6);
+    if (isPassing) {
+      updateProgressMutation.mutate("COMPLETED");
+      setShowCertModal(true);
+    }
+
     // Calculate Attempt-Damped Proficiency Gain
     const lambda = 1.0 / Math.sqrt(Math.max(1, quizAttempts));
     const rawGain = (correctCount / quizQuestions.length) * 5.0; // max +5.0%
@@ -1099,40 +1105,45 @@ export default function VideoDetailScreen() {
           </View>
         </View>
 
-        {/* Learning Verification & Progress Recording */}
-        <Card style={styles.progressCard}>
-          <Text style={styles.progressCardTitle}>Learning Verification</Text>
-          <Text style={styles.progressCardSub}>
-            Watch the video lesson and verify your understanding to calibrate your skill evolution.
-          </Text>
-
-          <View style={styles.actionButtonsRow}>
-            <Button
-              title={isCompleted ? "✓ Masterclass Completed (+3% Proficiency)" : "Mark Video as Completed (100%)"}
-              onPress={() => updateProgressMutation.mutate("COMPLETED")}
-              variant="primary"
-              loading={updateProgressMutation.isPending}
-              size="md"
-              style={{ flex: 1 }}
-            />
-            {!isCompleted && (
-              <Button
-                title="Mark as In Progress (50%)"
-                onPress={() => updateProgressMutation.mutate("IN_PROGRESS")}
-                variant="outline"
-                loading={updateProgressMutation.isPending}
-                size="md"
-                style={{ flex: 1, marginTop: spacing.xs }}
-              />
-            )}
-            <Button
-              title="🎓 Generate Verified Course Certificate"
-              onPress={() => setShowCertModal(true)}
-              variant="outline"
-              size="md"
-              style={{ width: "100%", marginTop: spacing.xs, borderColor: "#F59E0B" }}
-            />
+        {/* Learning Verification & Progress Status (Verified Automatic Unlocking) */}
+        <Card style={[styles.progressCard, (isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) && { borderColor: "#10B981", backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <Text style={{ fontSize: 24 }}>{(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? "🏆" : "🔒"}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.progressCardTitle, (isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) && { color: "#10B981" }]}>
+                {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? "Course Mastered & Certificate Ready!" : "Certificate Locked (Completion Required)"}
+              </Text>
+              <Text style={styles.progressCardSub}>
+                {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6)))
+                  ? "Congratulations! You have fulfilled the academic study requirements. Your official SmartEvolve certificate is unlocked."
+                  : "To earn your official SmartEvolve certificate, complete this masterclass and pass the diagnostic Skill Quiz (≥60%)."}
+              </Text>
+            </View>
           </View>
+
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+            <View style={{ flex: 1, padding: 8, backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 6, borderWidth: 1, borderColor: colors.cardBorder }}>
+              <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "700" }}>STUDY STATUS</Text>
+              <Text style={{ fontSize: 12, color: (isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? colors.success : colors.warning, fontWeight: "700", marginTop: 2 }}>
+                {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? "Completed ✓" : "In Progress ⏳"}
+              </Text>
+            </View>
+            <View style={{ flex: 1, padding: 8, backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 6, borderWidth: 1, borderColor: colors.cardBorder }}>
+              <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "700" }}>SKILL QUIZ EVALUATION</Text>
+              <Text style={{ fontSize: 12, color: quizSubmitted ? (quizScore >= Math.ceil(quizQuestions.length * 0.6) ? colors.success : colors.error) : colors.textMuted, fontWeight: "700", marginTop: 2 }}>
+                {quizSubmitted ? `${Math.round((quizScore / quizQuestions.length) * 100)}% (${quizScore >= Math.ceil(quizQuestions.length * 0.6) ? "Passed ✓" : "Retake Quiz"})` : "Take Quiz Below ✍️"}
+              </Text>
+            </View>
+          </View>
+
+          {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) && (
+            <Button
+              title="🎓 View Official SmartEvolve Certificate"
+              onPress={() => setShowCertModal(true)}
+              size="md"
+              style={{ width: "100%", marginTop: spacing.md, backgroundColor: "#4338CA" }}
+            />
+          )}
         </Card>
 
         {/* Segmented Tab Navigation */}
@@ -1408,20 +1419,21 @@ export default function VideoDetailScreen() {
             )}
           </View>
         )}
-        {/* Autonomous Course Certificate Modal */}
+        {/* Autonomous Great Learning Style Course Certificate Modal */}
         <CertificateModal
           visible={showCertModal}
           onClose={() => setShowCertModal(false)}
           certificate={{
-            id: "SE-CERT-" + Math.floor(100000 + Math.random() * 900000),
+            id: "SE-GL-" + (effectiveVideo.videoId || "CERT").toUpperCase(),
             studentName: profile?.fullName || "Bindu Talari",
+            department: profile?.branch || "Computer Science and Engineering",
+            institution: profile?.institution || "K.S.R.M. College of Engineering (Autonomous)",
+            graduationYear: profile?.graduationYear || 2026,
             courseOrSkillTitle: effectiveVideo.title,
             category: effectiveVideo.category || effectiveVideo.skillName || "Computer Science",
             proficiency: quizSubmitted ? Math.round((quizScore / quizQuestions.length) * 100) : 95,
             issuedDate: new Date().toISOString(),
-            achievementDataHash: "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
-            contractAddress: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-            networkId: "Polygon / EVM",
+            certificateCode: "SE-GL-" + Math.floor(100000 + Math.random() * 900000),
           }}
         />
       </View>

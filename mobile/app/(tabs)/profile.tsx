@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { CertificateModal, CertificateData } from "../../src/components/CertificateModal";
 import {
   View,
   Text,
@@ -25,6 +26,8 @@ import { colors, radius, spacing } from "../../src/theme/colors";
 export default function ProfileScreen() {
   const router = useRouter();
   const { logout } = useAuth();
+  const [selectedProfileCert, setSelectedProfileCert] = useState<CertificateData | null>(null);
+
 
   const handleLogout = async () => {
     const doLogout = async () => {
@@ -268,6 +271,83 @@ export default function ProfileScreen() {
                 )}
               </Card>
             </View>
+
+            {/* Earned Academic Certificates Section */}
+            <View style={styles.sectionWrap}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>🎓 My Earned Certificates</Text>
+                <Text style={styles.skillsCount}>{(credentials || []).length} Verified</Text>
+              </View>
+
+              <Card>
+                {(credentials || []).length > 0 ? (
+                  (credentials || []).map((cred) => (
+                    <View
+                      key={cred.id}
+                      style={{
+                        paddingVertical: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.cardBorder,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 10,
+                      }}
+                    >
+                      <View style={{ flex: 1, minWidth: 220 }}>
+                        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "800" }}>
+                          {cred.achievementTitle}
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                          SmartEvolve Academy • Department of {profile?.branch || "Computer Science and Engineering"}
+                        </Text>
+                        <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "600", marginTop: 4 }}>
+                          Issued: {new Date(cred.issuedAt || Date.now()).toLocaleDateString()} • Code: SE-GL-{cred.id.substring(0, 6).toUpperCase()}
+                        </Text>
+                      </View>
+                      <Button
+                        title="View Certificate 📜"
+                        size="sm"
+                        onPress={() => {
+                          setSelectedProfileCert({
+                            id: cred.id,
+                            studentName: profile?.fullName || "Bindu Talari",
+                            department: profile?.branch || "Computer Science and Engineering",
+                            institution: profile?.institution || "K.S.R.M. College of Engineering (Autonomous)",
+                            graduationYear: profile?.graduationYear || 2026,
+                            courseOrSkillTitle: cred.achievementTitle,
+                            category: cred.credentialType || "Academic Specialization",
+                            proficiency: 95,
+                            issuedDate: cred.issuedAt,
+                            certificateCode: "SE-GL-" + cred.id.substring(0, 6).toUpperCase(),
+                          });
+                        }}
+                      />
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptySkillsWrap}>
+                    <Text style={styles.emptySkillsText}>
+                      No certificates earned yet. Watch and complete video courses in SmartEvolve Academy or pass milestone skill quizzes to autonomously generate your verified certificates!
+                    </Text>
+                    <Button
+                      title="Explore SmartEvolve Academy →"
+                      onPress={() => router.push("/videos")}
+                      size="sm"
+                      style={{ marginTop: spacing.md }}
+                    />
+                  </View>
+                )}
+              </Card>
+            </View>
+
+            {/* Certificate Modal */}
+            <CertificateModal
+              visible={!!selectedProfileCert}
+              onClose={() => setSelectedProfileCert(null)}
+              certificate={selectedProfileCert}
+            />
 
             {/* Action Links */}
             <View style={styles.actionsWrap}>

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -9,17 +9,20 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
 import { Button } from "./Button";
 import { colors, radius, spacing } from "../theme/colors";
 
 export interface CertificateData {
   id: string;
   studentName: string;
+  department?: string;
+  institution?: string;
+  graduationYear?: number | string;
   courseOrSkillTitle: string;
   category?: string;
   proficiency?: number;
   issuedDate?: string;
+  certificateCode?: string;
   achievementDataHash?: string;
   transactionHash?: string;
   contractAddress?: string;
@@ -35,7 +38,12 @@ interface CertificateModalProps {
 export function CertificateModal({ visible, onClose, certificate }: CertificateModalProps) {
   if (!certificate) return null;
 
-  const certId = certificate.id || "SE-CERT-" + Math.floor(100000 + Math.random() * 900000);
+  const certCode = certificate.certificateCode || certificate.id || "SE-GL-" + Math.floor(100000 + Math.random() * 900000);
+  const studentName = certificate.studentName || "Bindu Talari";
+  const department = certificate.department || "Computer Science and Engineering";
+  const institution = certificate.institution || "K.S.R.M. College of Engineering (Autonomous)";
+  const graduationYear = certificate.graduationYear || 2026;
+
   const issuedDate = certificate.issuedDate
     ? new Date(certificate.issuedDate).toLocaleDateString("en-US", {
         year: "numeric",
@@ -50,16 +58,15 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
 
   const handlePrint = () => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
-      // Inject print stylesheet if needed
-      const styleId = "cert-print-style";
+      const styleId = "cert-greatlearning-print";
       if (!document.getElementById(styleId)) {
         const style = document.createElement("style");
         style.id = styleId;
         style.innerHTML = `
           @media print {
             body * { visibility: hidden !important; }
-            #cert-frame-printable, #cert-frame-printable * { visibility: visible !important; }
-            #cert-frame-printable {
+            #greatlearning-cert-print, #greatlearning-cert-print * { visibility: visible !important; }
+            #greatlearning-cert-print {
               position: fixed !important;
               left: 0 !important;
               top: 0 !important;
@@ -67,8 +74,9 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
               height: 100vh !important;
               margin: 0 !important;
               padding: 24px !important;
-              background: #0B0F19 !important;
               box-sizing: border-box !important;
+              background: #FFFFFF !important;
+              color: #0F172A !important;
               display: flex !important;
               justify-content: center !important;
               align-items: center !important;
@@ -81,23 +89,23 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
     } else {
       Alert.alert(
         "Certificate Ready",
-        `Certificate #${certId} is verified on blockchain. Take a screenshot or open on desktop to print PDF.`
+        `Certificate #${certCode} is verified. Use desktop browser to save/print as high-resolution PDF.`
       );
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyCode = () => {
     const origin =
       Platform.OS === "web" && typeof window !== "undefined"
         ? window.location.origin
         : "https://smartevolve-ai-mobile-sand.vercel.app";
-    const link = `${origin}/credentials?verify=${certificate.id}`;
+    const link = `${origin}/credentials?verify=${certCode}`;
 
     if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(link);
-      Alert.alert("Link Copied!", `Verification link copied to clipboard:\n\n${link}`);
+      Alert.alert("Link Copied!", `Verification URL copied to clipboard:\n\n${link}`);
     } else {
-      Alert.alert("Public Verification Link", `Share this link for third-party audit:\n\n${link}`);
+      Alert.alert("Public Verification Link", `Share this link to verify certificate:\n\n${link}`);
     }
   };
 
@@ -105,11 +113,11 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          {/* Top Bar with Close */}
+          {/* Header Controls */}
           <View style={styles.topBar}>
-            <View style={styles.topBarLeft}>
-              <Text style={styles.topBarBadge}>🎓 OFFICIAL ACADEMIC CREDENTIAL</Text>
-              <Text style={styles.topBarSub}>Generated Autonomously by SmartEvolve AI</Text>
+            <View>
+              <Text style={styles.topBarBadge}>SmartEvolve ACADEMY CERTIFICATION</Text>
+              <Text style={styles.topBarSub}>Autonomously Verified Academic Credential</Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -117,116 +125,114 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
           </View>
 
           <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-            {/* The Actual Formal Printable Certificate */}
-            <View style={styles.certFrame} nativeID="cert-frame-printable">
-              {/* Outer Ornate Border */}
-              <View style={styles.outerBorder}>
-                {/* Inner Double Gold Border */}
-                <View style={styles.innerBorder}>
-                  {/* Corner Accent Ornaments */}
-                  <View style={[styles.cornerBox, styles.cornerTL]} />
-                  <View style={[styles.cornerBox, styles.cornerTR]} />
-                  <View style={[styles.cornerBox, styles.cornerBL]} />
-                  <View style={[styles.cornerBox, styles.cornerBR]} />
+            {/* The Great Learning-Styled Certificate Document */}
+            <View style={styles.certPaper} nativeID="greatlearning-cert-print">
+              {/* Outer Golden/Navy Double Frame */}
+              <View style={styles.certOuterFrame}>
+                <View style={styles.certInnerFrame}>
+                  {/* Decorative Corner Tabs */}
+                  <View style={[styles.cornerTab, styles.cornerTL]} />
+                  <View style={[styles.cornerTab, styles.cornerTR]} />
+                  <View style={[styles.cornerTab, styles.cornerBL]} />
+                  <View style={[styles.cornerTab, styles.cornerBR]} />
 
-                  {/* Header / Institution Section */}
-                  <View style={styles.instHeader}>
-                    <Text style={styles.instEmblem}>🏛️</Text>
-                    <Text style={styles.instCollege}>K.S.R.M. COLLEGE OF ENGINEERING</Text>
-                    <Text style={styles.instAutonomous}>(AUTONOMOUS)</Text>
-                    <Text style={styles.instAffiliation}>
-                      Approved by AICTE, New Delhi & Affiliated to JNTUA • An ISO 9001:2015 Certified Institution
-                    </Text>
-                    <Text style={styles.instDept}>DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING</Text>
-                    <View style={styles.platformBadge}>
-                      <Text style={styles.platformBadgeText}>SmartEvolve AI • Self-Evolving Autonomous Verification</Text>
+                  {/* Header Row: SmartEvolve Logo & Institution */}
+                  <View style={styles.certTopHeader}>
+                    {/* Left Brand: SmartEvolve Academy */}
+                    <View style={styles.brandCol}>
+                      <View style={styles.brandTitleRow}>
+                        <View style={styles.brandDot} />
+                        <Text style={styles.brandMainText}>SmartEvolve</Text>
+                      </View>
+                      <Text style={styles.brandSubText}>A C A D E M Y</Text>
+                    </View>
+
+                    {/* Right Institution: K.S.R.M. College of Engineering */}
+                    <View style={styles.institutionCol}>
+                      <Text style={styles.instName}>{institution}</Text>
+                      <Text style={styles.instSub}>Department of {department}</Text>
+                      <Text style={styles.instAccred}>Autonomous Institution • Affiliated to JNTUA • Approved by AICTE</Text>
                     </View>
                   </View>
 
-                  <View style={styles.dividerGold} />
+                  <View style={styles.goldDivider} />
 
                   {/* Certificate Title */}
-                  <View style={styles.titleSection}>
-                    <Text style={styles.certHeadline}>CERTIFICATE OF MASTERY & COMPETENCY</Text>
-                    <Text style={styles.certSubHeadline}>VERIFIED EDUCATIONAL ACHIEVEMENT</Text>
+                  <View style={styles.certTitleWrap}>
+                    <Text style={styles.certMainHeading}>CERTIFICATE OF COMPLETION</Text>
+                    <Text style={styles.certMainSubheading}>PROUDLY PRESENTED TO</Text>
                   </View>
 
-                  {/* Recipient Section */}
-                  <View style={styles.recipientSection}>
-                    <Text style={styles.certProse}>This is to certify that</Text>
-                    <Text style={styles.studentName}>
-                      {certificate.studentName || "Bindu Talari"}
+                  {/* Student Name */}
+                  <View style={styles.studentNameWrap}>
+                    <Text style={styles.studentNameText}>{studentName}</Text>
+                    <View style={styles.studentUnderline} />
+                  </View>
+
+                  {/* Recognition Prose */}
+                  <View style={styles.bodyProseWrap}>
+                    <Text style={styles.bodyText}>
+                      of the <Text style={styles.boldText}>Department of {department}</Text>, Class of {graduationYear},
+                      for successfully completing all curriculum modules and verifying comprehensive skill competency in
                     </Text>
-                    <Text style={styles.certProse}>
-                      has successfully demonstrated advanced competency, completed curriculum assessments, and verified high proficiency in
-                    </Text>
-                    <Text style={styles.courseTitle}>
+
+                    <Text style={styles.courseHighlightText}>
                       {certificate.courseOrSkillTitle}
                     </Text>
+
                     {certificate.category ? (
-                      <Text style={styles.categorySub}>Specialization Track: {certificate.category}</Text>
-                    ) : null}
-                  </View>
-
-                  {/* Proficiency & Cryptographic Verification Strip */}
-                  <View style={styles.verificationStrip}>
-                    <View style={styles.vCol}>
-                      <Text style={styles.vKey}>DEMONSTRATED PROFICIENCY</Text>
-                      <Text style={styles.vValAccent}>
-                        {certificate.proficiency ? `${Math.round(certificate.proficiency)}% Verified` : "95% Mastery"}
+                      <Text style={styles.categoryBadgeText}>
+                        Domain Specialization: {certificate.category}
                       </Text>
-                    </View>
-                    <View style={styles.vCol}>
-                      <Text style={styles.vKey}>CERTIFICATE ID</Text>
-                      <Text style={styles.vValMono}>{certId.substring(0, 18)}</Text>
-                    </View>
-                    <View style={styles.vCol}>
-                      <Text style={styles.vKey}>DATE ISSUED</Text>
-                      <Text style={styles.vVal}>{issuedDate}</Text>
-                    </View>
-                    <View style={styles.vCol}>
-                      <Text style={styles.vKey}>IMMUTABILITY STATUS</Text>
-                      <Text style={styles.vValGreen}>✓ On-Chain Anchored</Text>
-                    </View>
-                  </View>
+                    ) : null}
 
-                  {/* Blockchain Proof Digest */}
-                  <View style={styles.proofBox}>
-                    <Text style={styles.proofText} numberOfLines={1}>
-                      <Text style={{ fontWeight: "700", color: "#F59E0B" }}>SHA-256 Digest: </Text>
-                      {certificate.achievementDataHash || "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"}
-                    </Text>
-                    <Text style={styles.proofText} numberOfLines={1}>
-                      <Text style={{ fontWeight: "700", color: "#6366F1" }}>Smart Contract: </Text>
-                      {certificate.contractAddress || "0x5FbDB2315678afecb367f032d93F642f64180aa3 (SmartEvolveCredential)"}
+                    <Text style={styles.bodySubText}>
+                      with verified proficiency assessment and milestone achievement tracked on SmartEvolve AI.
                     </Text>
                   </View>
 
-                  {/* Signatures & Seal Section */}
-                  <View style={styles.signaturesSection}>
-                    {/* HOD Sign */}
-                    <View style={styles.signCol}>
-                      <View style={styles.signLine} />
-                      <Text style={styles.signName}>Dr. V. Lokeswara Reddy</Text>
-                      <Text style={styles.signTitle}>Head of the Department, CSE</Text>
-                      <Text style={styles.signInst}>K.S.R.M. College of Engineering</Text>
-                    </View>
+                  {/* Footer Section: Date, Code, Seal & Signatures */}
+                  <View style={styles.certFooter}>
+                    {/* Date & Verification ID */}
+                    <View style={styles.footerColLeft}>
+                      <Text style={styles.metaLabel}>Issued Date</Text>
+                      <Text style={styles.metaValue}>{issuedDate}</Text>
 
-                    {/* Official Stamp / Seal */}
-                    <View style={styles.sealCol}>
-                      <View style={styles.sealCircle}>
-                        <Text style={styles.sealIcon}>🛡️</Text>
-                        <Text style={styles.sealText}>KSRM CE</Text>
-                        <Text style={styles.sealSub}>AUTONOMOUS</Text>
+                      <Text style={[styles.metaLabel, { marginTop: 8 }]}>Certificate Code</Text>
+                      <Text style={styles.metaCode}>{certCode}</Text>
+
+                      <View style={styles.verifyChip}>
+                        <Text style={styles.verifyChipText}>✓ Verified on SmartEvolve</Text>
                       </View>
                     </View>
 
-                    {/* Principal Sign */}
-                    <View style={styles.signCol}>
-                      <View style={styles.signLine} />
-                      <Text style={styles.signName}>Dr. M. Sreenivasulu</Text>
-                      <Text style={styles.signTitle}>Director & Principal</Text>
-                      <Text style={styles.signInst}>K.S.R.M. College of Engineering</Text>
+                    {/* Center Official Gold Seal */}
+                    <View style={styles.footerColCenter}>
+                      <View style={styles.goldSealWrap}>
+                        <View style={styles.goldSealInner}>
+                          <Text style={styles.sealIconText}>★</Text>
+                          <Text style={styles.sealBrandText}>SmartEvolve</Text>
+                          <Text style={styles.sealVerifiedText}>VERIFIED</Text>
+                          <Text style={styles.sealIconText}>★</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Right Signatories */}
+                    <View style={styles.footerColRight}>
+                      <View style={styles.signBlock}>
+                        <View style={styles.signLine} />
+                        <Text style={styles.signatoryName}>Dr. V. Lokeswara Reddy</Text>
+                        <Text style={styles.signatoryRole}>Head of Department, CSE</Text>
+                        <Text style={styles.signatoryInst}>K.S.R.M. College of Engineering</Text>
+                      </View>
+
+                      <View style={[styles.signBlock, { marginTop: 10 }]}>
+                        <View style={styles.signLine} />
+                        <Text style={styles.signatoryName}>Dr. M. Sreenivasulu</Text>
+                        <Text style={styles.signatoryRole}>Director & Principal</Text>
+                        <Text style={styles.signatoryInst}>K.S.R.M. College of Engineering</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -242,8 +248,8 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
                 style={{ flex: 1 }}
               />
               <Button
-                title="🔗 Copy Public Verification Link"
-                onPress={handleCopyLink}
+                title="🔗 Copy Verification Link"
+                onPress={handleCopyCode}
                 variant="outline"
                 size="lg"
                 style={{ flex: 1 }}
@@ -259,15 +265,15 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: "rgba(0, 0, 0, 0.88)",
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.md,
   },
   modalContainer: {
     width: "100%",
-    maxWidth: 880,
-    maxHeight: "94%",
+    maxWidth: 920,
+    maxHeight: "95%",
     backgroundColor: "#0B0F19",
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -280,15 +286,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    backgroundColor: "#131B2E",
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
-    backgroundColor: "#131B2E",
-  },
-  topBarLeft: {
-    gap: 2,
   },
   topBarBadge: {
-    color: "#F59E0B",
+    color: "#6366F1",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.5,
@@ -296,6 +299,7 @@ const styles = StyleSheet.create({
   topBarSub: {
     color: colors.textSecondary,
     fontSize: 11,
+    marginTop: 2,
   },
   closeBtn: {
     width: 32,
@@ -314,274 +318,322 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: "center",
   },
-  certFrame: {
+
+  /* Great Learning Style Clean Academic Parchment */
+  certPaper: {
     width: "100%",
-    backgroundColor: "#0D1322",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 6,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  outerBorder: {
-    borderWidth: 4,
+  certOuterFrame: {
+    borderWidth: 6,
+    borderColor: "#1E293B",
+    padding: 8,
+    backgroundColor: "#FFFFFF",
+  },
+  certInnerFrame: {
+    borderWidth: 1.5,
     borderColor: "#F59E0B",
-    padding: 10,
-    backgroundColor: "#0F172A",
-  },
-  innerBorder: {
-    borderWidth: 2,
-    borderColor: "rgba(245, 158, 11, 0.6)",
     padding: 24,
-    backgroundColor: "#090D16",
+    backgroundColor: "#FAFBFD",
     position: "relative",
   },
-  cornerBox: {
+
+  cornerTab: {
     position: "absolute",
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderColor: "#F59E0B",
   },
-  cornerTL: { top: 6, left: 6, borderTopWidth: 3, borderLeftWidth: 3 },
-  cornerTR: { top: 6, right: 6, borderTopWidth: 3, borderRightWidth: 3 },
-  cornerBL: { bottom: 6, left: 6, borderBottomWidth: 3, borderLeftWidth: 3 },
-  cornerBR: { bottom: 6, right: 6, borderBottomWidth: 3, borderRightWidth: 3 },
+  cornerTL: { top: 6, left: 6, borderTopWidth: 2, borderLeftWidth: 2 },
+  cornerTR: { top: 6, right: 6, borderTopWidth: 2, borderRightWidth: 2 },
+  cornerBL: { bottom: 6, left: 6, borderBottomWidth: 2, borderLeftWidth: 2 },
+  cornerBR: { bottom: 6, right: 6, borderBottomWidth: 2, borderRightWidth: 2 },
 
-  instHeader: {
+  /* Header Row */
+  certTopHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  brandCol: {
+    justifyContent: "center",
+  },
+  brandTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  brandDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radius.full,
+    backgroundColor: "#6366F1",
+  },
+  brandMainText: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#0F172A",
+    letterSpacing: -0.5,
+  },
+  brandSubText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#6366F1",
+    letterSpacing: 4,
+    marginTop: 2,
+    paddingLeft: 16,
+  },
+
+  institutionCol: {
+    alignItems: "flex-end",
+    flexShrink: 1,
+  },
+  instName: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#0F172A",
+    textAlign: "right",
+  },
+  instSub: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#475569",
+    textAlign: "right",
+    marginTop: 2,
+  },
+  instAccred: {
+    fontSize: 9,
+    color: "#64748B",
+    textAlign: "right",
+    marginTop: 2,
+  },
+
+  goldDivider: {
+    height: 1,
+    backgroundColor: "rgba(245, 158, 11, 0.35)",
+    marginVertical: 16,
+    width: "100%",
+  },
+
+  /* Titles */
+  certTitleWrap: {
     alignItems: "center",
     marginBottom: 12,
   },
-  instEmblem: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  instCollege: {
-    color: "#FFFFFF",
-    fontSize: 20,
+  certMainHeading: {
+    fontSize: 22,
     fontWeight: "900",
-    letterSpacing: 1,
-    textAlign: "center",
-  },
-  instAutonomous: {
-    color: "#F59E0B",
-    fontSize: 13,
-    fontWeight: "800",
     letterSpacing: 2,
-    marginTop: 2,
-  },
-  instAffiliation: {
-    color: "#94A3B8",
-    fontSize: 10,
-    textAlign: "center",
-    marginTop: 4,
-  },
-  instDept: {
-    color: "#CBD5E1",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    marginTop: 6,
+    color: "#0F172A",
     textAlign: "center",
   },
-  platformBadge: {
-    backgroundColor: "rgba(99, 102, 241, 0.15)",
-    borderColor: "rgba(99, 102, 241, 0.35)",
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    marginTop: 6,
-  },
-  platformBadgeText: {
-    color: "#818CF8",
-    fontSize: 10,
+  certMainSubheading: {
+    fontSize: 11,
     fontWeight: "700",
-  },
-  dividerGold: {
-    height: 1,
-    backgroundColor: "rgba(245, 158, 11, 0.4)",
-    marginVertical: 14,
-    width: "80%",
-    alignSelf: "center",
-  },
-
-  titleSection: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  certHeadline: {
-    color: "#F59E0B",
-    fontSize: 18,
-    fontWeight: "900",
     letterSpacing: 1.5,
-    textAlign: "center",
-  },
-  certSubHeadline: {
     color: "#64748B",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginTop: 2,
-  },
-
-  recipientSection: {
-    alignItems: "center",
-    marginVertical: 8,
-  },
-  certProse: {
-    color: "#94A3B8",
-    fontSize: 12,
-    fontStyle: "italic",
-    textAlign: "center",
-  },
-  studentName: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    marginVertical: 8,
-    textAlign: "center",
-    textDecorationLine: "underline",
-    textDecorationColor: "#6366F1",
-  },
-  courseTitle: {
-    color: "#818CF8",
-    fontSize: 18,
-    fontWeight: "800",
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 24,
-  },
-  categorySub: {
-    color: "#64748B",
-    fontSize: 11,
     marginTop: 4,
-    fontStyle: "italic",
   },
 
-  verificationStrip: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
-    borderColor: "rgba(245, 158, 11, 0.25)",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 14,
-    gap: 8,
-  },
-  vCol: {
+  /* Student Name */
+  studentNameWrap: {
     alignItems: "center",
+    marginVertical: 10,
   },
-  vKey: {
-    color: "#64748B",
-    fontSize: 9,
-    fontWeight: "800",
+  studentNameText: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "#1E293B",
+    textAlign: "center",
     letterSpacing: 0.5,
   },
-  vVal: {
-    color: "#CBD5E1",
-    fontSize: 11,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  vValAccent: {
-    color: "#F59E0B",
-    fontSize: 12,
-    fontWeight: "800",
-    marginTop: 2,
-  },
-  vValMono: {
-    color: "#818CF8",
-    fontSize: 10,
-    fontFamily: "monospace",
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  vValGreen: {
-    color: "#10B981",
-    fontSize: 11,
-    fontWeight: "800",
-    marginTop: 2,
+  studentUnderline: {
+    width: 180,
+    height: 2,
+    backgroundColor: "#F59E0B",
+    marginTop: 4,
   },
 
-  proofBox: {
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    borderColor: "#1E293B",
-    borderWidth: 1,
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 16,
-    gap: 2,
+  /* Body Prose */
+  bodyProseWrap: {
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginVertical: 8,
   },
-  proofText: {
+  bodyText: {
+    fontSize: 13,
+    color: "#334155",
+    textAlign: "center",
+    lineHeight: 20,
+    maxWidth: 680,
+  },
+  boldText: {
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  courseHighlightText: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#4338CA",
+    textAlign: "center",
+    marginVertical: 10,
+    lineHeight: 26,
+    maxWidth: 720,
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#059669",
+    backgroundColor: "rgba(5, 150, 105, 0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: 6,
+  },
+  bodySubText: {
+    fontSize: 11,
     color: "#64748B",
-    fontSize: 9,
-    fontFamily: "monospace",
+    textAlign: "center",
+    fontStyle: "italic",
+    marginTop: 4,
   },
 
-  signaturesSection: {
+  /* Footer */
+  certFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 20,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.05)",
+    borderTopColor: "#E2E8F0",
+    flexWrap: "wrap",
+    gap: 16,
   },
-  signCol: {
-    flex: 1,
-    alignItems: "center",
+  footerColLeft: {
+    minWidth: 150,
   },
-  signLine: {
-    width: "70%",
-    height: 1,
-    backgroundColor: "#94A3B8",
-    marginBottom: 6,
-  },
-  signName: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  signTitle: {
-    color: "#F59E0B",
-    fontSize: 10,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  signInst: {
-    color: "#64748B",
+  metaLabel: {
     fontSize: 9,
-    textAlign: "center",
+    fontWeight: "700",
+    color: "#64748B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  metaValue: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginTop: 1,
+  },
+  metaCode: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#4338CA",
+    fontFamily: "monospace",
+    marginTop: 1,
+  },
+  verifyChip: {
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: "flex-start",
+    marginTop: 6,
+  },
+  verifyChipText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#047857",
   },
 
-  sealCol: {
-    paddingHorizontal: 12,
+  footerColCenter: {
     alignItems: "center",
+    justifyContent: "center",
   },
-  sealCircle: {
-    width: 68,
-    height: 68,
+  goldSealWrap: {
+    width: 72,
+    height: 72,
     borderRadius: radius.full,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: "#F59E0B",
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    backgroundColor: "#FEF3C7",
+    padding: 3,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  goldSealInner: {
+    width: "100%",
+    height: "100%",
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: "#D97706",
+    borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
   },
-  sealIcon: {
-    fontSize: 18,
+  sealIconText: {
+    fontSize: 8,
+    color: "#D97706",
   },
-  sealText: {
-    color: "#F59E0B",
+  sealBrandText: {
     fontSize: 8,
     fontWeight: "900",
+    color: "#92400E",
   },
-  sealSub: {
-    color: "#10B981",
+  sealVerifiedText: {
     fontSize: 6,
     fontWeight: "800",
     letterSpacing: 0.5,
+    color: "#B45309",
+  },
+
+  footerColRight: {
+    minWidth: 180,
+    alignItems: "flex-end",
+  },
+  signBlock: {
+    alignItems: "center",
+    width: 170,
+  },
+  signLine: {
+    width: 140,
+    height: 1,
+    backgroundColor: "#64748B",
+    marginBottom: 4,
+  },
+  signatoryName: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#0F172A",
+    textAlign: "center",
+  },
+  signatoryRole: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#D97706",
+    textAlign: "center",
+  },
+  signatoryInst: {
+    fontSize: 8,
+    color: "#64748B",
+    textAlign: "center",
   },
 
   actionSection: {

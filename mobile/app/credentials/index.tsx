@@ -430,6 +430,9 @@ export default function CredentialsScreen() {
               ? {
                   id: selectedCredDetail.id,
                   studentName: profile?.fullName || "Bindu Talari",
+                  department: profile?.branch || "Computer Science and Engineering",
+                  institution: profile?.institution || "K.S.R.M. College of Engineering (Autonomous)",
+                  graduationYear: profile?.graduationYear || 2026,
                   courseOrSkillTitle: selectedCredDetail.achievementTitle,
                   category: selectedCredDetail.credentialType || "Academic Specialization",
                   proficiency: 95,
