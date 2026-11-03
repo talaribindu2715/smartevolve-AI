@@ -3,6 +3,7 @@ package com.smartevolve.controller;
 import com.smartevolve.dto.AssessmentDto;
 import com.smartevolve.dto.AssessmentResultDto;
 import com.smartevolve.dto.SubmitAssessmentRequest;
+import com.smartevolve.dto.CourseQuizSubmissionRequest;
 import com.smartevolve.security.SecurityUtils;
 import com.smartevolve.service.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,5 +42,13 @@ public class AssessmentController {
     public ResponseEntity<AssessmentResultDto> submitAssessment(@Valid @RequestBody SubmitAssessmentRequest request) {
         UUID studentId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(assessmentService.submitAssessment(studentId, request));
+    }
+
+    @PostMapping("/course-quiz/submit")
+    @Operation(summary = "Submit course or video quiz marks and persist results in database")
+    public ResponseEntity<AssessmentResultDto> submitCourseQuiz(
+            @Valid @RequestBody CourseQuizSubmissionRequest request) {
+        UUID studentId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(assessmentService.submitCourseQuizResult(studentId, request));
     }
 }

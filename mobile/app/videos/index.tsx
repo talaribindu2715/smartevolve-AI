@@ -95,11 +95,14 @@ export default function VideoAcademyScreen() {
     let list = Array.from(map.values());
 
     if (selectedSkillId && selectedSkillId !== "all") {
+      const lower = selectedSkillId.toLowerCase();
       list = list.filter(
         (v) =>
           v.skillId === selectedSkillId ||
-          v.category?.toLowerCase() === selectedSkillId.toLowerCase() ||
-          v.skillName?.toLowerCase().includes(selectedSkillId.toLowerCase())
+          v.category?.toLowerCase() === lower ||
+          v.skillName?.toLowerCase().includes(lower) ||
+          v.channelTitle?.toLowerCase().includes(lower) ||
+          v.title?.toLowerCase().includes(lower)
       );
     }
 

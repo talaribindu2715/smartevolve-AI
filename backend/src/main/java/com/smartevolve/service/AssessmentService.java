@@ -5,6 +5,7 @@ import com.smartevolve.dto.AssessmentDto;
 import com.smartevolve.dto.AssessmentResultDto;
 import com.smartevolve.dto.QuestionDto;
 import com.smartevolve.dto.SubmitAssessmentRequest;
+import com.smartevolve.dto.CourseQuizSubmissionRequest;
 import com.smartevolve.entity.*;
 import com.smartevolve.exception.BadRequestException;
 import com.smartevolve.exception.ResourceNotFoundException;
@@ -34,6 +35,7 @@ public class AssessmentService {
     private final ProficiencyCalculator proficiencyCalculator;
     private final CredentialService credentialService;
     private final RoadmapService roadmapService;
+    private final SkillRepository skillRepository;
 
     public AssessmentService(
             AssessmentRepository assessmentRepository,
@@ -45,7 +47,8 @@ public class AssessmentService {
             ProfileRepository profileRepository,
             ProficiencyCalculator proficiencyCalculator,
             @Lazy CredentialService credentialService,
-            @Lazy RoadmapService roadmapService) {
+            @Lazy RoadmapService roadmapService,
+            SkillRepository skillRepository) {
         this.assessmentRepository = assessmentRepository;
         this.questionRepository = questionRepository;
         this.attemptRepository = attemptRepository;
@@ -56,6 +59,7 @@ public class AssessmentService {
         this.proficiencyCalculator = proficiencyCalculator;
         this.credentialService = credentialService;
         this.roadmapService = roadmapService;
+        this.skillRepository = skillRepository;
     }
 
     @Transactional(readOnly = true)
@@ -267,6 +271,126 @@ public class AssessmentService {
                 .updatedConfidence(updateResult.getConfidence())
                 .evolutionReason(updateResult.getChangeReason())
                 .questionReviews(reviewItems)
+                .build();
+    }
+
+    @Transactional
+    public AssessmentResultDto submitCourseQuizResult(UUID studentId, CourseQuizSubmissionRequest request) {
+        Profile profile = profileRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentId));
+
+        String targetSkill = (request.getSkillName() != null && !request.getSkillName().isBlank())
+                ? request.getSkillName().trim()
+                : "Computer Science";
+
+        Skill skill = skillRepository.findByNameIgnoreCase(targetSkill)
+                .orElseGet(() -> skillRepository.findAll().stream().findFirst()
+                        .orElseThrow(() -> new ResourceNotFoundException("No skills configured in database")));
+
+        String title = (request.getCourseTitle() != null && !request.getCourseTitle().isBlank())
+                ? request.getCourseTitle().trim() + " Mastery Quiz"
+                : skill.getName() + " Quiz";
+
+        Assessment assessment = assessmentRepository.findBySkillIdAndActiveTrue(skill.getId()).stream()
+                .filter(a -> a.getTitle().equalsIgnoreCase(title))
+                .findFirst()
+                .orElseGet(() -> assessmentRepository.save(Assessment.builder()
+                        .title(title)
+                        .skill(skill)
+                        .difficulty(request.getDifficulty() != null ? request.getDifficulty() : "INTERMEDIATE")
+                        .assessmentType("QUIZ")
+                        .active(true)
+                        .build()));
+
+        int attemptNumber = (int) attemptRepository.countByStudentIdAndAssessmentId(studentId, assessment.getId()) + 1;
+
+        int scoreInt = request.getScore() != null ? Math.max(0, request.getScore()) : 0;
+        int totalInt = request.getTotalQuestions() != null ? Math.max(1, request.getTotalQuestions()) : 10;
+
+        BigDecimal totalScore = BigDecimal.valueOf(scoreInt);
+        BigDecimal maxScore = BigDecimal.valueOf(totalInt);
+        BigDecimal percentage = totalScore.divide(maxScore, 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100.0")).setScale(1, RoundingMode.HALF_UP);
+
+        AssessmentAttempt attempt = AssessmentAttempt.builder()
+                .student(profile)
+                .assessment(assessment)
+                .score(totalScore)
+                .maximumScore(maxScore)
+                .percentage(percentage)
+                .attemptNumber(attemptNumber)
+                .timeTakenSeconds(request.getTimeTakenSeconds() != null ? request.getTimeTakenSeconds() : 60)
+                .build();
+        AssessmentAttempt savedAttempt = attemptRepository.save(attempt);
+
+        // Adaptive AI proficiency update
+        StudentSkill studentSkill = studentSkillRepository
+                .findByStudentIdAndSkillId(studentId, skill.getId())
+                .orElse(StudentSkill.builder()
+                        .student(profile)
+                        .skill(skill)
+                        .proficiency(BigDecimal.ZERO)
+                        .confidence(new BigDecimal("0.40"))
+                        .evidenceType("QUIZ")
+                        .build());
+
+        BigDecimal previousProficiency = studentSkill.getProficiency();
+        BigDecimal currentConfidence = studentSkill.getConfidence();
+
+        var updateResult = proficiencyCalculator.calculateAssessmentImpact(
+                previousProficiency,
+                currentConfidence,
+                percentage,
+                assessment.getDifficulty(),
+                attemptNumber
+        );
+
+        studentSkill.setProficiency(updateResult.getNewProficiency());
+        studentSkill.setConfidence(updateResult.getConfidence());
+        studentSkill.setEvidenceType("QUIZ");
+        studentSkill.setLastAssessedAt(OffsetDateTime.now());
+        studentSkillRepository.save(studentSkill);
+
+        String platformName = request.getPlatform() != null ? request.getPlatform() : "SMARTEVOLVE";
+        evolutionHistoryRepository.save(SkillEvolutionHistory.builder()
+                .student(profile)
+                .skill(skill)
+                .previousProficiency(previousProficiency)
+                .newProficiency(updateResult.getNewProficiency())
+                .profileVersion(attemptNumber)
+                .changeReason(String.format("Completed %s quiz on %s: Score %d/%d (%.1f%%)",
+                        platformName, title, scoreInt, totalInt, percentage.doubleValue()))
+                .evidenceType("QUIZ")
+                .evidenceReference(savedAttempt.getId().toString())
+                .build());
+
+        if (percentage.compareTo(new BigDecimal("80.0")) >= 0) {
+            try {
+                String certTitle = skill.getName() + " Quiz Mastery";
+                credentialService.issueMilestoneCredential(studentId, skill.getId(), certTitle);
+            } catch (Exception ignored) {}
+        }
+
+        log.info("Persistent Quiz Result Saved: Student {} scored {}/{} in {}",
+                studentId, scoreInt, totalInt, title);
+
+        return AssessmentResultDto.builder()
+                .attemptId(savedAttempt.getId())
+                .assessmentId(assessment.getId())
+                .assessmentTitle(assessment.getTitle())
+                .skillId(skill.getId())
+                .skillName(skill.getName())
+                .score(totalScore)
+                .maximumScore(maxScore)
+                .percentage(percentage)
+                .attemptNumber(attemptNumber)
+                .timeTakenSeconds(savedAttempt.getTimeTakenSeconds())
+                .submittedAt(savedAttempt.getSubmittedAt())
+                .previousProficiency(previousProficiency)
+                .newProficiency(updateResult.getNewProficiency())
+                .proficiencyDelta(updateResult.getDelta())
+                .updatedConfidence(updateResult.getConfidence())
+                .evolutionReason(updateResult.getChangeReason())
                 .build();
     }
 }

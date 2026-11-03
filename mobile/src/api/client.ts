@@ -133,6 +133,21 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  submitCourseQuizResult: (data: {
+    courseOrVideoId: string;
+    courseTitle?: string;
+    skillName?: string;
+    score: number;
+    totalQuestions: number;
+    timeTakenSeconds?: number;
+    attemptNumber?: number;
+    difficulty?: string;
+    platform?: string;
+  }) =>
+    apiFetch<AssessmentResult>("/api/assessments/course-quiz/submit", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   // Evolution & Trends
   getEvolutionHistory: () => apiFetch<EvolutionHistory[]>("/api/evolution/history"),
