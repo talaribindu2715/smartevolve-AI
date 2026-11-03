@@ -181,12 +181,6 @@ export default function CareersScreen() {
               <Text style={styles.headerTag}>CAREER DISCOVERY & AI MATCHING</Text>
               <Text style={styles.headerTitle}>Adaptive Career Matrix</Text>
             </View>
-            <TouchableOpacity
-              style={styles.formulaBadge}
-              onPress={() => setShowFormulaModal(true)}
-            >
-              <Text style={styles.formulaBadgeText}>ℹ Match Formula</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Primary View Switcher: Industry Roles vs ML Predictor */}

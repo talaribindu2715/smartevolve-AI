@@ -189,10 +189,9 @@ export default function DashboardScreen() {
             style={styles.quickActionCard}
             onPress={() => router.push("/(tabs)/learn")}
           >
-            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(99, 102, 241, 0.15)" }]}>
-              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="2">
-                <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(99, 102, 241, 0.18)" }]}>
+              <Svg width="22" height="22" viewBox="0 0 16 16" fill="#6366F1">
+                <Path fillRule="evenodd" d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6v1H14a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V8h-5v1a.5.5 0 0 1-1 0V7H2.5A.5.5 0 0 1 2 6.5v-1a.5.5 0 0 1 1 0V6h5.5V5.5A1.5 1.5 0 0 1 7 4V3.5zM1.5 9a.5.5 0 0 0-.5.5v3A1.5 1.5 0 0 0 2.5 14h3A1.5 1.5 0 0 0 7 12.5v-3a.5.5 0 0 0-.5-.5h-5zm10 0a.5.5 0 0 0-.5.5v3a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5v-3a.5.5 0 0 0-.5-.5h-5z" />
               </Svg>
             </View>
             <Text style={styles.qaTitle}>Roadmap</Text>
@@ -200,23 +199,11 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             style={styles.quickActionCard}
-            onPress={() => router.push("/(tabs)/careers")}
-          >
-            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(6, 182, 212, 0.15)" }]}>
-              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.accent} strokeWidth="2">
-                <Path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </Svg>
-            </View>
-            <Text style={styles.qaTitle}>Careers</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionCard}
             onPress={() => router.push("/(tabs)/evolution")}
           >
-            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(139, 92, 246, 0.15)" }]}>
-              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.secondary} strokeWidth="2">
-                <Path d="M18 20V10M12 20V4M6 20v-6" />
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(168, 85, 247, 0.18)" }]}>
+              <Svg width="22" height="22" viewBox="0 0 16 16" fill="#A855F7">
+                <Path fillRule="evenodd" d="M0 0h1v15h15v1H0V0Zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.707l-4.146 4.147a.5.5 0 0 1-.708 0L7 6.707l-4.646 4.647a.5.5 0 0 1-.708-.708l5-5a.5.5 0 0 1 .708 0L9.5 7.793 13.293 4H10.5a.5.5 0 0 1-.5-.5Z" />
               </Svg>
             </View>
             <Text style={styles.qaTitle}>Evolution</Text>
@@ -226,9 +213,9 @@ export default function DashboardScreen() {
             style={styles.quickActionCard}
             onPress={() => router.push("/videos")}
           >
-            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
-              <Svg width="20" height="20" viewBox="0 0 24 24" fill="#EF4444">
-                <Polygon points="5 3 19 12 5 21 5 3" />
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.18)" }]}>
+              <Svg width="22" height="22" viewBox="0 0 16 16" fill="#EF4444">
+                <Path d="M0 12V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm6.79-6.907A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814l-3.5-2.5z" />
               </Svg>
             </View>
             <Text style={styles.qaTitle}>Videos</Text>
@@ -238,9 +225,10 @@ export default function DashboardScreen() {
             style={styles.quickActionCard}
             onPress={() => router.push("/credentials")}
           >
-            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.15)" }]}>
-              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.blockchain} strokeWidth="2">
-                <Path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.18)" }]}>
+              <Svg width="22" height="22" viewBox="0 0 16 16" fill="#F59E0B">
+                <Path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z" />
+                <Path fillRule="evenodd" d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.622.637-.89-.011a2.89 2.89 0 0 0-2.924 2.924l.01.89-.636.622a2.89 2.89 0 0 0 0 4.134l.637.622-.011.89a2.89 2.89 0 0 0 2.924 2.924l.89-.01.622.636a2.89 2.89 0 0 0 4.134 0l.622-.637.89.011a2.89 2.89 0 0 0 2.924-2.924l-.01-.89.636-.622a2.89 2.89 0 0 0 0-4.134l-.637-.622.011-.89a2.89 2.89 0 0 0-2.924-2.924l-.89.01-.622-.636z" />
               </Svg>
             </View>
             <Text style={styles.qaTitle}>Credentials</Text>

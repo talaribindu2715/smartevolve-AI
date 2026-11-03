@@ -20,12 +20,443 @@ import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
-import { RoadmapStep } from "../../src/types";
+import { Roadmap, RoadmapStep } from "../../src/types";
+
+const CAREER_TRACKS = [
+  { key: "fullstack", label: "💼 Full-Stack Developer", careerName: "Full-Stack Software Engineer" },
+  { key: "ai", label: "🤖 AI & ML Engineer", careerName: "AI & Machine Learning Engineer" },
+  { key: "java", label: "☕ Java Developer", careerName: "Java Enterprise Developer" },
+  { key: "cloud", label: "☁️ Cloud & DevOps", careerName: "Cloud & DevOps Architect" },
+];
+
+const DEFAULT_ROADMAPS: Record<string, Roadmap> = {
+  "fullstack": {
+    id: "default-roadmap-fullstack",
+    careerId: "00000000-0000-0000-0002-000000000005",
+    careerName: "Full-Stack Software Engineer",
+    version: 1,
+    status: "ACTIVE",
+    generatedAt: "2026-11-03T00:00:00Z",
+    totalSteps: 7,
+    completedSteps: 2,
+    progressPercentage: 28.5,
+    steps: [
+      {
+        id: "fs-1",
+        resourceId: "20000000-0000-0000-0001-000000000001",
+        resourceTitle: "Modern TypeScript & ES6+ Architecture",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 45,
+        skillId: "00000000-0000-0000-0001-000000000004",
+        skillName: "TypeScript & JavaScript",
+        sequenceNumber: 1,
+        priority: "CRITICAL",
+        reason: "Prerequisite foundation for component design, type safety, and async patterns.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "fs-2",
+        resourceId: "20000000-0000-0000-0001-000000000003",
+        resourceTitle: "Relational Modeling & PostgreSQL Querying",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 50,
+        skillId: "00000000-0000-0000-0001-000000000005",
+        skillName: "PostgreSQL & SQL",
+        sequenceNumber: 2,
+        priority: "CRITICAL",
+        reason: "Core persistence layer needed for structured storage and data integrity.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "fs-3",
+        resourceId: "20000000-0000-0000-0005-000000000002",
+        resourceTitle: "Spring Boot 3 REST APIs & Microservices",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 75,
+        skillId: "00000000-0000-0000-0005-000000000002",
+        skillName: "Spring Boot",
+        sequenceNumber: 3,
+        priority: "HIGH",
+        reason: "Enterprise backend services with declarative transactions and JPA repositories.",
+        status: "IN_PROGRESS",
+        progressPercentage: 45,
+        prerequisiteResourceIds: ["20000000-0000-0000-0001-000000000003"],
+      },
+      {
+        id: "fs-4",
+        resourceId: "20000000-0000-0000-0001-000000000002",
+        resourceTitle: "React & React Native Component Systems",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 60,
+        skillId: "00000000-0000-0000-0005-000000000001",
+        skillName: "React & React Native",
+        sequenceNumber: 4,
+        priority: "HIGH",
+        reason: "Modern reactive frontends, state management, and cross-platform mobile views.",
+        status: "AVAILABLE",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0001-000000000001"],
+      },
+      {
+        id: "fs-5",
+        resourceId: "20000000-0000-0000-0003-000000000001",
+        resourceTitle: "Docker Containerization & Multi-Stage Builds",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 40,
+        skillId: "00000000-0000-0000-0006-000000000001",
+        skillName: "Docker",
+        sequenceNumber: 5,
+        priority: "MEDIUM",
+        reason: "Package frontend and backend services into reproducible immutable containers.",
+        status: "AVAILABLE",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0005-000000000002"],
+      },
+      {
+        id: "fs-6",
+        resourceId: "20000000-0000-0000-0005-000000000001",
+        resourceTitle: "Distributed System Design & Microservice Caching",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 90,
+        skillId: "00000000-0000-0000-0007-000000000002",
+        skillName: "System Design",
+        sequenceNumber: 6,
+        priority: "HIGH",
+        reason: "Scalability, Redis caching tiers, message queues, and horizontal partitioning.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0003-000000000001"],
+      },
+      {
+        id: "fs-7",
+        resourceId: "20000000-0000-0000-0003-000000000003",
+        resourceTitle: "Automated CI/CD Pipelines & Cloud Deployment",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 60,
+        skillId: "00000000-0000-0000-0006-000000000003",
+        skillName: "CI/CD Pipelines",
+        sequenceNumber: 7,
+        priority: "MEDIUM",
+        reason: "Automate testing, build verification, and zero-downtime production releases.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0005-000000000001"],
+      },
+    ],
+  },
+  "ai": {
+    id: "default-roadmap-ai",
+    careerId: "00000000-0000-0000-0002-000000000001",
+    careerName: "AI & Machine Learning Engineer",
+    version: 1,
+    status: "ACTIVE",
+    generatedAt: "2026-11-03T00:00:00Z",
+    totalSteps: 6,
+    completedSteps: 2,
+    progressPercentage: 33.3,
+    steps: [
+      {
+        id: "ai-1",
+        resourceId: "20000000-0000-0000-0001-000000000001",
+        resourceTitle: "Python Mastery & Vectorized Math with NumPy",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 45,
+        skillId: "00000000-0000-0000-0001-000000000001",
+        skillName: "Python",
+        sequenceNumber: 1,
+        priority: "CRITICAL",
+        reason: "Syntax foundation, list comprehensions, and NumPy ndarray manipulation.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "ai-2",
+        resourceId: "20000000-0000-0000-0003-000000000001",
+        resourceTitle: "Data Wrangling with Pandas & Feature Engineering",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 50,
+        skillId: "00000000-0000-0000-0003-000000000001",
+        skillName: "Pandas & NumPy",
+        sequenceNumber: 2,
+        priority: "CRITICAL",
+        reason: "Data cleaning, imputation, categorical encoding, and feature scaling.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: ["20000000-0000-0000-0001-000000000001"],
+      },
+      {
+        id: "ai-3",
+        resourceId: "20000000-0000-0000-0001-000000000002",
+        resourceTitle: "Supervised & Unsupervised Machine Learning",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 80,
+        skillId: "00000000-0000-0000-0004-000000000001",
+        skillName: "Machine Learning",
+        sequenceNumber: 3,
+        priority: "CRITICAL",
+        reason: "Scikit-learn algorithms: Random Forest, SVM, Gradient Boosting & cross-validation.",
+        status: "IN_PROGRESS",
+        progressPercentage: 40,
+        prerequisiteResourceIds: ["20000000-0000-0000-0003-000000000001"],
+      },
+      {
+        id: "ai-4",
+        resourceId: "20000000-0000-0000-0005-000000000001",
+        resourceTitle: "Deep Neural Networks, PyTorch & Backpropagation",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 90,
+        skillId: "00000000-0000-0000-0004-000000000002",
+        skillName: "Deep Learning",
+        sequenceNumber: 4,
+        priority: "HIGH",
+        reason: "Tensors, autograd, multilayer perceptrons, convolutional layers, and loss optimization.",
+        status: "AVAILABLE",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0001-000000000002"],
+      },
+      {
+        id: "ai-5",
+        resourceId: "20000000-0000-0000-0005-000000000002",
+        resourceTitle: "Generative AI, LLMs & Retrieval Augmented Generation (RAG)",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 75,
+        skillId: "00000000-0000-0000-0004-000000000004",
+        skillName: "Prompt Engineering & LLMs",
+        sequenceNumber: 5,
+        priority: "CRITICAL",
+        reason: "Vector databases, chunking strategies, embeddings, and few-shot prompt templates.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0005-000000000001"],
+      },
+      {
+        id: "ai-6",
+        resourceId: "20000000-0000-0000-0003-000000000003",
+        resourceTitle: "Production ML Pipelines & Model Serving",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 60,
+        skillId: "00000000-0000-0000-0005-000000000004",
+        skillName: "RESTful API Design",
+        sequenceNumber: 6,
+        priority: "MEDIUM",
+        reason: "FastAPI inference microservices, ONNX runtime, and latency optimization.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0005-000000000002"],
+      },
+    ],
+  },
+  "java": {
+    id: "default-roadmap-java",
+    careerId: "00000000-0000-0000-0002-000000000009",
+    careerName: "Java Enterprise Developer",
+    version: 1,
+    status: "ACTIVE",
+    generatedAt: "2026-11-03T00:00:00Z",
+    totalSteps: 5,
+    completedSteps: 2,
+    progressPercentage: 40.0,
+    steps: [
+      {
+        id: "java-1",
+        resourceId: "20000000-0000-0000-0005-000000000001",
+        resourceTitle: "Java 21 Modern Capabilities & Virtual Threads",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 60,
+        skillId: "00000000-0000-0000-0001-000000000002",
+        skillName: "Java",
+        sequenceNumber: 1,
+        priority: "CRITICAL",
+        reason: "Records, sealed classes, pattern matching switch, and Project Loom virtual threads.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "java-2",
+        resourceId: "20000000-0000-0000-0001-000000000003",
+        resourceTitle: "Relational SQL & PostgreSQL Optimization",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 40,
+        skillId: "00000000-0000-0000-0001-000000000005",
+        skillName: "SQL & PostgreSQL",
+        sequenceNumber: 2,
+        priority: "CRITICAL",
+        reason: "Database schema normalization, multi-table joins, and B-Tree indexing.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "java-3",
+        resourceId: "20000000-0000-0000-0005-000000000002",
+        resourceTitle: "Spring Boot 3 Enterprise REST APIs & Spring Data JPA",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 75,
+        skillId: "00000000-0000-0000-0005-000000000002",
+        skillName: "Spring Boot",
+        sequenceNumber: 3,
+        priority: "CRITICAL",
+        reason: "Dependency injection, Spring Data JPA, JWT authentication, and Actuator monitoring.",
+        status: "IN_PROGRESS",
+        progressPercentage: 55,
+        prerequisiteResourceIds: ["20000000-0000-0005-000000000001", "20000000-0000-0000-0001-000000000003"],
+      },
+      {
+        id: "java-4",
+        resourceId: "20000000-0000-0000-0001-000000000004",
+        resourceTitle: "Data Structures & Algorithmic Problem Solving",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 65,
+        skillId: "00000000-0000-0000-0007-000000000001",
+        skillName: "Data Structures & Algorithms",
+        sequenceNumber: 4,
+        priority: "HIGH",
+        reason: "Balanced binary search trees, topological sorting DAGs, and dynamic programming.",
+        status: "AVAILABLE",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0005-000000000001"],
+      },
+      {
+        id: "java-5",
+        resourceId: "20000000-0000-0000-0003-000000000001",
+        resourceTitle: "Containerized Microservice Deployment with Docker",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 50,
+        skillId: "00000000-0000-0000-0006-000000000001",
+        skillName: "Docker",
+        sequenceNumber: 5,
+        priority: "MEDIUM",
+        reason: "Multi-stage Docker builds, Alpine JRE runtimes, and container orchestration.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0005-000000000002"],
+      },
+    ],
+  },
+  "cloud": {
+    id: "default-roadmap-cloud",
+    careerId: "00000000-0000-0000-0002-000000000010",
+    careerName: "Cloud & DevOps Architect",
+    version: 1,
+    status: "ACTIVE",
+    generatedAt: "2026-11-03T00:00:00Z",
+    totalSteps: 5,
+    completedSteps: 1,
+    progressPercentage: 20.0,
+    steps: [
+      {
+        id: "cloud-1",
+        resourceId: "20000000-0000-0000-0003-000000000001",
+        resourceTitle: "Docker Containerization Fundamentals",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 40,
+        skillId: "00000000-0000-0000-0006-000000000001",
+        skillName: "Docker",
+        sequenceNumber: 1,
+        priority: "CRITICAL",
+        reason: "Container runtimes, images, volume management, and networking bridges.",
+        status: "COMPLETED",
+        progressPercentage: 100,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "cloud-2",
+        resourceId: "20000000-0000-0000-0001-000000000001",
+        resourceTitle: "Linux Administration & Bash Automation",
+        difficulty: "BEGINNER",
+        phase: "BEGINNER",
+        estimatedMinutes: 45,
+        skillId: "00000000-0000-0000-0006-000000000005",
+        skillName: "Linux Administration",
+        sequenceNumber: 2,
+        priority: "CRITICAL",
+        reason: "File permissions, systemd service units, cron jobs, and SSH key management.",
+        status: "AVAILABLE",
+        progressPercentage: 0,
+        prerequisiteResourceIds: [],
+      },
+      {
+        id: "cloud-3",
+        resourceId: "20000000-0000-0000-0003-000000000003",
+        resourceTitle: "CI/CD Automation with GitHub Actions",
+        difficulty: "INTERMEDIATE",
+        phase: "INTERMEDIATE",
+        estimatedMinutes: 55,
+        skillId: "00000000-0000-0000-0006-000000000003",
+        skillName: "CI/CD Pipelines",
+        sequenceNumber: 3,
+        priority: "HIGH",
+        reason: "Automated regression testing, linting gates, container pushes to registries.",
+        status: "AVAILABLE",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0003-000000000001"],
+      },
+      {
+        id: "cloud-4",
+        resourceId: "20000000-0000-0000-0005-000000000001",
+        resourceTitle: "Kubernetes Cluster Orchestration & Ingress",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 80,
+        skillId: "00000000-0000-0000-0006-000000000002",
+        skillName: "Kubernetes",
+        sequenceNumber: 4,
+        priority: "HIGH",
+        reason: "Pods, Deployments, ReplicaSets, ClusterIP services, and ConfigMaps.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0003-000000000001"],
+      },
+      {
+        id: "cloud-5",
+        resourceId: "20000000-0000-0000-0005-000000000002",
+        resourceTitle: "AWS Cloud Infrastructure & Well-Architected Framework",
+        difficulty: "ADVANCED",
+        phase: "ADVANCED",
+        estimatedMinutes: 90,
+        skillId: "00000000-0000-0000-0006-000000000004",
+        skillName: "AWS Cloud Core",
+        sequenceNumber: 5,
+        priority: "CRITICAL",
+        reason: "VPC subnets, security groups, RDS multi-AZ, IAM least-privilege, and S3.",
+        status: "LOCKED",
+        progressPercentage: 0,
+        prerequisiteResourceIds: ["20000000-0000-0000-0005-000000000001"],
+      },
+    ],
+  },
+};
 
 export default function LearnScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedPhaseFilter, setSelectedPhaseFilter] = useState<string>("ALL");
+  const [selectedTrackKey, setSelectedTrackKey] = useState<string>("fullstack");
   const [dailyTasksCompleted, setDailyTasksCompleted] = useState<Record<string, boolean>>({
     task1: true,
     task2: false,
@@ -125,7 +556,9 @@ export default function LearnScreen() {
     { key: "ADVANCED", label: "Phase 3: Advanced Mastery", desc: "Performance optimization, security & scaling" },
   ];
 
-  const stepsList = roadmap?.steps || [];
+  const fallbackRoadmap = DEFAULT_ROADMAPS[selectedTrackKey] || DEFAULT_ROADMAPS.fullstack;
+  const effectiveRoadmap: Roadmap = (roadmap?.steps && roadmap.steps.length > 0) ? roadmap : fallbackRoadmap;
+  const stepsList: RoadmapStep[] = effectiveRoadmap.steps || [];
   const filteredSteps = stepsList.filter((step) => {
     if (selectedPhaseFilter === "ALL") return true;
     const stepPhase =
@@ -156,13 +589,13 @@ export default function LearnScreen() {
           <View style={styles.headerTopRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.tagline}>ADAPTIVE LEARNING ROADMAP</Text>
-              <Text style={styles.title}>{roadmap?.careerName || "Career Learning Path"}</Text>
+              <Text style={styles.title}>{effectiveRoadmap.careerName}</Text>
             </View>
-            {roadmap?.careerId && (
+            {effectiveRoadmap.careerId && (
               <TouchableOpacity
                 style={styles.refreshBtn}
                 disabled={refreshRoadmapMutation.isPending}
-                onPress={() => refreshRoadmapMutation.mutate(roadmap.careerId)}
+                onPress={() => refreshRoadmapMutation.mutate(effectiveRoadmap.careerId)}
               >
                 {refreshRoadmapMutation.isPending ? (
                   <ActivityIndicator size="small" color="#FFF" />
@@ -173,26 +606,49 @@ export default function LearnScreen() {
             )}
           </View>
 
-          {roadmap ? (
-            <>
-              <Text style={styles.subtitle}>
-                {roadmap.completedSteps} of {roadmap.totalSteps} milestones achieved (
-                {(roadmap.progressPercentage ?? 0).toFixed(0)}% complete)
-              </Text>
+          <Text style={styles.subtitle}>
+            {effectiveRoadmap.completedSteps} of {effectiveRoadmap.totalSteps} milestones achieved (
+            {(effectiveRoadmap.progressPercentage ?? 0).toFixed(0)}% complete)
+          </Text>
 
-              {/* Progress Bar */}
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${Math.min(100, Math.max(0, roadmap.progressPercentage ?? 0))}%` },
-                  ]}
-                />
-              </View>
-            </>
-          ) : (
-            <Text style={styles.subtitle}>Personalized milestones calibrated to your active career goal</Text>
-          )}
+          {/* Progress Bar */}
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${Math.min(100, Math.max(0, effectiveRoadmap.progressPercentage ?? 0))}%` },
+              ]}
+            />
+          </View>
+        </View>
+
+        {/* Quick Career Goal Switcher */}
+        <View style={{ marginBottom: spacing.md }}>
+          <Text style={styles.trackSwitcherLabel}>CHOOSE CAREER GOAL ROADMAP</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.trackScroll}>
+            {CAREER_TRACKS.map((track) => {
+              const isSelected = (!roadmap?.steps || roadmap.steps.length === 0)
+                ? selectedTrackKey === track.key
+                : effectiveRoadmap.careerName.toLowerCase().includes(track.key);
+              return (
+                <TouchableOpacity
+                  key={track.key}
+                  style={[styles.trackChip, isSelected && styles.trackChipActive]}
+                  onPress={() => {
+                    setSelectedTrackKey(track.key);
+                    const defaultObj = DEFAULT_ROADMAPS[track.key];
+                    if (defaultObj?.careerId) {
+                      refreshRoadmapMutation.mutate(defaultObj.careerId);
+                    }
+                  }}
+                >
+                  <Text style={[styles.trackChipText, isSelected && styles.trackChipTextActive]}>
+                    {track.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Backend Connectivity Notice if Error */}
@@ -209,26 +665,6 @@ export default function LearnScreen() {
           <View>
             <CardSkeleton />
             <CardSkeleton />
-          </View>
-        )}
-
-        {/* Empty State when no roadmap */}
-        {!isRoadmapLoading && (!roadmap || !roadmap.steps || roadmap.steps.length === 0) && (
-          <View style={styles.emptyContainer}>
-            <Svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="1.5">
-              <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </Svg>
-            <Text style={styles.emptyTitle}>No Active Roadmap</Text>
-            <Text style={styles.emptySub}>
-              Select a target career role to generate your adaptive, prerequisite-aware learning roadmap.
-            </Text>
-            <Button
-              title="Explore Career Paths"
-              onPress={() => router.push("/(tabs)/careers")}
-              size="md"
-              style={{ marginTop: spacing.md }}
-            />
           </View>
         )}
 
@@ -278,7 +714,7 @@ export default function LearnScreen() {
         )}
 
         {/* Daily & Weekly Learning Sprint Checklist */}
-        {roadmap && (
+        {effectiveRoadmap && (
           <Card style={styles.dailyTaskCard}>
             <View style={styles.dailyTaskHeader}>
               <Text style={styles.dailyTaskTitle}>🎯 Active Learning Sprint</Text>
@@ -340,7 +776,7 @@ export default function LearnScreen() {
         )}
 
         {/* YouTube Academy Gateway */}
-        {roadmap && (
+        {effectiveRoadmap && (
           <TouchableOpacity
             style={styles.youtubeAcademyBanner}
             activeOpacity={0.88}
@@ -362,7 +798,7 @@ export default function LearnScreen() {
         )}
 
         {/* Learning Phase Filter Chips */}
-        {roadmap && (
+        {effectiveRoadmap && (
           <View style={{ marginBottom: spacing.md }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.phaseFilterBar}>
               <TouchableOpacity
@@ -400,7 +836,7 @@ export default function LearnScreen() {
         )}
 
         {/* Sequence of Ordered Steps */}
-        {roadmap && (
+        {effectiveRoadmap && (
           <View style={styles.timelineList}>
             {filteredSteps.map((step, idx) => {
               const isCompleted = step.status === "COMPLETED";
@@ -599,6 +1035,40 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: colors.accent,
     borderRadius: 3,
+  },
+  trackSwitcherLabel: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+    textTransform: "uppercase",
+  },
+  trackScroll: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  trackChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    marginRight: spacing.xs,
+  },
+  trackChipActive: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    borderColor: colors.primary,
+  },
+  trackChipText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  trackChipTextActive: {
+    color: colors.textPrimary,
+    fontWeight: "700",
   },
   careerGapCard: {
     padding: spacing.md,
