@@ -359,7 +359,7 @@ public class YouTubeService {
                 .skill(skill)
                 .previousProficiency(prevProficiency)
                 .newProficiency(newProficiency)
-                .changeReason(String.format("Completed YouTube video masterclass: '%s'", video.getTitle()))
+                .changeReason(String.format("Completed masterclass: '%s'", video.getTitle()))
                 .evidenceType("VIDEO_LEARNING")
                 .evidenceReference(video.getVideoId())
                 .build();

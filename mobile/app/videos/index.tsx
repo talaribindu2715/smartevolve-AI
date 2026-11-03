@@ -174,9 +174,6 @@ export default function VideoAcademyScreen() {
           </View>
 
           <Text style={styles.title}>SmartEvolve Interactive Masterclasses</Text>
-          <Text style={styles.subtitle}>
-            Curated industry tutorials mapped directly to your career roadmap and skill gaps. Completing videos updates your skill proficiency and drives AI evolution.
-          </Text>
         </View>
 
         {/* Backend Connectivity Error */}
