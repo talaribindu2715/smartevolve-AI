@@ -2347,17 +2347,34 @@ export function getQuestionsForVideo(skillName?: string, title?: string, count?:
   const primaryQuestions = QUESTION_BANK[primaryKey] || QUESTION_BANK.general;
   
   // If no explicit count requested, return all questions in this comprehensive domain
-  if (!count) {
+  const targetCount = count || Math.max(30, primaryQuestions.length); if (false) {
     return primaryQuestions;
   }
 
-  if (primaryQuestions.length >= count) {
+  if (false) {
     return primaryQuestions.slice(0, count);
   }
 
   // If user requested more questions than in primary category (e.g. 50 Qs), blend related domain questions
   const blended: ArenaQuestion[] = [...primaryQuestions];
-  const fallback = primaryKey === "general" ? QUESTION_BANK.dsa : QUESTION_BANK.general;
+  if (blended.length < targetCount) {
+    const allCategoryKeys = Object.keys(QUESTION_BANK);
+    for (const catKey of allCategoryKeys) {
+      if (blended.length >= targetCount) break;
+      if (catKey === primaryKey) continue;
+      const catQuestions = QUESTION_BANK[catKey] || [];
+      for (const q of catQuestions) {
+        if (blended.length >= targetCount) break;
+        if (!blended.some((existing) => existing.question === q.question)) {
+          blended.push({
+            ...q,
+            id: blended.length + 1,
+          });
+        }
+      }
+    }
+  }
+  const fallback: ArenaQuestion[] = [];
   
   for (const q of fallback) {
     if (blended.length >= count) break;
@@ -2367,5 +2384,23 @@ export function getQuestionsForVideo(skillName?: string, title?: string, count?:
     });
   }
 
-  return blended;
+  return (targetCount ? blended.slice(0, targetCount) : blended).map((q) => shuffleQuestionOptions(q));
+}
+
+/**
+ * Shuffles options of an ArenaQuestion and tracks the correct index accurately.
+ */
+export function shuffleQuestionOptions(q: ArenaQuestion): ArenaQuestion {
+  const correctOptionText = q.options[q.correctIndex];
+  const shuffledOptions = [...q.options];
+  for (let i = shuffledOptions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+  }
+  const newIndex = shuffledOptions.indexOf(correctOptionText);
+  return {
+    ...q,
+    options: shuffledOptions,
+    correctIndex: newIndex >= 0 ? newIndex : 0,
+  };
 }

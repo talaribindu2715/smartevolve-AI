@@ -62,7 +62,7 @@ public class EmailOtpService {
                 .success(true)
                 .email(email)
                 .message(emailSent 
-                        ? "Verification code sent to " + email + " via Google SMTP." 
+                        ? "Verification code sent to " + email + "." 
                         : "Verification code generated successfully. Code: " + code)
                 .debugOtp(!emailSent ? code : null)
                 .expiresInMinutes(10)

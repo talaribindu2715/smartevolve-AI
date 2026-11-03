@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
   // Responsive full-width layout without desktop margins
   responsiveWrapper: {
     width: "100%",
-    maxWidth: 960,
+    maxWidth: 880,
     alignSelf: "center",
   },
   loadingContainer: {

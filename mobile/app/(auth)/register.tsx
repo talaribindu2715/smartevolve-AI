@@ -432,7 +432,7 @@ export default function RegisterScreen() {
               </View>
 
               <Text style={styles.modalSub}>
-                We sent a 6-digit verification code via Google SMTP to:
+                We sent a 6-digit verification code to:
               </Text>
               <Text style={styles.modalEmailText}>{pendingFormData?.email}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 11, textAlign: "center", marginBottom: 12 }}>
@@ -449,7 +449,7 @@ export default function RegisterScreen() {
                 <View style={{ paddingVertical: 20, alignItems: "center" }}>
                   <ActivityIndicator size="small" color={colors.primary} />
                   <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>
-                    Dispatching verification email via Google SMTP...
+                    Dispatching verification email...
                   </Text>
                 </View>
               ) : (
