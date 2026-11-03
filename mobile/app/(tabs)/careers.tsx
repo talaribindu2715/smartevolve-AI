@@ -44,6 +44,141 @@ const SIMULATION_SKILLS = [
   "Kubernetes & Orchestration",
 ];
 
+const DEFAULT_CAREERS: Career[] = [
+  {
+    id: "00000000-0000-0000-0002-000000000001",
+    name: "AI & Machine Learning Engineer",
+    description: "Design neural architectures, train LLMs, optimize transformer inference, and deploy production ML microservices.",
+    category: "AI & Data Science",
+    compatibilityScore: 84,
+    readinessLevel: "HIGH_POTENTIAL",
+    requiredSkillsCount: 6,
+    difficulty: "ADVANCED",
+    estimatedPreparationWeeks: 16,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000002",
+    name: "Full-Stack Software Engineer",
+    description: "Architect end-to-end responsive web applications using React/Next.js frontends and Spring Boot / Node.js backend services.",
+    category: "Software Engineering",
+    compatibilityScore: 92,
+    readinessLevel: "READY",
+    requiredSkillsCount: 7,
+    difficulty: "INTERMEDIATE",
+    estimatedPreparationWeeks: 12,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000003",
+    name: "Cloud & DevOps Architect",
+    description: "Build automated CI/CD deployment pipelines, manage Kubernetes clusters, and architect resilient AWS cloud networks.",
+    category: "Cloud & Infrastructure",
+    compatibilityScore: 78,
+    readinessLevel: "HIGH_POTENTIAL",
+    requiredSkillsCount: 5,
+    difficulty: "INTERMEDIATE",
+    estimatedPreparationWeeks: 14,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000004",
+    name: "Data Scientist & Business Intelligence Lead",
+    description: "Extract actionable insights using Pandas, statistical inference, predictive modeling, and interactive Power BI dashboards.",
+    category: "AI & Data Science",
+    compatibilityScore: 86,
+    readinessLevel: "READY",
+    requiredSkillsCount: 5,
+    difficulty: "INTERMEDIATE",
+    estimatedPreparationWeeks: 10,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000005",
+    name: "Cybersecurity & Security Operations Engineer",
+    description: "Perform penetration testing, vulnerability assessments, configure zero-trust firewalls, and audit smart contracts.",
+    category: "Security",
+    compatibilityScore: 71,
+    readinessLevel: "DEVELOPING",
+    requiredSkillsCount: 5,
+    difficulty: "ADVANCED",
+    estimatedPreparationWeeks: 18,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000006",
+    name: "Java Enterprise Backend Developer",
+    description: "Develop high-throughput banking and enterprise REST services with Spring Boot 3, Hibernate JPA, and Kafka streaming.",
+    category: "Enterprise Software",
+    compatibilityScore: 89,
+    readinessLevel: "READY",
+    requiredSkillsCount: 6,
+    difficulty: "INTERMEDIATE",
+    estimatedPreparationWeeks: 12,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000007",
+    name: "Cross-Platform Mobile App Engineer",
+    description: "Engineer performant iOS and Android mobile applications using React Native, Expo Router, and native device capabilities.",
+    category: "Software Engineering",
+    compatibilityScore: 88,
+    readinessLevel: "READY",
+    requiredSkillsCount: 5,
+    difficulty: "BEGINNER_FRIENDLY",
+    estimatedPreparationWeeks: 10,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000008",
+    name: "Site Reliability Engineer (SRE)",
+    description: "Maximize system availability with Prometheus/Grafana telemetry, automated incident recovery, and Linux kernel tuning.",
+    category: "Cloud & Infrastructure",
+    compatibilityScore: 76,
+    readinessLevel: "HIGH_POTENTIAL",
+    requiredSkillsCount: 5,
+    difficulty: "ADVANCED",
+    estimatedPreparationWeeks: 15,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000009",
+    name: "Database Administrator & Data Architect",
+    description: "Optimize complex PostgreSQL relational schemas, configure read-replicas, manage Redis caches, and tune slow SQL queries.",
+    category: "Enterprise Software",
+    compatibilityScore: 83,
+    readinessLevel: "READY",
+    requiredSkillsCount: 4,
+    difficulty: "BEGINNER_FRIENDLY",
+    estimatedPreparationWeeks: 8,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000010",
+    name: "Frontend UI/UX Systems Architect",
+    description: "Craft modern, accessible, and ultra-fast web interfaces using TypeScript, Tailwind CSS, Next.js 14, and motion systems.",
+    category: "Software Engineering",
+    compatibilityScore: 95,
+    readinessLevel: "READY",
+    requiredSkillsCount: 5,
+    difficulty: "BEGINNER_FRIENDLY",
+    estimatedPreparationWeeks: 8,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000011",
+    name: "Generative AI Solutions Engineer",
+    description: "Build retrieval augmented generation (RAG) pipelines, semantic vector search with Pinecone/Qdrant, and multi-agent workflows.",
+    category: "AI & Data Science",
+    compatibilityScore: 87,
+    readinessLevel: "READY",
+    requiredSkillsCount: 5,
+    difficulty: "INTERMEDIATE",
+    estimatedPreparationWeeks: 10,
+  },
+  {
+    id: "00000000-0000-0000-0002-000000000012",
+    name: "Web3 & EVM Smart Contract Developer",
+    description: "Write tamper-proof Solidity smart contracts, conduct security audits, and deploy verifiable on-chain credential registries.",
+    category: "Software Engineering",
+    compatibilityScore: 74,
+    readinessLevel: "DEVELOPING",
+    requiredSkillsCount: 4,
+    difficulty: "ADVANCED",
+    estimatedPreparationWeeks: 16,
+  },
+];
+
 export default function CareersScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"roles" | "ml">("roles");
@@ -107,7 +242,10 @@ export default function CareersScreen() {
     setSimulatedData(null);
   };
 
-  const filteredCareers = (careers || []).filter((c) => {
+  const effectiveCareers: Career[] =
+    careers && careers.length > 0 ? careers : DEFAULT_CAREERS;
+
+  const filteredCareers = (effectiveCareers || []).filter((c) => {
     const matchesCat =
       selectedCategory === "All" || c.category === selectedCategory;
     const matchesSearch =
@@ -190,7 +328,7 @@ export default function CareersScreen() {
               onPress={() => setActiveTab("roles")}
             >
               <Text style={[styles.tabButtonText, activeTab === "roles" && styles.tabButtonTextActive]}>
-                💼 Industry Roles ({careers?.length || 15})
+                💼 Industry Roles ({effectiveCareers.length})
               </Text>
             </TouchableOpacity>
 
@@ -342,6 +480,7 @@ export default function CareersScreen() {
               </View>
             ) : (
               <ScrollView
+                style={{ flex: 1 }}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
                   <RefreshControl
