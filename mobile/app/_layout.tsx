@@ -6,6 +6,7 @@ import { PaperProvider, MD3DarkTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../src/store/authContext";
 import { colors } from "../src/theme/colors";
+import { OTAUpdateModal } from "../src/components/OTAUpdateModal";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ export default function RootLayout() {
         <AuthProvider>
           <PaperProvider theme={paperTheme}>
             <StatusBar style="light" backgroundColor={colors.background} />
+            <OTAUpdateModal initialDelayMs={3000} />
             <Stack
               screenOptions={{
                 headerStyle: { backgroundColor: colors.background },

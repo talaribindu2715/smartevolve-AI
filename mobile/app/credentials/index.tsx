@@ -806,9 +806,10 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 600,
     padding: spacing.xl,
-    backgroundColor: colors.surface,
-    borderColor: colors.blockchain,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D97706",
     borderWidth: 2,
+    borderRadius: radius.lg,
   },
   certBody: {
     gap: spacing.sm,
@@ -840,7 +841,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   certDetailsBox: {
-    backgroundColor: colors.background,
+    backgroundColor: "#F8FAFC",
     borderColor: colors.cardBorder,
     borderWidth: 1,
     borderRadius: radius.md,
