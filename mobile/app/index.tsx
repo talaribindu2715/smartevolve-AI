@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
@@ -36,7 +35,7 @@ export default function LandingScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View style={styles.contentWrapper}>
         {/* Top Navbar */}
         <View style={styles.navbar}>
           <View style={styles.brandGroup}>
@@ -64,7 +63,7 @@ export default function LandingScreen() {
             </Text>
           </View>
 
-          {/* Top Right Navigation: Start Learning Free & Sign In to Workspace */}
+          {/* Top Right Actions */}
           <View style={styles.navActions}>
             {isAuthenticated ? (
               <TouchableOpacity style={styles.dashboardPill} onPress={() => router.push("/(tabs)")}>
@@ -86,30 +85,18 @@ export default function LandingScreen() {
           </View>
         </View>
 
-        {/* Hero Section */}
+        {/* Hero Section: Centered & Non-Scrollable */}
         <View style={styles.heroSection}>
-          {/* Hero Big Headlines */}
           <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
             One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
           </Text>
 
-          {/* Hero Subtitle */}
           <Text style={[styles.heroSub, isDesktop && styles.heroSubDesktop]}>
             Personalized adaptive learning engineered with attempt-damped proficiency estimation,
             automated Kahn DAG prerequisite roadmaps, and EVM blockchain-anchored tamper-evident credentials.
           </Text>
         </View>
-
-        {/* Minimal Clean Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            SmartEvolve AI Platform • K.S.R.M. College of Engineering (Autonomous)
-          </Text>
-          <Text style={styles.footerSub}>
-            Department of Computer Science and Engineering
-          </Text>
-        </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -117,15 +104,18 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    height: "100%",
     backgroundColor: "#070B14",
+    overflow: "hidden", // Completely eliminates scrolling
   },
-  scrollContent: {
-    flexGrow: 1,
+  contentWrapper: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
     width: "100%",
     maxWidth: 1400,
     alignSelf: "center",
+    justifyContent: "space-between",
   },
   navbar: {
     flexDirection: "row",
@@ -134,7 +124,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    marginBottom: spacing.xxl,
     flexWrap: "wrap",
     gap: spacing.md,
   },
@@ -173,8 +162,8 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   primaryCtaBtn: {
-    backgroundColor: "#6366F1", // Vibrant purple primary button matching user's image
-    paddingVertical: 11,
+    backgroundColor: "#6366F1",
+    paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,
     alignItems: "center",
@@ -194,7 +183,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderColor: "rgba(255, 255, 255, 0.22)",
     borderWidth: 1,
-    paddingVertical: 10,
+    paddingVertical: 9,
     paddingHorizontal: 18,
     borderRadius: 10,
     alignItems: "center",
@@ -219,9 +208,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   heroSection: {
-    paddingVertical: spacing.xxl,
+    flex: 1,
+    justifyContent: "center",
     alignItems: "flex-start",
     width: "100%",
+    paddingBottom: spacing.xxl,
   },
   heroHeadline: {
     color: "#FFFFFF",
@@ -241,30 +232,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 30,
     maxWidth: 780,
-    marginBottom: spacing.xxl,
   },
   heroSubDesktop: {
     fontSize: 20,
     lineHeight: 32,
-  },
-  footer: {
-    marginTop: "auto",
-    paddingTop: spacing.xxl,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.06)",
-    alignItems: "center",
-    gap: 4,
-    paddingBottom: spacing.xl,
-  },
-  footerText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  footerSub: {
-    color: colors.textMuted,
-    fontSize: 11,
-    textAlign: "center",
   },
 });
