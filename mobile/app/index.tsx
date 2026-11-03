@@ -106,7 +106,7 @@ export default function LandingScreen() {
           {/* Right Column: Prominent Glowing SmartEvolve AI Emblem */}
           <View style={[styles.heroSymbolContainer, isDesktop && styles.heroSymbolContainerDesktop]}>
             <View style={styles.symbolGlowOrb} />
-            <Svg width={isDesktop ? 340 : 220} height={isDesktop ? 340 : 220} viewBox="0 0 100 100" fill="none">
+            <Svg width={isDesktop ? 480 : 300} height={isDesktop ? 480 : 300} viewBox="0 0 100 100" fill="none">
               <Defs>
                 <LinearGradient id="heroBigGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <Stop offset="0%" stopColor="#6366F1" />
@@ -362,15 +362,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   heroSymbolContainerDesktop: {
-    flex: 1,
-    maxWidth: 480,
+    flex: 1.2,
+    maxWidth: 640,
     marginTop: 0,
   },
   symbolGlowOrb: {
     position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    width: 480,
+    height: 480,
+    borderRadius: 240,
+    backgroundColor: "rgba(99, 102, 241, 0.18)",
   },
 });
