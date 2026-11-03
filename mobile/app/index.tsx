@@ -85,85 +85,19 @@ export default function LandingScreen() {
           </View>
         </View>
 
-        {/* Hero Section: Two-Column Responsive with Large SmartEvolve AI Symbol filling the gap */}
-        <View style={[styles.heroSection, isDesktop && styles.heroSectionDesktop]}>
-          <View style={styles.heroLeftCol}>
+        {/* Hero Section: Centered & Non-Scrollable */}
+        <View style={styles.heroSection}>
+          <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
+            One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
+          </Text>
 
-            <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
-              One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
-            </Text>
-
-            <View style={styles.heroCtaRow}>
-              <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
-                <Text style={styles.heroPrimaryBtnText}>Explore Skills & Masterclasses →</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
-                <Text style={styles.heroSecondaryBtnText}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Right Column: Prominent Glowing SmartEvolve AI Emblem */}
-          <View style={[styles.heroSymbolContainer, isDesktop && styles.heroSymbolContainerDesktop]}>
-            <View style={styles.symbolGlowOrb} />
-            <Svg width={isDesktop ? 480 : 300} height={isDesktop ? 480 : 300} viewBox="0 0 100 100" fill="none">
-              <Defs>
-                <LinearGradient id="heroBigGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#6366F1" />
-                  <Stop offset="50%" stopColor="#A855F7" />
-                  <Stop offset="100%" stopColor="#10B981" />
-                </LinearGradient>
-                <LinearGradient id="heroInnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="rgba(99, 102, 241, 0.25)" />
-                  <Stop offset="100%" stopColor="rgba(16, 185, 129, 0.08)" />
-                </LinearGradient>
-              </Defs>
-              {/* Outer Dashed Orbit */}
-              <Circle
-                cx="50"
-                cy="50"
-                r="47"
-                stroke="url(#heroBigGrad)"
-                strokeWidth="1.8"
-                strokeDasharray="4 4"
-                opacity="0.5"
-              />
-              {/* Solid Perimeter Ring */}
-              <Circle
-                cx="50"
-                cy="50"
-                r="42"
-                stroke="url(#heroBigGrad)"
-                strokeWidth="3.5"
-                fill="none"
-                opacity="0.85"
-              />
-              {/* Hexagonal Lattice with Gradient Fill */}
-              <Path
-                d="M50 18 L78 34 L78 66 L50 82 L22 66 L22 34 Z"
-                stroke="url(#heroBigGrad)"
-                strokeWidth="3.5"
-                fill="url(#heroInnerGrad)"
-              />
-              {/* Internal Convergence Edges */}
-              <Path d="M50 18 L50 50" stroke="#FFFFFF" strokeWidth="2" opacity="0.75" />
-              <Path d="M22 34 L50 50" stroke="#FFFFFF" strokeWidth="2" opacity="0.75" />
-              <Path d="M78 34 L50 50" stroke="#FFFFFF" strokeWidth="2" opacity="0.75" />
-              <Path d="M50 50 L50 82" stroke="#FFFFFF" strokeWidth="2" opacity="0.75" />
-              <Path d="M22 66 L50 50" stroke="#FFFFFF" strokeWidth="2" opacity="0.75" />
-              <Path d="M78 66 L50 50" stroke="#FFFFFF" strokeWidth="2" opacity="0.75" />
-              {/* Glowing Quantum Core */}
-              <Circle cx="50" cy="50" r="10" fill="#FFFFFF" />
-              <Circle cx="50" cy="50" r="5.5" fill="#6366F1" />
-              {/* Vertex Nodes */}
-              <Circle cx="50" cy="18" r="3.5" fill="#10B981" />
-              <Circle cx="78" cy="34" r="3.5" fill="#A855F7" />
-              <Circle cx="78" cy="66" r="3.5" fill="#6366F1" />
-              <Circle cx="50" cy="82" r="3.5" fill="#10B981" />
-              <Circle cx="22" cy="66" r="3.5" fill="#A855F7" />
-              <Circle cx="22" cy="34" r="3.5" fill="#6366F1" />
-            </Svg>
-
+          <View style={styles.heroCtaRow}>
+            <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
+              <Text style={styles.heroPrimaryBtnText}>Explore Skills & Masterclasses →</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
+              <Text style={styles.heroSecondaryBtnText}>Sign In</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -307,18 +241,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 32,
   },
-  heroSectionDesktop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: spacing.xl,
-  },
-  heroLeftCol: {
-    flex: 1,
-    maxWidth: 680,
-    justifyContent: "center",
-    alignItems: "flex-start",
-  },
   heroCtaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -354,23 +276,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
-  },
-  heroSymbolContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    marginTop: spacing.lg,
-  },
-  heroSymbolContainerDesktop: {
-    flex: 1.2,
-    maxWidth: 640,
-    marginTop: 0,
-  },
-  symbolGlowOrb: {
-    position: "absolute",
-    width: 480,
-    height: 480,
-    borderRadius: 240,
-    backgroundColor: "rgba(99, 102, 241, 0.18)",
   },
 });
