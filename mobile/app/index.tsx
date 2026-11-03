@@ -88,10 +88,6 @@ export default function LandingScreen() {
         {/* Hero Section: Two-Column Responsive with Large SmartEvolve AI Symbol filling the gap */}
         <View style={[styles.heroSection, isDesktop && styles.heroSectionDesktop]}>
           <View style={styles.heroLeftCol}>
-            <View style={styles.heroBadgeRow}>
-              <View style={styles.heroBadgeDot} />
-              <Text style={styles.heroBadgeText}>AUTONOMOUS AI LEARNING PLATFORM</Text>
-            </View>
 
             <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
               One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
@@ -329,30 +325,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     justifyContent: "center",
     alignItems: "flex-start",
-  },
-  heroBadgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(99, 102, 241, 0.12)",
-    borderColor: "rgba(99, 102, 241, 0.3)",
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.full,
-    marginBottom: spacing.md,
-  },
-  heroBadgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#10B981",
-  },
-  heroBadgeText: {
-    color: "#818CF8",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
   },
   heroCtaRow: {
     flexDirection: "row",
