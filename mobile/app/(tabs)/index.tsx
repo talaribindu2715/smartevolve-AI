@@ -330,7 +330,6 @@ export default function DashboardScreen() {
                   {(latestEvolution.delta ?? 0) >= 0 ? "+" : ""}{(latestEvolution.delta ?? 0).toFixed(1)}%
                 </Text>
               </View>
-              <Text style={styles.evolutionReason}>💬 {latestEvolution.changeReason}</Text>
               <Text style={styles.evolutionMeta}>
                 Evidence: {latestEvolution.evidenceType.replace("_", " ")} • {new Date(latestEvolution.createdAt).toLocaleDateString()}
               </Text>
