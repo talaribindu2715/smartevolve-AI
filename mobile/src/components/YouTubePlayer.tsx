@@ -49,7 +49,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const videoId = useMemo(() => extractYouTubeVideoId(videoIdOrUrl), [videoIdOrUrl]);
   const fallbackThumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
   const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`;
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com`;
 
   const handleOpenExternal = () => {
     Linking.openURL(youtubeUrl).catch((err) => {
@@ -80,10 +80,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               </View>
             </TouchableOpacity>
           ) : (
-            // Standard iframe for web
             <iframe
               src={embedUrl}
-              title={title || "SmartEvolve Academy Masterclass"}
+              title={title || "SmartEvolve Masterclass"}
               style={{
                 width: "100%",
                 height: "100%",
@@ -91,11 +90,24 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
                 borderRadius: radius.md,
                 backgroundColor: "#000",
               }}
-              sandbox="allow-scripts allow-same-origin allow-presentation"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
           )}
+        </View>
+
+        {/* Quick fallback action bar */}
+        <View style={styles.controlsBar}>
+          <View style={styles.streamingMeta}>
+            <View style={styles.liveDot} />
+            <Text style={styles.streamingText}>Direct Player</Text>
+          </View>
+          <TouchableOpacity style={styles.externalBtn} onPress={handleOpenExternal}>
+            <Svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444">
+              <Path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+            </Svg>
+            <Text style={styles.externalBtnText}>Open in YouTube App ↗</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -109,34 +121,32 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     console.warn("react-native-webview is not available:", e);
   }
 
+  // Robust HTML string preventing YouTube Error 153:
+  // - strict-origin-when-cross-origin meta referrer tag
+  // - Valid origin parameter matching https://www.youtube.com
+  // - Omission of restrictive sandbox attribute which strips referer
+  // - Omission of cross-origin DOM query scripts which trigger tamper detection
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="referrer" content="strict-origin-when-cross-origin">
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; background-color: #000; }
+          * { margin: 0; padding: 0; box-sizing: border-box; background-color: #000000; }
           body, html { width: 100%; height: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
           iframe { width: 100%; height: 100%; border: none; }
         </style>
       </head>
       <body>
         <iframe 
-          src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3" 
+          src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com" 
           frameborder="0" 
-          sandbox="allow-scripts allow-same-origin allow-presentation"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen>
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin">
         </iframe>
-        <script>
-          // Automatic Ad-Bypass & Overlay Filter
-          setInterval(function() {
-            var skip = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
-            if (skip) skip.click();
-            var overlays = document.querySelectorAll('.ytp-ad-overlay-container, .ytp-ad-message-container, .video-ads');
-            overlays.forEach(function(el) { el.style.display = 'none'; });
-          }, 300);
-        </script>
       </body>
     </html>
   `;
@@ -147,12 +157,23 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         {NativeWebView && !hasError ? (
           <>
             <NativeWebView
-              source={{ html: htmlContent }}
+              source={{
+                html: htmlContent,
+                baseUrl: "https://www.youtube.com",
+                headers: {
+                  Referer: "https://www.youtube.com",
+                  Origin: "https://www.youtube.com",
+                },
+              }}
+              originWhitelist={["*"]}
               style={styles.webView}
-              javaScriptEnabled
-              domStorageEnabled
-              allowsInlineMediaPlayback
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              allowsInlineMediaPlayback={true}
               mediaPlaybackRequiresUserAction={false}
+              allowsFullscreenVideo={true}
+              mixedContentMode="always"
+              userAgent="Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
               onLoadStart={() => setIsLoading(true)}
               onLoadEnd={() => setIsLoading(false)}
               onError={() => {
@@ -181,10 +202,24 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               </Svg>
             </View>
             <View style={styles.watchBadge}>
-              <Text style={styles.watchBadgeText}>Tap to Play Masterclass</Text>
+              <Text style={styles.watchBadgeText}>Tap to Play in YouTube App ↗</Text>
             </View>
           </TouchableOpacity>
         )}
+      </View>
+
+      {/* Action footer with direct YouTube launch fallback */}
+      <View style={styles.controlsBar}>
+        <View style={styles.streamingMeta}>
+          <View style={styles.liveDot} />
+          <Text style={styles.streamingText}>In-App Masterclass Player</Text>
+        </View>
+        <TouchableOpacity style={styles.externalBtn} onPress={handleOpenExternal}>
+          <Svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444">
+            <Path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+          </Svg>
+          <Text style={styles.externalBtnText}>Watch in YouTube App ↗</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -229,7 +264,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(239, 68, 68, 0.92)", // YouTube brand red
+    backgroundColor: "rgba(239, 68, 68, 0.92)",
     justifyContent: "center",
     alignItems: "center",
     paddingLeft: 4,
@@ -270,7 +305,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: 8,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
