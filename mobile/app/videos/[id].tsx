@@ -50,6 +50,7 @@ export default function VideoDetailScreen() {
   // Interactive Quiz Arena Mode State (Kahoot / Wayground / Quizizz - zero external login)
   const [arenaModalVisible, setArenaModalVisible] = useState(false);
   const [arenaPlatform, setArenaPlatform] = useState<"kahoot" | "wayground" | "quizizz">("kahoot");
+  const [selectedPoolSize, setSelectedPoolSize] = useState<number>(30);
 
   const launchArena = (plat: "kahoot" | "wayground" | "quizizz") => {
     setArenaPlatform(plat);
@@ -114,6 +115,10 @@ export default function VideoDetailScreen() {
 
   const fallbackVideo = getMasterVideoById(id || "");
   const effectiveVideo = video || fallbackVideo;
+
+  const quizQuestions = React.useMemo(() => {
+    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize);
+  }, [effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize]);
 
   const { data: assessments } = useQuery({
     queryKey: ["assessments"],
@@ -217,10 +222,6 @@ export default function VideoDetailScreen() {
   }
 
   const isCompleted = effectiveVideo.watchStatus === "COMPLETED";
-  const [selectedPoolSize, setSelectedPoolSize] = useState<number>(30);
-  const quizQuestions = React.useMemo(() => {
-    return getQuestionsForVideo(effectiveVideo.skillName, effectiveVideo.title, selectedPoolSize);
-  }, [effectiveVideo.skillName, effectiveVideo.title, selectedPoolSize]);
   const currentQuestion = quizQuestions[currentQuestionIndex] || quizQuestions[0];
 
   const handleSelectOption = (qId: number, optionIdx: number) => {
