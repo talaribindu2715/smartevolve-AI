@@ -2345,18 +2345,10 @@ export function getQuestionsForVideo(skillName?: string, title?: string, count?:
   }
 
   const primaryQuestions = QUESTION_BANK[primaryKey] || QUESTION_BANK.general;
-  
-  // If no explicit count requested, return all questions in this comprehensive domain
-  const targetCount = count || Math.max(30, primaryQuestions.length); if (false) {
-    return primaryQuestions;
-  }
-
-  if (false) {
-    return primaryQuestions.slice(0, count);
-  }
-
-  // If user requested more questions than in primary category (e.g. 50 Qs), blend related domain questions
+  const targetCount = count || Math.max(30, primaryQuestions.length);
   const blended: ArenaQuestion[] = [...primaryQuestions];
+
+  // Draw from across the full question bank so pool is never artificially limited
   if (blended.length < targetCount) {
     const allCategoryKeys = Object.keys(QUESTION_BANK);
     for (const catKey of allCategoryKeys) {
@@ -2374,17 +2366,9 @@ export function getQuestionsForVideo(skillName?: string, title?: string, count?:
       }
     }
   }
-  const fallback: ArenaQuestion[] = [];
-  
-  for (const q of fallback) {
-    if (blended.length >= count) break;
-    blended.push({
-      ...q,
-      id: blended.length + 1,
-    });
-  }
 
-  return (targetCount ? blended.slice(0, targetCount) : blended).map((q) => shuffleQuestionOptions(q));
+  const selected = targetCount ? blended.slice(0, targetCount) : blended;
+  return selected.map((q) => shuffleQuestionOptions(q));
 }
 
 /**
