@@ -93,14 +93,6 @@ export default function LandingScreen() {
               One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
             </Text>
 
-            <View style={styles.heroCtaRow}>
-              <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
-                <Text style={styles.heroPrimaryBtnText}>Explore Skills & Masterclasses →</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
-                <Text style={styles.heroSecondaryBtnText}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
           {/* Right Column: Golden Blockchain & AI Gear Image */}
