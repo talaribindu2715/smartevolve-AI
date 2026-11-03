@@ -164,13 +164,6 @@ export default function LandingScreen() {
               <Circle cx="22" cy="34" r="3.5" fill="#6366F1" />
             </Svg>
 
-            {/* Floating Tech Chips */}
-            <View style={styles.floatingBadgeTop}>
-              <Text style={styles.floatingBadgeText}>🧠 AI Adaptive DAG</Text>
-            </View>
-            <View style={styles.floatingBadgeBottom}>
-              <Text style={styles.floatingBadgeText}>🔗 Verifiable On-Chain</Text>
-            </View>
           </View>
         </View>
       </View>
@@ -379,43 +372,5 @@ const styles = StyleSheet.create({
     height: 320,
     borderRadius: 160,
     backgroundColor: "rgba(99, 102, 241, 0.15)",
-  },
-  floatingBadgeTop: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(15, 23, 42, 0.88)",
-    borderColor: "rgba(99, 102, 241, 0.35)",
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  floatingBadgeBottom: {
-    position: "absolute",
-    bottom: 10,
-    left: 10,
-    backgroundColor: "rgba(15, 23, 42, 0.88)",
-    borderColor: "rgba(16, 185, 129, 0.35)",
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  floatingBadgeText: {
-    color: "#F8FAFC",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
   },
 });
