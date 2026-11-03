@@ -91,10 +91,6 @@ export default function LandingScreen() {
             One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
           </Text>
 
-          <Text style={[styles.heroSub, isDesktop && styles.heroSubDesktop]}>
-            Personalized adaptive learning engineered with attempt-damped proficiency estimation,
-            automated Kahn DAG prerequisite roadmaps, and EVM blockchain-anchored tamper-evident credentials.
-          </Text>
         </View>
       </View>
     </View>
