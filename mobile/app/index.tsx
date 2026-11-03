@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
-  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
@@ -65,7 +64,7 @@ export default function LandingScreen() {
             </Text>
           </View>
 
-          {/* Nav Right CTA */}
+          {/* Top Right Navigation: Start Learning Free & Sign In to Workspace */}
           <View style={styles.navActions}>
             {isAuthenticated ? (
               <TouchableOpacity style={styles.dashboardPill} onPress={() => router.push("/(tabs)")}>
@@ -74,15 +73,15 @@ export default function LandingScreen() {
                 </Text>
               </TouchableOpacity>
             ) : (
-              <>
-                <TouchableOpacity style={styles.signInBtn} onPress={navigateToLogin}>
-                  <Text style={styles.signInBtnText}>Sign in</Text>
+              <View style={styles.authButtonsRow}>
+                <TouchableOpacity style={styles.primaryCtaBtn} onPress={navigateToRegister}>
+                  <Text style={styles.primaryCtaText}>Start Learning Free →</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.createAccountBtn} onPress={navigateToRegister}>
-                  <Text style={styles.createAccountBtnText}>Create account</Text>
+                <TouchableOpacity style={styles.secondaryCtaBtn} onPress={navigateToLogin}>
+                  <Text style={styles.secondaryCtaText}>Sign In to Workspace</Text>
                 </TouchableOpacity>
-              </>
+              </View>
             )}
           </View>
         </View>
@@ -99,33 +98,9 @@ export default function LandingScreen() {
             Personalized adaptive learning engineered with attempt-damped proficiency estimation,
             automated Kahn DAG prerequisite roadmaps, and EVM blockchain-anchored tamper-evident credentials.
           </Text>
-
-          {/* Hero Action CTA Buttons */}
-          <View style={[styles.ctaRow, isDesktop && styles.ctaRowDesktop]}>
-            <TouchableOpacity style={styles.primaryCtaBtn} onPress={navigateToRegister}>
-              <Text style={styles.primaryCtaText}>Start Learning Free →</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.secondaryCtaBtn} onPress={navigateToLogin}>
-              <Text style={styles.secondaryCtaText}>Sign In to Workspace</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Seamless Borderless 8K Fluid AI Showcase (No boxed containers or borders) */}
-          <View style={styles.heroImageWrapper}>
-            <Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2560&q=90",
-              }}
-              style={[styles.hero8kImage, isDesktop && styles.hero8kImageDesktop]}
-              resizeMode="cover"
-            />
-            {/* Ambient Lighting Glow without any borders */}
-            <View style={styles.ambientGlowOverlay} />
-          </View>
         </View>
 
-        {/* Minimal Footer */}
+        {/* Minimal Clean Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             SmartEvolve AI Platform • K.S.R.M. College of Engineering (Autonomous)
@@ -159,7 +134,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
+    flexWrap: "wrap",
+    gap: spacing.md,
   },
   brandGroup: {
     flexDirection: "row",
@@ -188,31 +165,45 @@ const styles = StyleSheet.create({
   navActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
   },
-  signInBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  authButtonsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
   },
-  signInBtnText: {
+  primaryCtaBtn: {
+    backgroundColor: "#6366F1", // Vibrant purple primary button matching user's image
+    paddingVertical: 11,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryCtaText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "600",
-  },
-  createAccountBtn: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 9,
-    paddingHorizontal: 18,
-    borderRadius: radius.full,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  createAccountBtnText: {
-    color: "#070B14",
-    fontSize: 14,
     fontWeight: "800",
+  },
+  secondaryCtaBtn: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryCtaText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
   dashboardPill: {
     backgroundColor: "rgba(99, 102, 241, 0.2)",
@@ -228,101 +219,42 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   heroSection: {
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.xxl,
     alignItems: "flex-start",
     width: "100%",
   },
   heroHeadline: {
     color: "#FFFFFF",
-    fontSize: 38,
+    fontSize: 42,
     fontWeight: "900",
-    lineHeight: 46,
-    letterSpacing: -1,
-    marginBottom: spacing.md,
+    lineHeight: 50,
+    letterSpacing: -1.5,
+    marginBottom: spacing.lg,
   },
   heroHeadlineDesktop: {
-    fontSize: 64,
-    lineHeight: 72,
-    letterSpacing: -2,
+    fontSize: 72,
+    lineHeight: 80,
+    letterSpacing: -2.5,
   },
   heroSub: {
     color: "#94A3B8",
-    fontSize: 16,
-    lineHeight: 26,
-    maxWidth: 720,
-    marginBottom: spacing.xl,
+    fontSize: 18,
+    lineHeight: 30,
+    maxWidth: 780,
+    marginBottom: spacing.xxl,
   },
   heroSubDesktop: {
-    fontSize: 18,
-    lineHeight: 28,
-  },
-  ctaRow: {
-    flexDirection: "column",
-    gap: 14,
-    width: "100%",
-    marginBottom: spacing.xl * 1.5,
-  },
-  ctaRowDesktop: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "auto",
-  },
-  primaryCtaBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: 15,
-    paddingHorizontal: 28,
-    borderRadius: radius.md,
-    alignItems: "center",
-  },
-  primaryCtaText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  secondaryCtaBtn: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderWidth: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 26,
-    borderRadius: radius.md,
-    alignItems: "center",
-  },
-  secondaryCtaText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  // Seamless Borderless 8K Visual Showcase
-  heroImageWrapper: {
-    width: "100%",
-    position: "relative",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginTop: spacing.md,
-    // Zero border, zero box styling
-    borderWidth: 0,
-    backgroundColor: "transparent",
-  },
-  hero8kImage: {
-    width: "100%",
-    height: 320,
-    borderRadius: 20,
-  },
-  hero8kImageDesktop: {
-    height: 540,
-  },
-  ambientGlowOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "transparent",
+    fontSize: 20,
+    lineHeight: 32,
   },
   footer: {
-    marginTop: spacing.xxl,
-    paddingTop: spacing.xl,
+    marginTop: "auto",
+    paddingTop: spacing.xxl,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.06)",
     alignItems: "center",
     gap: 4,
+    paddingBottom: spacing.xl,
   },
   footerText: {
     color: colors.textMuted,
