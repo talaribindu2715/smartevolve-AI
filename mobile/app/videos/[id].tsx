@@ -46,6 +46,13 @@ export default function VideoDetailScreen() {
   const [quizScore, setQuizScore] = useState(0);
   const [quizAttempts, setQuizAttempts] = useState(1);
   const [showCertModal, setShowCertModal] = useState(false);
+  const [localCompleted, setLocalCompleted] = useState(false);
+
+  const handleMarkCompleted = () => {
+    setLocalCompleted(true);
+    updateProgressMutation.mutate("COMPLETED");
+    setShowCertModal(true);
+  };
 
   // Interactive Quiz Arena Mode State (Kahoot / Wayground / Quizizz - zero external login)
   const [arenaModalVisible, setArenaModalVisible] = useState(false);
@@ -221,7 +228,10 @@ export default function VideoDetailScreen() {
     );
   }
 
-  const isCompleted = effectiveVideo.watchStatus === "COMPLETED";
+  const isCompleted =
+    effectiveVideo?.watchStatus === "COMPLETED" ||
+    localCompleted ||
+    (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6));
   const currentQuestion = quizQuestions[currentQuestionIndex] || quizQuestions[0];
 
   const handleSelectOption = (qId: number, optionIdx: number) => {
@@ -321,9 +331,20 @@ export default function VideoDetailScreen() {
             />
             <Text style={styles.durationPill}>⏱️ {effectiveVideo.duration || `${effectiveVideo.estimatedMinutes}:00`}</Text>
 
-            <TouchableOpacity style={styles.saveBtn} onPress={toggleSaveForLater}>
-              <Text style={styles.saveBtnText}>{isSaved ? "★ In Watchlist" : "☆ Save for Later"}</Text>
-            </TouchableOpacity>
+            <View style={styles.topRightActions}>
+              <TouchableOpacity
+                style={[styles.quickCompleteBtn, isCompleted && styles.quickCompleteBtnDone]}
+                onPress={handleMarkCompleted}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.quickCompleteBtnText, isCompleted && styles.quickCompleteBtnTextDone]}>
+                  {isCompleted ? "🎓 Certificate Ready" : "✓ Mark Completed"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={toggleSaveForLater}>
+                <Text style={styles.saveBtnText}>{isSaved ? "★ In Watchlist" : "☆ Save for Later"}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <Text style={styles.videoTitle}>{effectiveVideo.title}</Text>
@@ -338,17 +359,17 @@ export default function VideoDetailScreen() {
         </View>
 
         {/* Learning Verification & Progress Status (Verified Automatic Unlocking) */}
-        <Card style={[styles.progressCard, (isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) && { borderColor: "#10B981", backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
+        <Card style={[styles.progressCard, isCompleted && { borderColor: "#10B981", backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <Text style={{ fontSize: 24 }}>{(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? "🏆" : "🔒"}</Text>
+            <Text style={{ fontSize: 24 }}>{isCompleted ? "🏆" : "🔒"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.progressCardTitle, (isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) && { color: "#10B981" }]}>
-                {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? "Course Mastered & Certificate Ready!" : "Certificate Locked (Completion Required)"}
+              <Text style={[styles.progressCardTitle, isCompleted && { color: "#10B981" }]}>
+                {isCompleted ? "Course Mastered & Certificate Ready!" : "Certificate Verification & Completion Status"}
               </Text>
               <Text style={styles.progressCardSub}>
-                {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6)))
-                  ? "Congratulations! You have fulfilled the academic study requirements. Your official SmartEvolve certificate is unlocked."
-                  : "To earn your official SmartEvolve certificate, complete this masterclass and pass the diagnostic Skill Quiz (≥60%)."}
+                {isCompleted
+                  ? "Congratulations! You have fulfilled the academic study requirements. Your official SmartEvolve certificate is unlocked and ready to view or download."
+                  : "Watch the video masterclass or click 'Mark as Completed' below to test and preview your certificate immediately."}
               </Text>
             </View>
           </View>
@@ -356,26 +377,46 @@ export default function VideoDetailScreen() {
           <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
             <View style={{ flex: 1, padding: 8, backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 6, borderWidth: 1, borderColor: colors.cardBorder }}>
               <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "700" }}>STUDY STATUS</Text>
-              <Text style={{ fontSize: 12, color: (isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? colors.success : colors.warning, fontWeight: "700", marginTop: 2 }}>
-                {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) ? "Completed ✓" : "In Progress ⏳"}
+              <Text style={{ fontSize: 12, color: isCompleted ? colors.success : colors.warning, fontWeight: "700", marginTop: 2 }}>
+                {isCompleted ? "Completed ✓" : "In Progress ⏳"}
               </Text>
             </View>
             <View style={{ flex: 1, padding: 8, backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 6, borderWidth: 1, borderColor: colors.cardBorder }}>
               <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "700" }}>SKILL QUIZ EVALUATION</Text>
               <Text style={{ fontSize: 12, color: quizSubmitted ? (quizScore >= Math.ceil(quizQuestions.length * 0.6) ? colors.success : colors.error) : colors.textMuted, fontWeight: "700", marginTop: 2 }}>
-                {quizSubmitted ? `${Math.round((quizScore / quizQuestions.length) * 100)}% (${quizScore >= Math.ceil(quizQuestions.length * 0.6) ? "Passed ✓" : "Retake Quiz"})` : "Take Quiz Below ✍️"}
+                {quizSubmitted ? `${Math.round((quizScore / quizQuestions.length) * 100)}% (${quizScore >= Math.ceil(quizQuestions.length * 0.6) ? "Passed ✓" : "Retake Quiz"})` : "Optional Quiz Below ✍️"}
               </Text>
             </View>
           </View>
 
-          {(isCompleted || (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6))) && (
-            <Button
-              title="🎓 View Official SmartEvolve Certificate"
-              onPress={() => setShowCertModal(true)}
-              size="md"
-              style={{ width: "100%", marginTop: spacing.md, backgroundColor: "#4338CA" }}
-            />
-          )}
+          {/* Action Buttons: Mark as Completed & View Certificate */}
+          <View style={styles.certActionsRow}>
+            <TouchableOpacity
+              style={[styles.markCompletedBtn, isCompleted && styles.markCompletedBtnActive]}
+              onPress={handleMarkCompleted}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.markCompletedBtnText}>
+                {isCompleted ? "✓ Video Completed (Click to Re-open Certificate)" : "✓ Mark Video as Completed"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewCertBtn}
+              onPress={() => {
+                if (!isCompleted) {
+                  handleMarkCompleted();
+                } else {
+                  setShowCertModal(true);
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.viewCertBtnText}>
+                🎓 View Official SmartEvolve Certificate
+              </Text>
+            </TouchableOpacity>
+          </View>
         </Card>
 
         {/* Segmented Tab Navigation */}
@@ -762,7 +803,8 @@ const styles = StyleSheet.create({
   // Responsive full-width layout without desktop margins
   responsiveWrapper: {
     width: "100%",
-    alignSelf: "stretch",
+    maxWidth: 960,
+    alignSelf: "center",
   },
   loadingContainer: {
     flex: 1,
@@ -811,6 +853,83 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 11,
     fontWeight: "600",
+  },
+  topRightActions: {
+    marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  quickCompleteBtn: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  quickCompleteBtnDone: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    borderColor: "#6366F1",
+  },
+  quickCompleteBtnText: {
+    color: "#10B981",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  quickCompleteBtnTextDone: {
+    color: "#818CF8",
+  },
+  certActionsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: spacing.md,
+    flexWrap: "wrap",
+  },
+  markCompletedBtn: {
+    flex: 1,
+    minWidth: 200,
+    backgroundColor: "#059669",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  markCompletedBtnActive: {
+    backgroundColor: "rgba(16, 185, 129, 0.18)",
+    borderWidth: 1.5,
+    borderColor: "#10B981",
+  },
+  markCompletedBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  viewCertBtn: {
+    flex: 1,
+    minWidth: 200,
+    backgroundColor: "#4338CA",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#4338CA",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  viewCertBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
   },
   videoTitle: {
     color: colors.textPrimary,

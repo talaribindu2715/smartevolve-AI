@@ -200,6 +200,8 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
+    maxWidth: 780,
+    alignSelf: "center",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     overflow: "hidden",
@@ -209,8 +211,10 @@ const styles = StyleSheet.create({
   playerFrame: {
     width: "100%",
     aspectRatio: 16 / 9,
+    maxHeight: 440,
     backgroundColor: "#000000",
     position: "relative",
+    alignSelf: "center",
   },
   webView: {
     flex: 1,
