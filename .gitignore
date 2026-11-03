@@ -51,3 +51,5 @@ typechain-types/
 .DS_Store
 Thumbs.db
 *.log
+
+*.pdf

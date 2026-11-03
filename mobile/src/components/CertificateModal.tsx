@@ -58,34 +58,364 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
 
   const handlePrint = () => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
-      const styleId = "cert-greatlearning-print";
-      if (!document.getElementById(styleId)) {
-        const style = document.createElement("style");
-        style.id = styleId;
-        style.innerHTML = `
-          @media print {
-            body * { visibility: hidden !important; }
-            #greatlearning-cert-print, #greatlearning-cert-print * { visibility: visible !important; }
-            #greatlearning-cert-print {
-              position: fixed !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100vw !important;
-              height: 100vh !important;
-              margin: 0 !important;
-              padding: 24px !important;
-              box-sizing: border-box !important;
-              background: #FFFFFF !important;
-              color: #0F172A !important;
-              display: flex !important;
-              justify-content: center !important;
-              align-items: center !important;
-            }
-          }
-        `;
-        document.head.appendChild(style);
+      const iframeId = "cert-print-iframe";
+      let iframe = document.getElementById(iframeId) as HTMLIFrameElement;
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
       }
-      window.print();
+      iframe = document.createElement("iframe");
+      iframe.id = iframeId;
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SmartEvolve_Certificate_${certCode}</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .cert-outer {
+      width: 100%;
+      height: 100%;
+      border: 6px solid #0F172A;
+      padding: 6px;
+      background: #FFFFFF;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .cert-inner {
+      width: 100%;
+      height: 100%;
+      border: 1.5px solid #F59E0B;
+      padding: 24px 32px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .corner {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-color: #F59E0B;
+    }
+    .tl { top: 6px; left: 6px; border-top: 2px solid #F59E0B; border-left: 2px solid #F59E0B; }
+    .tr { top: 6px; right: 6px; border-top: 2px solid #F59E0B; border-right: 2px solid #F59E0B; }
+    .bl { bottom: 6px; left: 6px; border-bottom: 2px solid #F59E0B; border-left: 2px solid #F59E0B; }
+    .br { bottom: 6px; right: 6px; border-bottom: 2px solid #F59E0B; border-right: 2px solid #F59E0B; }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #6366F1;
+    }
+    .brand-name {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0F172A;
+      letter-spacing: -0.5px;
+    }
+    .brand-sub {
+      font-size: 10px;
+      font-weight: 800;
+      color: #6366F1;
+      letter-spacing: 4px;
+      margin-top: 2px;
+      padding-left: 16px;
+    }
+    .header-badge {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #6366F1;
+      letter-spacing: 1.5px;
+    }
+    .gold-line {
+      height: 1px;
+      background: rgba(245, 158, 11, 0.35);
+      margin: 12px 0;
+      width: 100%;
+    }
+    .title-wrap {
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .main-heading {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #0F172A;
+    }
+    .sub-heading {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #64748B;
+      margin-top: 4px;
+    }
+    .name-wrap {
+      text-align: center;
+      margin: 8px 0;
+    }
+    .student-name {
+      font-size: 28px;
+      font-weight: 900;
+      color: #1E293B;
+      display: inline-block;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #F59E0B;
+    }
+    .prose-wrap {
+      text-align: center;
+      margin: 6px 0;
+    }
+    .body-text {
+      font-size: 13px;
+      color: #334155;
+      line-height: 20px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .course-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #4338CA;
+      margin: 8px 0;
+    }
+    .domain-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #059669;
+      background: rgba(5, 150, 105, 0.1);
+      padding: 3px 12px;
+      border-radius: 12px;
+      margin-bottom: 4px;
+    }
+    .body-sub {
+      font-size: 11px;
+      color: #64748B;
+      font-style: italic;
+    }
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-top: 12px;
+      border-top: 1px solid #E2E8F0;
+      margin-top: 12px;
+    }
+    .col-left {
+      min-width: 160px;
+      text-align: left;
+    }
+    .meta-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .meta-val {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-top: 1px;
+    }
+    .meta-code {
+      font-size: 11px;
+      font-weight: 800;
+      color: #4338CA;
+      font-family: monospace;
+      margin-top: 1px;
+    }
+    .chip {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid #10B981;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 9px;
+      font-weight: 800;
+      color: #047857;
+      margin-top: 6px;
+    }
+    .seal-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #FEF3C7;
+      border: 2px solid #F59E0B;
+      padding: 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .seal-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px dashed #D97706;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .seal-brand {
+      font-size: 9px;
+      font-weight: 900;
+      color: #92400E;
+    }
+    .seal-ver {
+      font-size: 6px;
+      font-weight: 800;
+      color: #B45309;
+      letter-spacing: 0.5px;
+    }
+    .col-right {
+      min-width: 180px;
+      text-align: center;
+    }
+    .sign-line {
+      width: 140px;
+      height: 1px;
+      background: #64748B;
+      margin: 0 auto 4px auto;
+    }
+    .sign-name {
+      font-size: 11px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .sign-role {
+      font-size: 9px;
+      font-weight: 700;
+      color: #D97706;
+    }
+  </style>
+</head>
+<body>
+  <div class="cert-outer">
+    <div class="cert-inner">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+
+      <div class="header-row">
+        <div class="brand-wrap">
+          <div class="brand-title">
+            <div class="brand-dot"></div>
+            <div class="brand-name">SmartEvolve</div>
+          </div>
+          <div class="brand-sub">A C A D E M Y</div>
+        </div>
+        <div class="header-badge">OFFICIAL CERTIFICATION</div>
+      </div>
+
+      <div class="gold-line"></div>
+
+      <div class="title-wrap">
+        <div class="main-heading">CERTIFICATE OF COMPLETION</div>
+        <div class="sub-heading">PROUDLY PRESENTED TO</div>
+      </div>
+
+      <div class="name-wrap">
+        <div class="student-name">${studentName}</div>
+      </div>
+
+      <div class="prose-wrap">
+        <div class="body-text">
+          For successfully completing all curriculum modules and verifying comprehensive skill competency in
+        </div>
+        <div class="course-title">${certificate.courseOrSkillTitle}</div>
+        ${certificate.category ? `<div class="domain-badge">Domain Specialization: ${certificate.category}</div>` : ""}
+        <div class="body-sub">
+          with verified proficiency assessment and milestone achievement tracked on SmartEvolve AI.
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <div class="col-left">
+          <div class="meta-label">Issued Date</div>
+          <div class="meta-val">${issuedDate}</div>
+          <div class="meta-label" style="margin-top: 6px;">Certificate Code</div>
+          <div class="meta-code">${certCode}</div>
+          <div class="chip">✓ Verified on SmartEvolve</div>
+        </div>
+
+        <div class="seal-wrap">
+          <div class="seal-inner">
+            <span style="font-size: 8px; color: #D97706;">★</span>
+            <div class="seal-brand">SmartEvolve</div>
+            <div class="seal-ver">VERIFIED</div>
+            <span style="font-size: 8px; color: #D97706;">★</span>
+          </div>
+        </div>
+
+        <div class="col-right">
+          <div class="sign-line"></div>
+          <div class="sign-name">Academic Director</div>
+          <div class="sign-role">SmartEvolve Certification Board</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(html);
+        doc.close();
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        }, 300);
+      }
     } else {
       Alert.alert(
         "Certificate Ready",
