@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   useWindowDimensions,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
@@ -86,18 +87,33 @@ export default function LandingScreen() {
         </View>
 
         {/* Hero Section: Centered & Non-Scrollable */}
-        <View style={styles.heroSection}>
-          <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
-            One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
-          </Text>
+        <View style={[styles.heroSection, isDesktop && styles.heroSectionDesktop]}>
+          <View style={styles.heroLeftCol}>
+            <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
+              One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
+            </Text>
 
-          <View style={styles.heroCtaRow}>
-            <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
-              <Text style={styles.heroPrimaryBtnText}>Explore Skills & Masterclasses →</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
-              <Text style={styles.heroSecondaryBtnText}>Sign In</Text>
-            </TouchableOpacity>
+            <View style={styles.heroCtaRow}>
+              <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
+                <Text style={styles.heroPrimaryBtnText}>Explore Skills & Masterclasses →</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
+                <Text style={styles.heroSecondaryBtnText}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Right Column: Golden Blockchain & AI Gear Image */}
+          <View style={[styles.heroImageContainer, isDesktop && styles.heroImageContainerDesktop]}>
+            <View style={styles.imageGlowOrb} />
+            <Image
+              source={require("../assets/golden-blockchain-gear.png")}
+              style={[
+                styles.goldenGearImage,
+                isDesktop ? styles.goldenGearImageDesktop : styles.goldenGearImageMobile,
+              ]}
+              resizeMode="contain"
+            />
           </View>
         </View>
       </View>
@@ -217,6 +233,52 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     width: "100%",
     paddingBottom: spacing.xxl,
+  },
+  heroSectionDesktop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: spacing.xl,
+  },
+  heroLeftCol: {
+    flex: 1,
+    maxWidth: 620,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  heroImageContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    marginTop: spacing.md,
+  },
+  heroImageContainerDesktop: {
+    flex: 1.1,
+    maxWidth: 580,
+    marginTop: 0,
+  },
+  imageGlowOrb: {
+    position: "absolute",
+    width: 420,
+    height: 420,
+    borderRadius: 210,
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
+  },
+  goldenGearImage: {
+    borderRadius: 24,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  goldenGearImageDesktop: {
+    width: 440,
+    height: 440,
+  },
+  goldenGearImageMobile: {
+    width: 280,
+    height: 280,
   },
   heroHeadline: {
     color: "#FFFFFF",
