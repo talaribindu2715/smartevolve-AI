@@ -21,6 +21,7 @@ import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { VideoCard } from "../../src/components/VideoCard";
 import { CertificateModal } from "../../src/components/CertificateModal";
+import { InteractiveQuizArenaModal } from "../../src/components/InteractiveQuizArenaModal";
 import { getMasterVideoById } from "../../src/data/masterVideos";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
@@ -838,6 +839,365 @@ const QUESTION_BANK: Record<string, QuizQuestion[]> = {
       "options": ["O(n log n)", "O(n^2)", "O(n)", "O(log n)"],
       "correctIndex": 0,
       "explanation": "Decision tree analysis mathematically proves that comparison-based sorting cannot beat Omega(n log n) in the worst case."
+    }  ],
+  "llm": [
+    {
+      "id": 1,
+      "question": "What technique involves providing input-output examples directly in the context window before asking the model to perform a task?",
+      "options": ["Few-Shot Prompting", "Zero-Shot Learning", "RLHF Fine-Tuning", "Chain-of-Verification"],
+      "correctIndex": 0,
+      "explanation": "Few-Shot prompting conditions the transformer attention heads with in-context demonstrations without altering model weights."
+    },
+    {
+      "id": 2,
+      "question": "In RAG (Retrieval-Augmented Generation), what data structure is used to search for semantically related text chunks?",
+      "options": ["High-dimensional Vector Embeddings in a Vector Database", "B-Tree relational index", "Red-black binary tree", "String keyword hash table"],
+      "correctIndex": 0,
+      "explanation": "Vector databases index embeddings using Approximate Nearest Neighbor (ANN) algorithms to find semantic matches based on cosine distance."
+    },
+    {
+      "id": 3,
+      "question": "What does temperature control during LLM token sampling?",
+      "options": ["The entropy / randomness of next-token selection", "The GPU memory allocation", "The processor clock frequency", "The maximum prompt length"],
+      "correctIndex": 0,
+      "explanation": "Lower temperatures flatten logits into deterministic greedy choices, while higher values increase creative diversity."
+    },
+    {
+      "id": 4,
+      "question": "What core mechanism in Transformer models computes relationships between all tokens in a sequence regardless of distance?",
+      "options": ["Multi-Head Self-Attention", "Recurrent Hidden State", "Convolutional Kernel", "Max Pooling"],
+      "correctIndex": 0,
+      "explanation": "Multi-head self-attention computes Query, Key, and Value dot-products to weigh contextual relevance across the entire token sequence."
+    },
+    {
+      "id": 5,
+      "question": "Which prompting technique instructs an LLM to write out intermediate reasoning steps before arriving at a final answer?",
+      "options": ["Chain-of-Thought (CoT) Prompting", "Role System Prompting", "Directional Stimulus", "Negative Constraint Prompting"],
+      "correctIndex": 0,
+      "explanation": "Chain-of-Thought prompting prompts the model to break complex multi-step reasoning down, drastically improving mathematical and logical accuracy."
+    },
+    {
+      "id": 6,
+      "question": "What is an LLM 'hallucination' in generative AI systems?",
+      "options": ["Generating grammatically confident but factually untrue information", "Out of memory runtime exception", "Token buffer overflow", "Network timeout on streaming response"],
+      "correctIndex": 0,
+      "explanation": "Hallucinations occur when statistical next-token completions generate fluent assertions unsupported by real-world facts or context."
+    },
+    {
+      "id": 7,
+      "question": "What is the primary role of a Tokenizer (e.g., BPE, WordPiece) in LLM pipelines?",
+      "options": ["Converts raw text into discrete sub-word numerical token IDs", "Compresses video files into mp4", "Translates Python to JavaScript", "Encrypts prompts with AES-256"],
+      "correctIndex": 0,
+      "explanation": "Tokenizers break natural language into subword units and map them to integer indices in the model vocabulary table."
+    },
+    {
+      "id": 8,
+      "question": "What technique aligns raw pre-trained LLMs with human values and preferences using preference ranking datasets?",
+      "options": ["RLHF (Reinforcement Learning from Human Feedback)", "Unsupervised K-Means Clustering", "Random Weight Perturbation", "Batch Normalization"],
+      "correctIndex": 0,
+      "explanation": "RLHF trains a reward model from human preferences and fine-tunes policy models with PPO or DPO to enhance safety and helpfulness."
+    },
+    {
+      "id": 9,
+      "question": "Which distance metric is standard for comparing semantic vector similarities in embedding spaces?",
+      "options": ["Cosine Similarity", "Manhattan Taxi Distance", "Hamming XOR Distance", "Levenshtein Distance"],
+      "correctIndex": 0,
+      "explanation": "Cosine similarity measures the cosine of the angle between two normalized vectors, capturing directional semantic affinity."
+    },
+    {
+      "id": 10,
+      "question": "What is chunking overlap in document indexing for RAG pipelines?",
+      "options": ["Sharing boundary tokens between adjacent chunks to preserve continuity", "Compressing text into zip archives", "Duplicating entire files in S3", "Translating chunks into Latin"],
+      "correctIndex": 0,
+      "explanation": "Chunk overlap prevents splitting critical semantic sentences or context across arbitrary fixed-token boundaries."
+    }
+  ],
+  "cybersecurity": [
+    {
+      "id": 1,
+      "question": "What vulnerability in OWASP Top 10 occurs when untrusted input is concatenated directly into SQL command strings?",
+      "options": ["SQL Injection (SQLi)", "Cross-Site Scripting (XSS)", "Server-Side Request Forgery", "Insecure Direct Object Reference"],
+      "correctIndex": 0,
+      "explanation": "SQLi allows attackers to alter query logic and bypass authentication or exfiltrate database contents via unsanitized input."
+    },
+    {
+      "id": 2,
+      "question": "What cryptographic property ensures compromised server private keys cannot decrypt past recorded TLS session traffic?",
+      "options": ["Perfect Forward Secrecy (PFS)", "Symmetric Block Chaining", "MD5 Hashing", "Base64 Encoding"],
+      "correctIndex": 0,
+      "explanation": "PFS generates unique ephemeral Diffie-Hellman session keys for every connection, preventing retrospective decryption."
+    },
+    {
+      "id": 3,
+      "question": "Which HTTP security response header forces web browsers to communicate exclusively over secure HTTPS channels?",
+      "options": ["Strict-Transport-Security (HSTS)", "Content-Security-Policy", "X-Frame-Options", "Access-Control-Allow-Origin"],
+      "correctIndex": 0,
+      "explanation": "HSTS instructs browsers to automatically convert all HTTP links to HTTPS and refuse connection if certificates are invalid."
+    },
+    {
+      "id": 4,
+      "question": "What type of attack involves an adversary secretly relaying and possibly altering communications between two parties?",
+      "options": ["Man-in-the-Middle (MitM) Attack", "Denial of Service (DoS)", "Dictionary Password Attack", "Buffer Overflow"],
+      "correctIndex": 0,
+      "explanation": "MitM attacks intercept unencrypted or unauthenticated network traffic, allowing adversaries to eavesdrop or inject malicious payloads."
+    },
+    {
+      "id": 5,
+      "question": "Which cryptographic function is intentionally slow and CPU/memory-intensive to protect stored user passwords against brute force?",
+      "options": ["bcrypt / Argon2id", "MD5", "SHA-1", "CRC32"],
+      "correctIndex": 0,
+      "explanation": "bcrypt and Argon2 utilize configurable work factors and salt parameters to defeat high-velocity GPU rainbow table attacks."
+    },
+    {
+      "id": 6,
+      "question": "What security paradigm follows the core principle 'Never trust, always verify' across internal and external networks?",
+      "options": ["Zero Trust Architecture", "Perimeter Firewalls", "VPN Perimeter Model", "Air-Gapped Deployment"],
+      "correctIndex": 0,
+      "explanation": "Zero Trust assumes threats exist both inside and outside network boundaries, requiring continuous identity verification and least-privilege access."
+    },
+    {
+      "id": 7,
+      "question": "What attack injects malicious JavaScript into legitimate web pages viewed by other users?",
+      "options": ["Cross-Site Scripting (XSS)", "SQL Injection", "ARP Poisoning", "DNS Spoofing"],
+      "correctIndex": 0,
+      "explanation": "XSS executes malicious scripts in victim browsers, enabling session hijacking, cookie theft, and DOM manipulation."
+    },
+    {
+      "id": 8,
+      "question": "What defense mechanism creates a random unique token per user session to validate incoming state-changing POST requests?",
+      "options": ["CSRF Token (Anti-Cross-Site Request Forgery)", "JSON Web Token (JWT)", "Public SSH Key", "SSL Certificate"],
+      "correctIndex": 0,
+      "explanation": "CSRF tokens ensure state-changing HTTP requests originate intentionally from the genuine application UI, not unauthorized third-party sites."
+    },
+    {
+      "id": 9,
+      "question": "Which asymmetric cryptography algorithm is widely used for digital signatures and TLS certificate handshakes?",
+      "options": ["RSA / ECDSA", "AES-256", "DES", "RC4"],
+      "correctIndex": 0,
+      "explanation": "RSA and Elliptic Curve Digital Signature Algorithm (ECDSA) use public/private key pairs to verify identity and encrypt symmetric keys."
+    },
+    {
+      "id": 10,
+      "question": "What is the primary objective of a penetration test (pen test)?",
+      "options": ["Proactively identify and validate exploitable security vulnerabilities before malicious actors do", "Format production database hard drives", "Compress server log files", "Verify UI color contrasts"],
+      "correctIndex": 0,
+      "explanation": "Penetration testing simulates real-world cyberattacks against systems to find security weaknesses and verify defense effectiveness."
+    }
+  ],
+  "dataanalysis": [
+    {
+      "id": 1,
+      "question": "In Power BI and tabular semantic data models, what does DAX stand for?",
+      "options": ["Data Analysis Expressions", "Direct Access XML", "Data Aggregation Exchange", "Dynamic Array Extension"],
+      "correctIndex": 0,
+      "explanation": "DAX is the formula and query language used in Power BI, Analysis Services, and Power Pivot to define custom calculations and aggregations."
+    },
+    {
+      "id": 2,
+      "question": "Which relational data warehouse modeling schema features a central Fact table connected directly to Dimension tables?",
+      "options": ["Star Schema", "Snowflake Hierarchy", "Flat Matrix", "Normalized 3NF Cluster"],
+      "correctIndex": 0,
+      "explanation": "Star schema minimizes joins and optimizes aggregation query performance in OLAP analytics systems."
+    },
+    {
+      "id": 3,
+      "question": "In Python Pandas, which method pivots a DataFrame based on unique index, column, and aggregated values?",
+      "options": ["pivot_table()", "melt()", "groupby()", "concat()"],
+      "correctIndex": 0,
+      "explanation": "pivot_table() groups and aggregates values across multi-dimensional row and column indices with customizable aggfunc."
+    },
+    {
+      "id": 4,
+      "question": "What is the difference between a Calculated Column and a Measure in Power BI?",
+      "options": ["Measures are computed on-the-fly dynamically responding to slicer context; Calculated Columns store pre-computed static values in RAM", "Measures only work with text", "Calculated columns use SQL instead of DAX", "There is no difference"],
+      "correctIndex": 0,
+      "explanation": "Measures recalculate dynamically per visual filter context without bloating memory, making them standard for aggregations."
+    },
+    {
+      "id": 5,
+      "question": "What statistical visualization displays the median, quartiles (Q1, Q3), and outliers of a numerical dataset?",
+      "options": ["Box Plot (Box and Whisker)", "Pie Chart", "Treemap", "Waterfall Chart"],
+      "correctIndex": 0,
+      "explanation": "Box plots provide a concise 5-number summary visualizing central tendency, dispersion spread, and extreme outlier values."
+    },
+    {
+      "id": 6,
+      "question": "What metric measures the linear relationship between two continuous variables on a scale from -1.0 to +1.0?",
+      "options": ["Pearson Correlation Coefficient", "Standard Error", "Variance Inflation Factor", "Chi-Square Test"],
+      "correctIndex": 0,
+      "explanation": "+1 indicates perfect positive correlation, -1 indicates perfect negative correlation, and 0 indicates no linear association."
+    },
+    {
+      "id": 7,
+      "question": "In data preparation, what is the process of replacing missing NULL values with statistical estimates like mean or median?",
+      "options": ["Imputation", "One-Hot Encoding", "Min-Max Normalization", "Truncation"],
+      "correctIndex": 0,
+      "explanation": "Imputation preserves sample sizes without discarding incomplete rows, substituting appropriate statistical representations."
+    },
+    {
+      "id": 8,
+      "question": "What Power BI connection mode executes queries directly against the live underlying database without importing data into memory?",
+      "options": ["DirectQuery", "Import Mode", "Dual Composite", "Live Analysis"],
+      "correctIndex": 0,
+      "explanation": "DirectQuery queries underlying data sources in real time, essential for massive terabyte-scale databases and strict compliance rules."
+    },
+    {
+      "id": 9,
+      "question": "What does ETL stand for in modern data engineering and analytics architectures?",
+      "options": ["Extract, Transform, Load", "Encrypt, Transfer, Lock", "Evaluate, Test, Launch", "Export, Table, Label"],
+      "correctIndex": 0,
+      "explanation": "ETL pipelines extract raw data from operational systems, transform and clean it into analytical formats, and load it into data warehouses."
+    },
+    {
+      "id": 10,
+      "question": "In a standard normal distribution curve, approximately what percentage of data falls within 1 standard deviation of the mean?",
+      "options": ["68.2%", "50.0%", "95.4%", "99.7%"],
+      "correctIndex": 0,
+      "explanation": "The empirical 68-95-99.7 rule specifies that roughly 68.2% of normal data lies within 1 standard deviation of the mean."
+    }
+  ],
+  "web3": [
+    {
+      "id": 1,
+      "question": "In Ethereum and EVM-compatible blockchains, what deterministic virtual environment executes smart contract bytecode?",
+      "options": ["Ethereum Virtual Machine (EVM)", "Node.js V8 Runtime", "Docker Sandbox", "Wasm Container"],
+      "correctIndex": 0,
+      "explanation": "The EVM is a sandboxed, stack-based runtime executed deterministically by every validator node across the network."
+    },
+    {
+      "id": 2,
+      "question": "What vulnerability occurs when a smart contract makes an external call before updating its internal state balance variables?",
+      "options": ["Reentrancy Attack", "Integer Overflow", "Front-Running MEV", "Flash Loan Default"],
+      "correctIndex": 0,
+      "explanation": "Reentrancy allows attackers to repeatedly re-invoke withdrawal functions recursively before state balances are zeroed out (e.g. The DAO hack)."
+    },
+    {
+      "id": 3,
+      "question": "What is the primary role of Gas in EVM blockchain transactions?",
+      "options": ["Compensates validators for compute resources and prevents infinite execution loops", "Encrypts wallet keys", "Provides identity verification", "Backs stablecoin reserves"],
+      "correctIndex": 0,
+      "explanation": "Gas measures computational complexity; finite gas limits guarantee halting on Turing-complete code and defend against DoS attacks."
+    },
+    {
+      "id": 4,
+      "question": "Which token standard defines non-fungible, unique cryptographic assets on EVM blockchains?",
+      "options": ["ERC-721", "ERC-20", "ERC-1155", "ERC-777"],
+      "correctIndex": 0,
+      "explanation": "ERC-721 establishes standardized interfaces for tracking ownership of distinct, non-fungible verifiable digital credentials and NFTs."
+    },
+    {
+      "id": 5,
+      "question": "What consensus mechanism secures modern Ethereum by requiring validators to stake ETH collateral rather than burn electricity?",
+      "options": ["Proof-of-Stake (PoS)", "Proof-of-Work (PoW)", "Delegated BFT", "Proof-of-Authority"],
+      "correctIndex": 0,
+      "explanation": "Proof-of-Stake selects block proposers and validators weighted by staked capital, drastically reducing energy usage while enforcing slashing penalties."
+    },
+    {
+      "id": 6,
+      "question": "In Solidity, which function state mutability modifier promises that the function neither reads nor modifies contract state?",
+      "options": ["pure", "view", "payable", "external"],
+      "correctIndex": 0,
+      "explanation": "pure functions operate strictly on passed parameters and local variables without accessing storage state (e.g. mathematical utility methods)."
+    },
+    {
+      "id": 7,
+      "question": "What cryptographic data structure enables efficient, tamper-evident verification of large sets of transaction records?",
+      "options": ["Merkle Tree (Hash Tree)", "Circular Queue", "B+ Tree", "Singly Linked List"],
+      "correctIndex": 0,
+      "explanation": "Merkle Trees summarize transactions into a single Merkle Root; light clients can verify inclusion with compact O(log n) cryptographic proofs."
+    },
+    {
+      "id": 8,
+      "question": "What happens to smart contract code once deployed to an immutable blockchain address?",
+      "options": ["Bytecode cannot be modified or updated; it remains permanent and immutable", "Automatically updates nightly", "Can be edited with admin keys", "Expires after 1 year"],
+      "correctIndex": 0,
+      "explanation": "Immutability guarantees that once contract bytecode is deployed, the exact execution logic cannot be tampered with or overwritten."
+    },
+    {
+      "id": 9,
+      "question": "In Solidity, what design pattern ensures safe external calls by updating state variables before invoking external addresses?",
+      "options": ["Checks-Effects-Interactions Pattern", "Singleton Pattern", "Factory Pattern", "Observer Pattern"],
+      "correctIndex": 0,
+      "explanation": "Checks-Effects-Interactions checks prerequisites first, applies internal state changes second, and executes external calls last, preventing reentrancy."
+    },
+    {
+      "id": 10,
+      "question": "What is a Smart Contract Event in Solidity?",
+      "options": ["An EVM logging abstraction that writes lightweight data to blockchain transaction receipts", "A cron job scheduler", "A calendar appointment", "A real-time WebSocket connection"],
+      "correctIndex": 0,
+      "explanation": "Events emit topics and indexed data to transaction receipts, enabling dApps and indexers (like The Graph) to track contract activity cheaply."
+    }
+  ],
+  "dsa": [
+    {
+      "id": 1,
+      "question": "Which fundamental data structure operates under the Last-In, First-Out (LIFO) protocol?",
+      "options": ["Stack", "Queue", "Priority Queue", "Deque"],
+      "correctIndex": 0,
+      "explanation": "Stacks push and pop elements from the top, ensuring the most recently added item is the first one removed."
+    },
+    {
+      "id": 2,
+      "question": "What is the worst-case time complexity of searching for an element in an unbalanced Binary Search Tree (BST)?",
+      "options": ["O(n) - degenerates into a linked list", "O(log n)", "O(1)", "O(n log n)"],
+      "correctIndex": 0,
+      "explanation": "When inserted in sorted order, an un-balanced BST degenerates into a single linear chain of n nodes, resulting in O(n) search."
+    },
+    {
+      "id": 3,
+      "question": "Which graph traversal algorithm explores neighbors level-by-level using a FIFO Queue?",
+      "options": ["Breadth-First Search (BFS)", "Depth-First Search (DFS)", "Bellman-Ford", "Tarjan's SCC"],
+      "correctIndex": 0,
+      "explanation": "BFS uses a Queue to visit nodes in order of shortest path hop distance from the root vertex."
+    },
+    {
+      "id": 4,
+      "question": "What optimization technique solves overlapping subproblems by caching computed answers in a memoization table?",
+      "options": ["Dynamic Programming (DP)", "Greedy Heuristic", "Backtracking", "Divide and Conquer"],
+      "correctIndex": 0,
+      "explanation": "Dynamic Programming avoids re-solving overlapping subproblems by storing computed intermediate results."
+    },
+    {
+      "id": 5,
+      "question": "What is the average time complexity of element insertion, deletion, and lookup in a Hash Table?",
+      "options": ["O(1)", "O(log n)", "O(n)", "O(n^2)"],
+      "correctIndex": 0,
+      "explanation": "A well-distributed hash function distributes keys uniformly across buckets, yielding constant O(1) amortized operational complexity."
+    },
+    {
+      "id": 6,
+      "question": "Which algorithm finds the single-source shortest path in a weighted graph with non-negative edge weights?",
+      "options": ["Dijkstra's Algorithm", "Kruskal's Algorithm", "Floyd-Warshall", "Kosaraju's Algorithm"],
+      "correctIndex": 0,
+      "explanation": "Dijkstra's algorithm greedily expands lowest-cost paths using a Min-Heap priority queue in O((V + E) log V) time."
+    },
+    {
+      "id": 7,
+      "question": "What algorithmic paradigm sorts a collection by partitioning elements around a chosen pivot value?",
+      "options": ["QuickSort", "Insertion Sort", "Bubble Sort", "Radix Sort"],
+      "correctIndex": 0,
+      "explanation": "QuickSort partitions arrays into elements smaller than and greater than a pivot, achieving O(n log n) average time."
+    },
+    {
+      "id": 8,
+      "question": "Which sorting algorithm produces a linear ordering of vertices in a Directed Acyclic Graph (DAG)?",
+      "options": ["Topological Sort (Kahn's Algorithm)", "Counting Sort", "Bucket Sort", "Heap Sort"],
+      "correctIndex": 0,
+      "explanation": "Topological sort orders DAG tasks such that for every directed edge u -> v, vertex u comes before v."
+    },
+    {
+      "id": 9,
+      "question": "What data structure is optimal for efficiently retrieving the Maximum or Minimum element in O(1) time?",
+      "options": ["Heap (Priority Queue)", "Linked List", "Dynamic Array", "Trie"],
+      "correctIndex": 0,
+      "explanation": "Binary heaps maintain the heap property, keeping the extreme element at the root index [0] accessible in O(1) time."
+    },
+    {
+      "id": 10,
+      "question": "What two-pointer technique solves the Two-Sum problem in O(n) time on an array that is already sorted?",
+      "options": ["Opposite-directional Left and Right pointers converging toward the target sum", "Nested double for-loops", "Randomized pivot selection", "Breadth first expansion"],
+      "correctIndex": 0,
+      "explanation": "Comparing arr[left] + arr[right] with the target allows incrementing left or decrementing right in linear O(n) time without additional space."
     }
   ]
 };
@@ -846,10 +1206,15 @@ function getTopicKey(skillName?: string, title?: string): string {
   const combined = ((skillName || "") + " " + (title || "")).toLowerCase();
   if (combined.includes("spring") || combined.includes("java")) return "springboot";
   if (combined.includes("python") || combined.includes("django") || combined.includes("flask") || combined.includes("pandas")) return "python";
-  if (combined.includes("machine") || combined.includes("ai") || combined.includes("neural") || combined.includes("data science") || combined.includes("deep learning") || combined.includes("gpt") || combined.includes("llm")) return "machinelearning";
-  if (combined.includes("sql") || combined.includes("database") || combined.includes("postgres")) return "sql";
-  if (combined.includes("react") || combined.includes("javascript") || combined.includes("typescript") || combined.includes("frontend") || combined.includes("mobile")) return "react";
-  if (combined.includes("docker") || combined.includes("cloud") || combined.includes("aws") || combined.includes("devops") || combined.includes("system design") || combined.includes("kubernetes")) return "cloud";
+  if (combined.includes("gpt") || combined.includes("llm") || combined.includes("prompt") || combined.includes("generative") || combined.includes("langchain")) return "llm";
+  if (combined.includes("machine") || combined.includes("ai") || combined.includes("neural") || combined.includes("data science") || combined.includes("deep learning") || combined.includes("pytorch")) return "machinelearning";
+  if (combined.includes("sql") || combined.includes("database") || combined.includes("postgres") || combined.includes("mongodb") || combined.includes("redis")) return "sql";
+  if (combined.includes("react") || combined.includes("javascript") || combined.includes("typescript") || combined.includes("frontend") || combined.includes("mobile") || combined.includes("next.js") || combined.includes("node")) return "react";
+  if (combined.includes("docker") || combined.includes("cloud") || combined.includes("aws") || combined.includes("devops") || combined.includes("kubernetes") || combined.includes("linux")) return "cloud";
+  if (combined.includes("cyber") || combined.includes("security") || combined.includes("hacking") || combined.includes("penetration")) return "cybersecurity";
+  if (combined.includes("power bi") || combined.includes("excel") || combined.includes("analytics") || combined.includes("tableau")) return "dataanalysis";
+  if (combined.includes("solidity") || combined.includes("blockchain") || combined.includes("web3") || combined.includes("ethereum") || combined.includes("crypto")) return "web3";
+  if (combined.includes("algorithm") || combined.includes("dsa") || combined.includes("structure") || combined.includes("leet") || combined.includes("tree") || combined.includes("graph")) return "dsa";
   return "general";
 }
 
@@ -870,6 +1235,59 @@ export default function VideoDetailScreen() {
   const [quizScore, setQuizScore] = useState(0);
   const [quizAttempts, setQuizAttempts] = useState(1);
   const [showCertModal, setShowCertModal] = useState(false);
+
+  // Interactive Quiz Arena Mode State (Kahoot / Wayground / Quizizz - zero external login)
+  const [arenaModalVisible, setArenaModalVisible] = useState(false);
+  const [arenaPlatform, setArenaPlatform] = useState<"kahoot" | "wayground" | "quizizz">("kahoot");
+
+  const launchArena = (plat: "kahoot" | "wayground" | "quizizz") => {
+    setArenaPlatform(plat);
+    setArenaModalVisible(true);
+  };
+
+  const handleArenaComplete = (correctCount: number, total: number, answers: Record<number, number>) => {
+    setSelectedAnswers(answers);
+    setQuizScore(correctCount);
+    setQuizSubmitted(true);
+
+    const isPassing = correctCount >= Math.ceil(total * 0.6);
+    if (isPassing) {
+      updateProgressMutation.mutate("COMPLETED");
+    }
+
+    // Persist to PostgreSQL database directly
+    api.submitCourseQuizResult({
+      courseOrVideoId: effectiveVideo?.videoId || effectiveVideo?.id || "course",
+      courseTitle: effectiveVideo?.title || "Masterclass",
+      skillName: effectiveVideo?.skillName || "Computer Science",
+      score: correctCount,
+      totalQuestions: total,
+      timeTakenSeconds: 90,
+      attemptNumber: quizAttempts,
+      difficulty: effectiveVideo?.difficulty || "INTERMEDIATE",
+      platform: arenaPlatform.toUpperCase(),
+    }).then(() => {
+      setDbPersisted(true);
+    }).catch((err) => {
+      console.warn("Arena persist notice:", err);
+    });
+
+    if (effectiveVideo) {
+      api.updateVideoProgress({
+        videoId: effectiveVideo.id,
+        youtubeVideoId: effectiveVideo.videoId,
+        watchedSeconds: (effectiveVideo.estimatedMinutes || 30) * 60,
+        totalSeconds: (effectiveVideo.estimatedMinutes || 30) * 60,
+        status: "COMPLETED",
+      }).catch(() => {});
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["evolutionHistory"] });
+    queryClient.invalidateQueries({ queryKey: ["evolutionTrends"] });
+    queryClient.invalidateQueries({ queryKey: ["studentSkills"] });
+    queryClient.invalidateQueries({ queryKey: ["credentials"] });
+  };
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -1192,6 +1610,35 @@ export default function VideoDetailScreen() {
                 <Text style={styles.bulletItem}>• Direct alignment with Kahn DAG prerequisite milestones.</Text>
               </View>
             </Card>
+
+            {/* Overview Quick Arena Launcher */}
+            <View style={styles.arenaCalloutCard}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>
+                  🎮 Masterclass Quiz Arena
+                </Text>
+                <View style={styles.noLoginBadge}>
+                  <Text style={styles.noLoginBadgeText}>No Login Required</Text>
+                </View>
+              </View>
+              <Text style={{ color: "#94A3B8", fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
+                Ready to test what you learned? Launch an interactive game session for this video with Kahoot shapes or Wayground speed timers:
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                <TouchableOpacity
+                  style={styles.kahootBtn}
+                  onPress={() => launchArena("kahoot")}
+                >
+                  <Text style={styles.arenaBtnText}>▲ ◆ ● ■ Launch Kahoot Arena</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.waygroundBtn}
+                  onPress={() => launchArena("wayground")}
+                >
+                  <Text style={styles.arenaBtnText}>⚡ Launch Wayground Mode</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         )}
 
@@ -1215,35 +1662,37 @@ export default function VideoDetailScreen() {
                 />
               </View>
 
-              {/* Interactive Quiz Platform Hub (Kahoot / Wayground / Quizizz) */}
-              <View style={{ backgroundColor: "rgba(99, 102, 241, 0.1)", borderColor: "rgba(99, 102, 241, 0.25)", borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 16 }}>
+              {/* In-App Interactive Quiz Arena (Kahoot • Wayground • Quizizz - No External Sign-In) */}
+              <View style={styles.arenaLaunchBanner}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: "700", fontSize: 13 }}>
-                    🎮 Interactive Quiz Arena: Kahoot • Wayground • Quizizz
+                  <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 14 }}>
+                    🎮 In-App Quiz Arena: Kahoot • Wayground • Quizizz
                   </Text>
-                  <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "600" }}>Live Multiplayer</Text>
+                  <View style={styles.noLoginBadge}>
+                    <Text style={styles.noLoginBadgeText}>Zero Sign-in • In-App</Text>
+                  </View>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16, marginBottom: 8 }}>
-                  Want to practice with hundreds of interactive multiplayer questions? Launch an arena below:
+                <Text style={{ color: "#94A3B8", fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
+                  Directly launches interactive questions for this video! Play with 25s countdown timers, Kahoot shape blocks, speed streaks, and earn your certificate:
                 </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                   <TouchableOpacity
-                    style={{ backgroundColor: "#46178F", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}
-                    onPress={() => Linking.openURL("https://kahoot.it")}
+                    style={styles.kahootBtn}
+                    onPress={() => launchArena("kahoot")}
                   >
-                    <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>Launch Kahoot ↗</Text>
+                    <Text style={styles.arenaBtnText}>▲ ◆ ● ■ Play Kahoot Arena ➔</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: "#0066CC", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}
-                    onPress={() => Linking.openURL("https://wayground.com")}
+                    style={styles.waygroundBtn}
+                    onPress={() => launchArena("wayground")}
                   >
-                    <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>Wayground Arena ↗</Text>
+                    <Text style={styles.arenaBtnText}>⚡ Play Wayground Speed ➔</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: "#8854C0", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}
-                    onPress={() => Linking.openURL("https://quizizz.com/join")}
+                    style={styles.quizizzBtn}
+                    onPress={() => launchArena("quizizz")}
                   >
-                    <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>Quizizz Challenge ↗</Text>
+                    <Text style={styles.arenaBtnText}>🎯 Play Quizizz Challenge ➔</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1419,6 +1868,19 @@ export default function VideoDetailScreen() {
             )}
           </View>
         )}
+        {/* In-App Interactive Quiz Arena (Kahoot • Wayground • Quizizz) */}
+        <InteractiveQuizArenaModal
+          visible={arenaModalVisible}
+          onClose={() => setArenaModalVisible(false)}
+          platform={arenaPlatform}
+          videoTitle={effectiveVideo.title}
+          skillName={effectiveVideo.skillName || "Computer Science"}
+          questions={quizQuestions}
+          studentName={profile?.fullName || "SmartEvolve Scholar"}
+          onComplete={handleArenaComplete}
+          onViewCertificate={() => setShowCertModal(true)}
+        />
+
         {/* Autonomous Great Learning Style Course Certificate Modal */}
         <CertificateModal
           visible={showCertModal}
@@ -1842,5 +2304,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     marginTop: 4,
+  },
+  arenaLaunchBanner: {
+    backgroundColor: "rgba(70, 23, 143, 0.25)",
+    borderColor: "rgba(168, 85, 247, 0.4)",
+    borderWidth: 1.5,
+    borderRadius: 14,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  arenaCalloutCard: {
+    backgroundColor: "#131B2E",
+    borderColor: "rgba(99, 102, 241, 0.35)",
+    borderWidth: 1.5,
+    borderRadius: 14,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  noLoginBadge: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  noLoginBadgeText: {
+    color: "#10B981",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  kahootBtn: {
+    backgroundColor: "#46178F",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  waygroundBtn: {
+    backgroundColor: "#0066CC",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  quizizzBtn: {
+    backgroundColor: "#8854C0",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  arenaBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
   },
 });
