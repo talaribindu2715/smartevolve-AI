@@ -136,9 +136,9 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
                   <View style={[styles.cornerTab, styles.cornerBL]} />
                   <View style={[styles.cornerTab, styles.cornerBR]} />
 
-                  {/* Header Row: SmartEvolve Logo & Institution */}
+                  {/* Header Row: SmartEvolve Logo & Official Status */}
                   <View style={styles.certTopHeader}>
-                    {/* Left Brand: SmartEvolve Academy */}
+                    {/* Brand: SmartEvolve Academy */}
                     <View style={styles.brandCol}>
                       <View style={styles.brandTitleRow}>
                         <View style={styles.brandDot} />
@@ -147,11 +147,8 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
                       <Text style={styles.brandSubText}>A C A D E M Y</Text>
                     </View>
 
-                    {/* Right Institution: K.S.R.M. College of Engineering */}
-                    <View style={styles.institutionCol}>
-                      <Text style={styles.instName}>{institution}</Text>
-                      <Text style={styles.instSub}>Department of {department}</Text>
-                      <Text style={styles.instAccred}>Autonomous Institution • Affiliated to JNTUA • Approved by AICTE</Text>
+                    <View style={styles.headerBadgeWrap}>
+                      <Text style={styles.headerBadgeText}>OFFICIAL CERTIFICATION</Text>
                     </View>
                   </View>
 
@@ -172,8 +169,7 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
                   {/* Recognition Prose */}
                   <View style={styles.bodyProseWrap}>
                     <Text style={styles.bodyText}>
-                      of the <Text style={styles.boldText}>Department of {department}</Text>, Class of {graduationYear},
-                      for successfully completing all curriculum modules and verifying comprehensive skill competency in
+                      For successfully completing all curriculum modules and verifying comprehensive skill competency in
                     </Text>
 
                     <Text style={styles.courseHighlightText}>
@@ -218,20 +214,12 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
                       </View>
                     </View>
 
-                    {/* Right Signatories */}
+                    {/* Right Signatory */}
                     <View style={styles.footerColRight}>
                       <View style={styles.signBlock}>
                         <View style={styles.signLine} />
-                        <Text style={styles.signatoryName}>Dr. V. Lokeswara Reddy</Text>
-                        <Text style={styles.signatoryRole}>Head of Department, CSE</Text>
-                        <Text style={styles.signatoryInst}>K.S.R.M. College of Engineering</Text>
-                      </View>
-
-                      <View style={[styles.signBlock, { marginTop: 10 }]}>
-                        <View style={styles.signLine} />
-                        <Text style={styles.signatoryName}>Dr. M. Sreenivasulu</Text>
-                        <Text style={styles.signatoryRole}>Director & Principal</Text>
-                        <Text style={styles.signatoryInst}>K.S.R.M. College of Engineering</Text>
+                        <Text style={styles.signatoryName}>Academic Director</Text>
+                        <Text style={styles.signatoryRole}>SmartEvolve Certification Board</Text>
                       </View>
                     </View>
                   </View>
@@ -399,28 +387,20 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
   },
 
-  institutionCol: {
-    alignItems: "flex-end",
-    flexShrink: 1,
+  headerBadgeWrap: {
+    backgroundColor: "rgba(99, 102, 241, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    alignSelf: "center",
   },
-  instName: {
-    fontSize: 13,
+  headerBadgeText: {
+    fontSize: 10,
     fontWeight: "800",
-    color: "#0F172A",
-    textAlign: "right",
-  },
-  instSub: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#475569",
-    textAlign: "right",
-    marginTop: 2,
-  },
-  instAccred: {
-    fontSize: 9,
-    color: "#64748B",
-    textAlign: "right",
-    marginTop: 2,
+    color: "#6366F1",
+    letterSpacing: 1.5,
   },
 
   goldDivider: {
