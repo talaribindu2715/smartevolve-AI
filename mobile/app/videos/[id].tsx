@@ -36,7 +36,7 @@ export default function VideoDetailScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  const [activeTab, setActiveTab] = useState<"overview" | "quiz" | "related">("overview");
+  const [activeTab, setActiveTab] = useState<"quiz" | "related">("quiz");
   const [isSaved, setIsSaved] = useState(false);
 
   // In-line Skill Quiz State
@@ -422,15 +422,6 @@ export default function VideoDetailScreen() {
         {/* Segmented Tab Navigation */}
         <View style={styles.tabsRow}>
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === "overview" && styles.tabBtnActive]}
-            onPress={() => setActiveTab("overview")}
-          >
-            <Text style={[styles.tabBtnText, activeTab === "overview" && styles.tabBtnTextActive]}>
-              Overview
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[styles.tabBtn, activeTab === "quiz" && styles.tabBtnActive]}
             onPress={() => setActiveTab("quiz")}
           >
@@ -448,54 +439,6 @@ export default function VideoDetailScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Tab 1: Overview */}
-        {activeTab === "overview" && (
-          <View style={styles.tabContent}>
-            <Card style={styles.bodyCard}>
-              <Text style={styles.bodyCardHeading}>Masterclass Description</Text>
-              <Text style={styles.bodyDescription}>
-                {effectiveVideo.description || "In-depth video tutorial covering essential concepts and practical industry implementations."}
-              </Text>
-
-              <View style={styles.keyPointsBox}>
-                <Text style={styles.keyPointsTitle}>💡 Key Learning Takeaways</Text>
-                <Text style={styles.bulletItem}>• Hands-on coding paradigms and syntax mastery.</Text>
-                <Text style={styles.bulletItem}>• Production engineering best practices from senior practitioners.</Text>
-                <Text style={styles.bulletItem}>• Direct alignment with Kahn DAG prerequisite milestones.</Text>
-              </View>
-            </Card>
-
-            {/* Overview Quick Arena Launcher */}
-            <View style={styles.arenaCalloutCard}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>
-                  🎮 Masterclass Quiz Arena
-                </Text>
-                <View style={styles.noLoginBadge}>
-                  <Text style={styles.noLoginBadgeText}>No Login Required</Text>
-                </View>
-              </View>
-              <Text style={{ color: "#94A3B8", fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
-                Ready to test what you learned? Launch an interactive game session for this video with Kahoot shapes or Wayground speed timers:
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                <TouchableOpacity
-                  style={styles.kahootBtn}
-                  onPress={() => launchArena("kahoot")}
-                >
-                  <Text style={styles.arenaBtnText}>▲ ◆ ● ■ Launch Kahoot Arena</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.waygroundBtn}
-                  onPress={() => launchArena("wayground")}
-                >
-                  <Text style={styles.arenaBtnText}>⚡ Launch Wayground Mode</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
 
         {/* Tab 2: Interactive Skill Quiz (No more 'Coming Soon'!) */}
         {activeTab === "quiz" && (
