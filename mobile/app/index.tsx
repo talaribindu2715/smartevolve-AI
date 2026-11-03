@@ -97,7 +97,6 @@ export default function LandingScreen() {
 
           {/* Right Column: Golden Blockchain & AI Gear Image */}
           <View style={[styles.heroImageContainer, isDesktop && styles.heroImageContainerDesktop]}>
-            <View style={styles.imageGlowOrb} />
             <Image
               source={require("../assets/golden-blockchain-gear.png")}
               style={[
@@ -249,20 +248,8 @@ const styles = StyleSheet.create({
     maxWidth: 580,
     marginTop: 0,
   },
-  imageGlowOrb: {
-    position: "absolute",
-    width: 420,
-    height: 420,
-    borderRadius: 210,
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
-  },
   goldenGearImage: {
-    borderRadius: 24,
-    shadowColor: "#F59E0B",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 8,
+    backgroundColor: "transparent",
   },
   goldenGearImageDesktop: {
     width: 440,
