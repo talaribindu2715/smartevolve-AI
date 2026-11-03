@@ -32,10 +32,18 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     setErrorMsg(null);
 
-    const redirectUrl =
-      Platform.OS === "web" && typeof window !== "undefined"
-        ? `${window.location.origin}/reset-password`
-        : "https://smartevolve-ai-mobile-sand.vercel.app/reset-password";
+    const isLocalhost =
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+    const liveBaseUrl = "https://smartevolve-ai-mobile-sand.vercel.app";
+    const origin =
+      Platform.OS === "web" && typeof window !== "undefined" && !isLocalhost
+        ? window.location.origin
+        : liveBaseUrl;
+
+    const redirectUrl = `${origin}/reset-password`;
 
     let supabaseSuccess = false;
     let backendSuccess = false;
