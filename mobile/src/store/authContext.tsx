@@ -64,6 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const restoreSession = async () => {
     try {
+      // 0. If user explicitly logged out, do not auto-restore session
+      const isLoggedOut = await secureStorage.isExplicitlyLoggedOut();
+      if (isLoggedOut) {
+        setIsAuthenticated(false);
+        setToken(null);
+        setUser(null);
+        return;
+      }
+
       // 1. Check Supabase session first if configured
       if (isSupabaseConfigured()) {
         const { data } = await supabase.auth.getSession();
@@ -114,9 +123,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     if (isSupabaseConfigured()) {
       try {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
       } catch (_) {}
     }
+    try {
+      await AsyncStorage.clear();
+    } catch (_) {}
     await secureStorage.clear();
     setToken(null);
     setUser(null);
