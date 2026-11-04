@@ -21,6 +21,12 @@ public class AiAdvisorController {
 
     private final GeminiAiService geminiAiService;
 
+    @GetMapping("/health")
+    @Operation(summary = "Check Google Gemini AI connection and health status")
+    public ResponseEntity<java.util.Map<String, Object>> getAiHealth() {
+        return ResponseEntity.ok(geminiAiService.checkGeminiHealth());
+    }
+
     @GetMapping("/skill-analysis")
     @Operation(summary = "Perform deep AI skill analysis", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<AiAdvisorDto.SkillAnalysisResponse> getSkillAnalysis(

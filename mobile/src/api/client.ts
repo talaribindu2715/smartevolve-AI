@@ -203,6 +203,19 @@ export const api = {
     });
   },
   // AI Advisor & Gemini Mentor Integration
+  checkAiHealth: () =>
+    apiFetch<{
+      provider: string;
+      model: string;
+      apiKeyConfigured: boolean;
+      status: "ONLINE" | "NOT_CONFIGURED" | "ERROR";
+      working: boolean;
+      latencyMs?: number;
+      geminiResponse?: string;
+      testResponse?: string;
+      message: string;
+    }>("/api/ai/health"),
+
   getAiSkillAnalysis: () =>
     apiFetch<any>("/api/ai/skill-analysis"),
 

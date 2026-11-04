@@ -243,6 +243,44 @@ public class GeminiAiService {
     }
 
     /**
+     * Diagnostic health check for Google Gemini API integration.
+     */
+    public Map<String, Object> checkGeminiHealth() {
+        Map<String, Object> res = new LinkedHashMap<>();
+        boolean hasKey = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
+        res.put("provider", "GOOGLE_GEMINI");
+        res.put("model", geminiModel);
+        res.put("apiKeyConfigured", hasKey);
+
+        if (!hasKey) {
+            res.put("status", "NOT_CONFIGURED");
+            res.put("working", false);
+            res.put("message", "GEMINI_API_KEY environment variable is not configured on the server. Set GEMINI_API_KEY in Render dashboard to activate Gemini AI.");
+            return res;
+        }
+
+        long start = System.currentTimeMillis();
+        String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
+        String apiResponse = callGeminiApi(testPrompt);
+        long latencyMs = System.currentTimeMillis() - start;
+
+        if (apiResponse != null && !apiResponse.isBlank()) {
+            res.put("status", "ONLINE");
+            res.put("working", true);
+            res.put("latencyMs", latencyMs);
+            res.put("geminiResponse", apiResponse.trim());
+            res.put("message", "Google Gemini AI API is connected and responding in real-time!");
+        } else {
+            res.put("status", "ERROR");
+            res.put("working", false);
+            res.put("latencyMs", latencyMs);
+            res.put("message", "Gemini API call failed. Verify that GEMINI_API_KEY has Gemini 1.5 Flash access enabled.");
+        }
+
+        return res;
+    }
+
+    /**
      * Direct HTTP call to Google Gemini REST API.
      */
     private String callGeminiApi(String prompt) {

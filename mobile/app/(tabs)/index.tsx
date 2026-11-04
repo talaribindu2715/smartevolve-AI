@@ -20,10 +20,12 @@ import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { VideoCard } from "../../src/components/VideoCard";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
+import { AiMentorModal } from "../../src/components/AiMentorModal";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const [aiMentorVisible, setAiMentorVisible] = useState(false);
 
   const {
     data: dashboard,
@@ -232,6 +234,16 @@ export default function DashboardScreen() {
               </Svg>
             </View>
             <Text style={styles.qaTitle}>Credentials</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => setAiMentorVisible(true)}
+          >
+            <View style={[styles.qaIconWrap, { backgroundColor: "rgba(16, 185, 129, 0.18)" }]}>
+              <Text style={{ fontSize: 18 }}>✨</Text>
+            </View>
+            <Text style={styles.qaTitle}>AI Mentor</Text>
           </TouchableOpacity>
         </ScrollView>
 
@@ -488,6 +500,11 @@ export default function DashboardScreen() {
             ))}
           </View>
         )}
+        {/* Gemini AI Mentor Modal */}
+        <AiMentorModal
+          visible={aiMentorVisible}
+          onClose={() => setAiMentorVisible(false)}
+        />
       </View>
     </ScrollView>
   );
