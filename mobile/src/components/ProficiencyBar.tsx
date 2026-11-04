@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Animated } from "react-native";
 import { colors, radius, spacing } from "../theme/colors";
 
 interface ProficiencyBarProps {
@@ -21,12 +21,27 @@ export const ProficiencyBar: React.FC<ProficiencyBarProps> = ({
   const safeTarget = typeof targetValue === "number" && !isNaN(targetValue) ? targetValue : undefined;
   const boundedValue = Math.max(0, Math.min(100, safeValue));
 
+  const animWidth = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animWidth, {
+      toValue: boundedValue,
+      duration: 750,
+      useNativeDriver: false,
+    }).start();
+  }, [boundedValue]);
+
   const getBarColor = (val: number) => {
     if (val >= 80) return colors.success;
     if (val >= 50) return colors.primary;
     if (val >= 30) return colors.accent;
     return colors.warning;
   };
+
+  const widthInterpolation = animWidth.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+  });
 
   return (
     <View style={styles.container}>
@@ -41,11 +56,11 @@ export const ProficiencyBar: React.FC<ProficiencyBarProps> = ({
       </View>
 
       <View style={styles.track}>
-        <View
+        <Animated.View
           style={[
             styles.fill,
             {
-              width: `${boundedValue}%`,
+              width: widthInterpolation,
               backgroundColor: getBarColor(boundedValue),
             },
           ]}

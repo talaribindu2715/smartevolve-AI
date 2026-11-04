@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
   Image,
   ScrollView,
+  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
@@ -18,6 +19,40 @@ export default function LandingScreen() {
   const { width } = useWindowDimensions();
   const { isAuthenticated, isLoading, user } = useAuth();
   const isDesktop = width >= 768;
+
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const floatAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(pulseAnim, {
+            toValue: 1.035,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnim, {
+            toValue: -6,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(pulseAnim, {
+            toValue: 1.0,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnim, {
+            toValue: 0,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
+    ).start();
+  }, []);
 
   React.useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -108,14 +143,16 @@ export default function LandingScreen() {
 
           {/* Right Column: Golden Blockchain & AI Gear Image */}
           <View style={[styles.heroImageContainer, isDesktop && styles.heroImageContainerDesktop]}>
-            <Image
-              source={require("../assets/golden-blockchain-gear.png")}
-              style={[
-                styles.goldenGearImage,
-                isDesktop ? styles.goldenGearImageDesktop : styles.goldenGearImageMobile,
-              ]}
-              resizeMode="contain"
-            />
+            <Animated.View style={{ transform: [{ scale: pulseAnim }, { translateY: floatAnim }] }}>
+              <Image
+                source={require("../assets/golden-blockchain-gear.png")}
+                style={[
+                  styles.goldenGearImage,
+                  isDesktop ? styles.goldenGearImageDesktop : styles.goldenGearImageMobile,
+                ]}
+                resizeMode="contain"
+              />
+            </Animated.View>
           </View>
         </View>
       </ScrollView>

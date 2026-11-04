@@ -168,12 +168,11 @@ export default function ProfileScreen() {
                 {profile?.institution || "Engineering College"}
               </Text>
               <Text style={styles.gradYear}>
-                Class of {profile?.graduationYear || 2027} • Academic Goal Active
+                Class of {profile?.graduationYear || 2026}
               </Text>
 
               <View style={styles.metaBadgeRow}>
                 <Badge label="VERIFIED STUDENT" variant="success" />
-                <Badge label="AI ADAPTIVE PROFILE" variant="primary" />
                 {verifiedBadgeCount > 0 && (
                   <Badge label={`${verifiedBadgeCount} ON-CHAIN CREDENTIALS`} variant="blockchain" />
                 )}
@@ -211,9 +210,6 @@ export default function ProfileScreen() {
               <Text style={styles.sectionTitle}>Category Competency Radar</Text>
               <Card style={styles.radarCard}>
                 <SkillRadarChart data={categoryProficiencies} size={280} />
-                <Text style={styles.radarSubtitle}>
-                  Continuous multi-dimensional competency analysis across engineering disciplines.
-                </Text>
               </Card>
             </View>
 
@@ -331,13 +327,7 @@ export default function ProfileScreen() {
             {/* Action Links */}
             <View style={styles.actionsWrap}>
               <Button
-                title="View Blockchain Verified Credentials"
-                onPress={() => router.push("/credentials")}
-                variant="outline"
-                size="md"
-              />
-              <Button
-                title="Account Settings & Preferences"
+                title="⚙️ Account Settings & Security"
                 onPress={() => router.push("/settings")}
                 variant="secondary"
                 size="md"

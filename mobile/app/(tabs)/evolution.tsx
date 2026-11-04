@@ -114,10 +114,6 @@ export default function EvolutionScreen() {
               )}
             </TouchableOpacity>
           </View>
-
-          <Text style={styles.headerSub}>
-            Deterministic, explainable skill adaptation driven by assessment verification, learning tasks, and prerequisite progression.
-          </Text>
         </View>
 
         {/* Backend Connection Error */}
@@ -238,18 +234,6 @@ export default function EvolutionScreen() {
               )}
             </View>
           </View>
-
-          {/* Recommended Next Actions */}
-          {trends?.recommendedNextActions && trends.recommendedNextActions.length > 0 && (
-            <View style={styles.nextActionsWrap}>
-              <Text style={styles.nextActionsTitle}>🧠 AI Adaptive Next Actions:</Text>
-              {trends.recommendedNextActions.map((action: string, i: number) => (
-                <Text key={i} style={styles.actionItemText}>
-                  • {action}
-                </Text>
-              ))}
-            </View>
-          )}
         </Card>
 
         {/* Active AI Recommendations & Causality Card */}

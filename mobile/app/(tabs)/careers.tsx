@@ -316,70 +316,15 @@ export default function CareersScreen() {
         <View style={styles.topHeader}>
           <View style={styles.headerTitleRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.headerTag}>CAREER DISCOVERY & AI MATCHING</Text>
               <Text style={styles.headerTitle}>Adaptive Career Matrix</Text>
             </View>
           </View>
-
-          {/* Primary View Switcher: Industry Roles vs ML Predictor */}
-          <View style={styles.tabSwitcher}>
-            <TouchableOpacity
-              style={[styles.tabButton, activeTab === "roles" && styles.tabButtonActive]}
-              onPress={() => setActiveTab("roles")}
-            >
-              <Text style={[styles.tabButtonText, activeTab === "roles" && styles.tabButtonTextActive]}>
-                💼 Industry Roles ({effectiveCareers.length})
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tabButton, activeTab === "ml" && styles.tabButtonActive]}
-              onPress={() => setActiveTab("ml")}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Text style={[styles.tabButtonText, activeTab === "ml" && styles.tabButtonTextActive]}>
-                  🤖 ML Match Engine
-                </Text>
-                <View style={styles.tabAiBadge}>
-                  <Text style={styles.tabAiBadgeText}>99.0% Acc</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
         </View>
 
-        {/* TAB 1: ROLES DISCOVERY & FILTERING */}
-        {activeTab === "roles" && (
-          <View style={{ flex: 1 }}>
-            <View style={styles.filterSection}>
-              {/* Highlight ML Banner */}
-              <TouchableOpacity
-                style={styles.mlHighlightBanner}
-                onPress={() => setActiveTab("ml")}
-                activeOpacity={0.88}
-              >
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                    <Text style={styles.mlHighlightTag}>RANDOM FOREST PREDICTOR</Text>
-                    <Text style={styles.mlHighlightAcc}>99.04% Accuracy</Text>
-                  </View>
-                  <Text style={styles.mlHighlightTitle} numberOfLines={1}>
-                    {mlPrediction?.topCareerMatch
-                      ? `Target Role: ${mlPrediction.topCareerMatch}`
-                      : "Instant ML Career Path Matcher"}
-                  </Text>
-                  <Text style={styles.mlHighlightDesc}>
-                    {mlPrediction?.topCareerConfidencePct
-                      ? `${(mlPrediction.topCareerConfidencePct ?? 0).toFixed(1)}% match probability • Tap for Explainable AI & Simulator`
-                      : "Trained on 5,000 real-world skill profiles • Click to run analysis"}
-                  </Text>
-                </View>
-                <View style={styles.mlHighlightArrow}>
-                  <Text style={styles.mlHighlightArrowText}>Explore →</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Search Bar */}
+        {/* ROLES DISCOVERY & FILTERING */}
+        <View style={{ flex: 1 }}>
+          <View style={styles.filterSection}>
+            {/* Search Bar */}
               <View style={styles.searchBar}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={colors.textMuted} strokeWidth="2">
                   <Path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -823,37 +768,6 @@ export default function CareersScreen() {
                       style={{ marginTop: spacing.md }}
                     />
                   )}
-                </Card>
-
-                {/* Model Provenance & Verification Specs */}
-                <Card style={styles.specsCard}>
-                  <Text style={styles.specsTitle}>🔬 ML Model Provenance & Architecture</Text>
-                  <View style={styles.specsGrid}>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Algorithm</Text>
-                      <Text style={styles.specVal}>Random Forest + Centroids</Text>
-                    </View>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>5-Fold CV Accuracy</Text>
-                      <Text style={[styles.specVal, { color: colors.success }]}>99.04%</Text>
-                    </View>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Macro F1-Score</Text>
-                      <Text style={[styles.specVal, { color: colors.success }]}>99.04%</Text>
-                    </View>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Training Samples</Text>
-                      <Text style={styles.specVal}>5,000 Verified Profiles</Text>
-                    </View>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Input Dimensions</Text>
-                      <Text style={styles.specVal}>32 Technical Skills</Text>
-                    </View>
-                    <View style={styles.specItem}>
-                      <Text style={styles.specLabel}>Inference Latency</Text>
-                      <Text style={styles.specVal}>&lt; 1 ms (In-Memory)</Text>
-                    </View>
-                  </View>
                 </Card>
               </View>
             ) : null}
