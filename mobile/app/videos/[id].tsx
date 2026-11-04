@@ -23,6 +23,7 @@ import { VideoCard } from "../../src/components/VideoCard";
 import { CertificateModal } from "../../src/components/CertificateModal";
 import { InteractiveQuizArenaModal } from "../../src/components/InteractiveQuizArenaModal";
 import { getMasterVideoById } from "../../src/data/masterVideos";
+import { saveEarnedCertificate } from "../../src/services/certificateService";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 const SAVED_VIDEOS_STORAGE_KEY = "smartevolve_saved_videos";
@@ -48,12 +49,6 @@ export default function VideoDetailScreen() {
   const [showCertModal, setShowCertModal] = useState(false);
   const [localCompleted, setLocalCompleted] = useState(false);
 
-  const handleMarkCompleted = () => {
-    setLocalCompleted(true);
-    updateProgressMutation.mutate("COMPLETED");
-    setShowCertModal(true);
-  };
-
   // Interactive Quiz Arena Mode State (Kahoot / Wayground / Quizizz - zero external login)
   const [arenaModalVisible, setArenaModalVisible] = useState(false);
   const [arenaPlatform, setArenaPlatform] = useState<"kahoot" | "wayground" | "quizizz">("kahoot");
@@ -72,6 +67,18 @@ export default function VideoDetailScreen() {
     const isPassing = correctCount >= Math.ceil(total * 0.6);
     if (isPassing) {
       updateProgressMutation.mutate("COMPLETED");
+      saveEarnedCertificate({
+        courseTitle: effectiveVideo?.title || "Masterclass",
+        courseId: effectiveVideo?.videoId || effectiveVideo?.id || "course",
+        category: effectiveVideo?.category || effectiveVideo?.skillName || "Computer Science",
+        score: correctCount,
+        total,
+        percentage: Math.round((correctCount / total) * 100),
+        studentName: profile?.fullName || "Bindu Talari",
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["credentials"] });
+        queryClient.invalidateQueries({ queryKey: ["storedEarnedCerts"] });
+      }).catch(() => {});
     }
 
     // Persist to PostgreSQL database directly
@@ -228,10 +235,28 @@ export default function VideoDetailScreen() {
     );
   }
 
+  const isPassingScore =
+    quizSubmitted && quizQuestions.length > 0 && quizScore >= Math.ceil(quizQuestions.length * 0.6);
   const isCompleted =
-    effectiveVideo?.watchStatus === "COMPLETED" ||
-    localCompleted ||
-    (quizSubmitted && quizScore >= Math.ceil(quizQuestions.length * 0.6));
+    effectiveVideo?.watchStatus === "COMPLETED" || localCompleted || isPassingScore;
+
+  const handleMarkCompleted = () => {
+    setLocalCompleted(true);
+    updateProgressMutation.mutate("COMPLETED");
+    if (isPassingScore) {
+      setShowCertModal(true);
+    } else {
+      Alert.alert(
+        "Masterclass Marked as Completed! 🎯",
+        "Video progress is recorded. To unlock and claim your official SmartEvolve Academic Certificate, take the Skill Quiz below and score at least 60%!",
+        [
+          { text: "Take Skill Quiz", onPress: () => setActiveTab("quiz") },
+          { text: "Later", style: "cancel" },
+        ]
+      );
+    }
+  };
+
   const currentQuestion = quizQuestions[currentQuestionIndex] || quizQuestions[0];
 
   const handleSelectOption = (qId: number, optionIdx: number) => {
@@ -250,10 +275,31 @@ export default function VideoDetailScreen() {
     setQuizScore(correctCount);
     setQuizSubmitted(true);
 
-    const isPassing = correctCount >= Math.ceil(quizQuestions.length * 0.6);
+    const passingThreshold = Math.ceil(quizQuestions.length * 0.6);
+    const isPassing = correctCount >= passingThreshold;
+    const scorePct = Math.round((correctCount / quizQuestions.length) * 100);
+
     if (isPassing) {
       updateProgressMutation.mutate("COMPLETED");
+      saveEarnedCertificate({
+        courseTitle: effectiveVideo.title,
+        courseId: effectiveVideo.videoId || effectiveVideo.id,
+        category: effectiveVideo.category || effectiveVideo.skillName || "Computer Science",
+        score: correctCount,
+        total: quizQuestions.length,
+        percentage: scorePct,
+        studentName: profile?.fullName || "Bindu Talari",
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["credentials"] });
+        queryClient.invalidateQueries({ queryKey: ["storedEarnedCerts"] });
+      }).catch(() => {});
       setShowCertModal(true);
+    } else {
+      Alert.alert(
+        "Quiz Result: 60% Passing Required",
+        `You scored ${correctCount}/${quizQuestions.length} (${scorePct}%).\n\nA score of at least 60% (≥${passingThreshold} correct) is required to unlock your official certificate. Please review the takeaways below and retake!`,
+        [{ text: "Retake Quiz", onPress: handleResetQuiz }, { text: "Review Key Concepts", style: "cancel" }]
+      );
     }
 
     // Calculate Attempt-Damped Proficiency Gain
@@ -397,23 +443,30 @@ export default function VideoDetailScreen() {
               activeOpacity={0.85}
             >
               <Text style={styles.markCompletedBtnText}>
-                {isCompleted ? "✓ Video Completed (Click to Re-open Certificate)" : "✓ Mark Video as Completed"}
+                {isCompleted ? "✓ Video Completed" : "✓ Mark Video as Completed"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.viewCertBtn}
+              style={[styles.viewCertBtn, !isPassingScore && { opacity: 0.85 }]}
               onPress={() => {
-                if (!isCompleted) {
-                  handleMarkCompleted();
-                } else {
+                if (isPassingScore) {
                   setShowCertModal(true);
+                } else {
+                  Alert.alert(
+                    "Quiz Assessment Required (≥60%)",
+                    `To unlock and view your official SmartEvolve Certificate for '${effectiveVideo.title}', you must pass the course quiz with at least 60%.\n\nTake the quiz below to unlock your certificate!`,
+                    [
+                      { text: "Take Quiz", onPress: () => setActiveTab("quiz") },
+                      { text: "Cancel", style: "cancel" },
+                    ]
+                  );
                 }
               }}
               activeOpacity={0.85}
             >
               <Text style={styles.viewCertBtnText}>
-                🎓 View Official SmartEvolve Certificate
+                {isPassingScore ? "🎓 View Official SmartEvolve Certificate" : "🔒 Complete Quiz (≥60%) to Unlock Certificate"}
               </Text>
             </TouchableOpacity>
           </View>

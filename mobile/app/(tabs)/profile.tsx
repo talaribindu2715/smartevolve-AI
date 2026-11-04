@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { CertificateModal, CertificateData } from "../../src/components/CertificateModal";
 import {
+  getStoredEarnedCertificates,
+  mergeCredentialsWithStoredCerts,
+} from "../../src/services/certificateService";
+import {
   View,
   Text,
   StyleSheet,
@@ -90,6 +94,11 @@ export default function ProfileScreen() {
     queryFn: () => api.getCredentials(),
   });
 
+  const { data: storedCerts, refetch: refetchStoredCerts } = useQuery({
+    queryKey: ["storedEarnedCerts"],
+    queryFn: () => getStoredEarnedCertificates(),
+  });
+
   const { data: dashboard } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api.getDashboard(),
@@ -98,12 +107,18 @@ export default function ProfileScreen() {
   const isLoading = isProfileLoading || isSkillsLoading || isAnalyticsLoading;
 
   const handleRefresh = async () => {
-    await Promise.all([refetchProfile(), refetchSkills(), refetchAnalytics()]);
+    await Promise.all([
+      refetchProfile(),
+      refetchSkills(),
+      refetchAnalytics(),
+      refetchStoredCerts(),
+    ]);
   };
 
   const skills = studentSkills || [];
   const categoryProficiencies = analytics?.categoryProficiencies || {};
-  const verifiedBadgeCount = (credentials || []).filter(
+  const effectiveCredentials = mergeCredentialsWithStoredCerts(credentials, storedCerts || []);
+  const verifiedBadgeCount = effectiveCredentials.filter(
     (c) => c.status === "CONFIRMED"
   ).length;
 
@@ -191,42 +206,6 @@ export default function ProfileScreen() {
               </View>
             </Card>
 
-            {/* Academic Goals & Preferences Card */}
-            <Card style={styles.goalsCard}>
-              <View style={styles.goalsHeaderRow}>
-                <Text style={styles.goalsCardTitle}>🎯 Target Career & Learning Preferences</Text>
-                <TouchableOpacity onPress={() => router.push("/settings")}>
-                  <Text style={styles.editProfileLink}>Edit Settings ✎</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.goalMetaRow}>
-                <Text style={styles.goalMetaLabel}>Target Career:</Text>
-                <TouchableOpacity
-                  onPress={() => router.push("/(tabs)/careers")}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-                >
-                  <Text style={styles.goalMetaVal}>
-                    {profile?.targetCareerName || "Not Selected (Tap to choose)"}
-                  </Text>
-                  <Text style={{ color: colors.accent, fontSize: 11 }}>→</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.goalMetaRow}>
-                <Text style={styles.goalMetaLabel}>Learning Style:</Text>
-                <Text style={styles.goalMetaVal}>
-                  {profile?.preferredLearningStyle || "Hands-on / Practical Projects"}
-                </Text>
-              </View>
-
-              {profile?.academicGoals ? (
-                <View style={styles.academicGoalsQuote}>
-                  <Text style={styles.academicGoalsText}>“{profile.academicGoals}”</Text>
-                </View>
-              ) : null}
-            </Card>
-
             {/* Category Radar Chart */}
             <View style={styles.sectionWrap}>
               <Text style={styles.sectionTitle}>Category Competency Radar</Text>
@@ -276,12 +255,12 @@ export default function ProfileScreen() {
             <View style={styles.sectionWrap}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>🎓 My Earned Certificates</Text>
-                <Text style={styles.skillsCount}>{(credentials || []).length} Verified</Text>
+                <Text style={styles.skillsCount}>{effectiveCredentials.length} Verified</Text>
               </View>
 
               <Card>
-                {(credentials || []).length > 0 ? (
-                  (credentials || []).map((cred) => (
+                {effectiveCredentials.length > 0 ? (
+                  effectiveCredentials.map((cred) => (
                     <View
                       key={cred.id}
                       style={{
@@ -303,7 +282,7 @@ export default function ProfileScreen() {
                           SmartEvolve Academy • Department of {profile?.branch || "Computer Science and Engineering"}
                         </Text>
                         <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "600", marginTop: 4 }}>
-                          Issued: {new Date(cred.issuedAt || Date.now()).toLocaleDateString()} • Code: SE-GL-{cred.id.substring(0, 6).toUpperCase()}
+                          Issued: {new Date(cred.issuedAt || Date.now()).toLocaleDateString()} • Code: {cred.id.startsWith("SE-GL-") ? cred.id : `SE-GL-${cred.id.substring(0, 6).toUpperCase()}`}
                         </Text>
                       </View>
                       <Button
@@ -320,7 +299,7 @@ export default function ProfileScreen() {
                             category: cred.credentialType || "Academic Specialization",
                             proficiency: 95,
                             issuedDate: cred.issuedAt,
-                            certificateCode: "SE-GL-" + cred.id.substring(0, 6).toUpperCase(),
+                            certificateCode: cred.id.startsWith("SE-GL-") ? cred.id : "SE-GL-" + cred.id.substring(0, 6).toUpperCase(),
                           });
                         }}
                       />
@@ -329,7 +308,7 @@ export default function ProfileScreen() {
                 ) : (
                   <View style={styles.emptySkillsWrap}>
                     <Text style={styles.emptySkillsText}>
-                      No certificates earned yet. Watch and complete video courses in SmartEvolve Academy or pass milestone skill quizzes to autonomously generate your verified certificates!
+                      No certificates earned yet. Complete video courses in SmartEvolve Academy and pass the milestone skill quiz (≥60%) to autonomously generate your verified certificates!
                     </Text>
                     <Button
                       title="Explore SmartEvolve Academy →"

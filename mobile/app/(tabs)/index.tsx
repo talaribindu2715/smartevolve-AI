@@ -465,26 +465,6 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Top Skills Proficiency */}
-        <View style={styles.sectionWrap}>
-          <Text style={styles.sectionTitle}>Demonstrated Skills</Text>
-          <Card>
-            {dashboard?.topSkills && dashboard.topSkills.length > 0 ? (
-              dashboard.topSkills.slice(0, 4).map((s) => (
-                <ProficiencyBar
-                  key={s.id}
-                  label={s.skillName}
-                  value={s.proficiency}
-                  category={s.category}
-                  evidenceType={s.evidenceType}
-                />
-              ))
-            ) : (
-              <Text style={styles.emptySub}>No skill assessments recorded yet. Take an assessment to calibrate your baseline!</Text>
-            )}
-          </Card>
-        </View>
-
         {/* Blockchain Achievements Snippet */}
         {dashboard?.verifiedCredentials && dashboard.verifiedCredentials.length > 0 && (
           <View style={styles.sectionWrap}>

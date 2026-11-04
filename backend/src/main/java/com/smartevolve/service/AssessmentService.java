@@ -364,11 +364,15 @@ public class AssessmentService {
                 .evidenceReference(savedAttempt.getId().toString())
                 .build());
 
-        if (percentage.compareTo(new BigDecimal("80.0")) >= 0) {
+        if (percentage.compareTo(new BigDecimal("60.0")) >= 0) {
             try {
-                String certTitle = skill.getName() + " Quiz Mastery";
+                String certTitle = (request.getCourseTitle() != null && !request.getCourseTitle().isBlank())
+                        ? request.getCourseTitle().trim()
+                        : skill.getName() + " Certification";
                 credentialService.issueMilestoneCredential(studentId, skill.getId(), certTitle);
-            } catch (Exception ignored) {}
+            } catch (Exception ex) {
+                log.warn("Could not auto-issue credential on quiz pass: {}", ex.getMessage());
+            }
         }
 
         log.info("Persistent Quiz Result Saved: Student {} scored {}/{} in {}",

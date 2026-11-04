@@ -23,6 +23,10 @@ import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { Credential, EligibleCredential, VerifyCredentialResponse } from "../../src/types";
 import { CertificateModal } from "../../src/components/CertificateModal";
+import {
+  getStoredEarnedCertificates,
+  mergeCredentialsWithStoredCerts,
+} from "../../src/services/certificateService";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function CredentialsScreen() {
@@ -50,6 +54,11 @@ export default function CredentialsScreen() {
   } = useQuery({
     queryKey: ["credentials"],
     queryFn: () => api.getCredentials(),
+  });
+
+  const { data: storedCerts, refetch: refetchStoredCerts } = useQuery({
+    queryKey: ["storedEarnedCerts"],
+    queryFn: () => getStoredEarnedCertificates(),
   });
 
   const {
@@ -220,7 +229,8 @@ export default function CredentialsScreen() {
 
   const isLoading = isCredsLoading || isEligibleLoading;
   const isError = isCredsError || isEligibleError;
-  const creds = credentials || [];
+  const rawCreds = credentials || [];
+  const creds = mergeCredentialsWithStoredCerts(rawCreds, storedCerts || []);
   const eligible = eligibleMilestones || [];
 
   const getStatusBadge = (status: string) => {
@@ -246,6 +256,7 @@ export default function CredentialsScreen() {
           onRefresh={() => {
             refetchCreds();
             refetchEligible();
+            refetchStoredCerts();
           }}
           tintColor={colors.primary}
         />
@@ -300,34 +311,6 @@ export default function CredentialsScreen() {
                 <Text style={styles.searchBtnText}>Verify</Text>
               )}
             </TouchableOpacity>
-          </View>
-        </Card>
-
-        {/* Verification Status Legend Card */}
-        <Card style={styles.legendCard}>
-          <Text style={styles.legendTitle}>Lifecycle Verification States</Text>
-          <View style={styles.legendGrid}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-              <Text style={styles.legendText}>
-                <Text style={{ fontWeight: "700", color: colors.textPrimary }}>On-Chain Confirmed: </Text>
-                Block mined & tamper-evident hash stored in EVM ledger.
-              </Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.warning }]} />
-              <Text style={styles.legendText}>
-                <Text style={{ fontWeight: "700", color: colors.textPrimary }}>Syncing / Pending: </Text>
-                Milestone satisfied; awaiting EVM gas batch confirmation.
-              </Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.error }]} />
-              <Text style={styles.legendText}>
-                <Text style={{ fontWeight: "700", color: colors.textPrimary }}>Revoked: </Text>
-                Academic credential invalidated or superseded.
-              </Text>
-            </View>
           </View>
         </Card>
 
