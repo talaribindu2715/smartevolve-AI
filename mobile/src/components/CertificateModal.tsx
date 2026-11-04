@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   ScrollView,
   Platform,
   Alert,
+  Linking,
+  Share,
+  useWindowDimensions,
 } from "react-native";
 import { Button } from "./Button";
 import { colors, radius, spacing } from "../theme/colors";
@@ -56,24 +59,10 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
         day: "numeric",
       });
 
-  const handlePrint = () => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const iframeId = "cert-print-iframe";
-      let iframe = document.getElementById(iframeId) as HTMLIFrameElement;
-      if (iframe && iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
-      iframe = document.createElement("iframe");
-      iframe.id = iframeId;
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "0";
-      document.body.appendChild(iframe);
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
 
-      const html = `<!DOCTYPE html>
+  const generateCertificateHtml = () => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -406,6 +395,24 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
 </body>
 </html>`;
 
+  const handlePrint = async () => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const iframeId = "cert-print-iframe";
+      let iframe = document.getElementById(iframeId) as HTMLIFrameElement;
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+      iframe = document.createElement("iframe");
+      iframe.id = iframeId;
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+
+      const html = generateCertificateHtml();
       const doc = iframe.contentWindow?.document;
       if (doc) {
         doc.open();
@@ -416,28 +423,68 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
           iframe.contentWindow?.print();
         }, 300);
       }
-    } else {
-      Alert.alert(
-        "Certificate Ready",
-        `Certificate #${certCode} is verified. Use desktop browser to save/print as high-resolution PDF.`
-      );
+      return;
+    }
+
+    // Native mobile app (Android APK / iOS):
+    // Open high-resolution verified web print URL in mobile browser where the user
+    // can tap "Save as PDF" using Android's native print spooler.
+    const origin = "https://smartevolve-ai-mobile-sand.vercel.app";
+    const printUrl = `${origin}/credentials?verify=${encodeURIComponent(certCode)}&name=${encodeURIComponent(studentName)}&title=${encodeURIComponent(certificate.courseOrSkillTitle)}&print=1`;
+
+    try {
+      await Linking.openURL(printUrl);
+    } catch (_) {
+      try {
+        await Share.share({
+          title: `SmartEvolve Certificate #${certCode}`,
+          message: `Official Certificate for ${studentName} - ${certificate.courseOrSkillTitle}\n\nPrint/Download PDF: ${printUrl}`,
+          url: printUrl,
+        });
+      } catch (err) {
+        Alert.alert("Certificate Verified", `Certificate #${certCode} is verified.\n\nOpen online to save as PDF:\n${printUrl}`);
+      }
     }
   };
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     const origin =
       Platform.OS === "web" && typeof window !== "undefined"
         ? window.location.origin
         : "https://smartevolve-ai-mobile-sand.vercel.app";
-    const link = `${origin}/credentials?verify=${certCode}`;
+    const link = `${origin}/credentials?verify=${encodeURIComponent(certCode)}&name=${encodeURIComponent(studentName)}&title=${encodeURIComponent(certificate.courseOrSkillTitle)}`;
 
-    if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(link);
-      Alert.alert("Link Copied!", `Verification URL copied to clipboard:\n\n${link}`);
+    if (Platform.OS === "web") {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(link);
+        Alert.alert("Link Copied!", `Verification URL copied to clipboard:\n\n${link}`);
+      } else {
+        Alert.alert("Public Verification Link", `Share this link to verify certificate:\n\n${link}`);
+      }
     } else {
-      Alert.alert("Public Verification Link", `Share this link to verify certificate:\n\n${link}`);
+      try {
+        await Share.share({
+          title: `SmartEvolve Credential #${certCode}`,
+          message: `Check out my verified academic credential on SmartEvolve AI!\n\nLearner: ${studentName}\nCourse: ${certificate.courseOrSkillTitle}\nVerification: ${link}`,
+          url: link,
+        });
+      } catch (_) {
+        Alert.alert("Verification Link", link);
+      }
     }
   };
+
+  useEffect(() => {
+    if (visible && Platform.OS === "web" && typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("print") === "1") {
+        const timer = setTimeout(() => {
+          handlePrint();
+        }, 600);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [visible]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -558,19 +605,19 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
             </View>
 
             {/* Action Buttons */}
-            <View style={styles.actionSection}>
+            <View style={[styles.actionSection, !isDesktop && styles.actionSectionMobile]}>
               <Button
-                title="🖨️ Download / Print Certificate (PDF)"
+                title="🖨️ Download Certificate (PDF)"
                 onPress={handlePrint}
-                size="lg"
-                style={{ flex: 1 }}
+                size="md"
+                style={isDesktop ? { flex: 1 } : { width: "100%" }}
               />
               <Button
-                title="🔗 Copy Verification Link"
+                title="🔗 Share Verification Link"
                 onPress={handleCopyCode}
                 variant="outline"
-                size="lg"
-                style={{ flex: 1 }}
+                size="md"
+                style={isDesktop ? { flex: 1 } : { width: "100%" }}
               />
             </View>
           </ScrollView>
@@ -954,9 +1001,12 @@ const styles = StyleSheet.create({
 
   actionSection: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: spacing.md,
     width: "100%",
     marginTop: spacing.md,
+  },
+  actionSectionMobile: {
+    flexDirection: "column",
+    gap: spacing.sm,
   },
 });

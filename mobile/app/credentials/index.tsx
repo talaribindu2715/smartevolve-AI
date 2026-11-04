@@ -27,7 +27,13 @@ import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function CredentialsScreen() {
   const queryClient = useQueryClient();
-  const params = useLocalSearchParams<{ verify?: string; id?: string }>();
+  const params = useLocalSearchParams<{
+    verify?: string;
+    id?: string;
+    print?: string;
+    name?: string;
+    title?: string;
+  }>();
 
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [selectedCredDetail, setSelectedCredDetail] = useState<Credential | null>(null);
@@ -104,8 +110,22 @@ export default function CredentialsScreen() {
     const targetId = params.verify || params.id;
     if (targetId && typeof targetId === "string" && targetId.trim().length > 0) {
       handleVerify(targetId.trim());
+      if (params.print === "1") {
+        setSelectedCredDetail({
+          id: targetId.trim(),
+          achievementTitle: params.title ? decodeURIComponent(params.title) : "SmartEvolve Certified Completion",
+          credentialType: "Academic Specialization",
+          issuedAt: new Date().toISOString(),
+          achievementDataHash: targetId.trim(),
+          status: "CONFIRMED",
+          networkId: "EVM Smart Contract",
+          userId: "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
     }
-  }, [params.verify, params.id]);
+  }, [params.verify, params.id, params.print, params.title]);
 
   const handleVerify = (credId: string) => {
     setVerifyingId(credId);
@@ -468,7 +488,7 @@ export default function CredentialsScreen() {
             selectedCredDetail
               ? {
                   id: selectedCredDetail.id,
-                  studentName: profile?.fullName || "Bindu Talari",
+                  studentName: (params.name ? decodeURIComponent(params.name) : null) || profile?.fullName || "Bindu Talari",
                   department: profile?.branch || "Computer Science and Engineering",
                   institution: profile?.institution || "K.S.R.M. College of Engineering (Autonomous)",
                   graduationYear: profile?.graduationYear || 2026,
@@ -476,6 +496,9 @@ export default function CredentialsScreen() {
                   category: selectedCredDetail.credentialType || "Academic Specialization",
                   proficiency: 95,
                   issuedDate: selectedCredDetail.issuedAt,
+                  certificateCode: selectedCredDetail.id.startsWith("SE-GL-")
+                    ? selectedCredDetail.id
+                    : "SE-GL-" + (selectedCredDetail.id.length >= 6 ? selectedCredDetail.id.slice(0, 6).toUpperCase() : Math.floor(100000 + Math.random() * 900000)),
                   achievementDataHash: selectedCredDetail.achievementDataHash,
                   transactionHash: selectedCredDetail.transactionHash,
                   contractAddress: selectedCredDetail.contractAddress,
@@ -544,12 +567,42 @@ export default function CredentialsScreen() {
                     )}
                   </View>
 
-                  <Button
-                    title="Close Audit"
-                    size="sm"
-                    onPress={() => setVerifyResult(null)}
-                    style={{ marginTop: spacing.md }}
-                  />
+                  <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
+                    <Button
+                      title="🎓 View Official Certificate"
+                      size="sm"
+                      onPress={() => {
+                        const targetId = verifyResult.credentialId;
+                        const match = creds.find((c) => c.id === targetId);
+                        if (match) {
+                          setSelectedCredDetail(match);
+                        } else {
+                          setSelectedCredDetail({
+                            id: targetId,
+                            achievementTitle: verifyResult.achievementTitle || "SmartEvolve Certified Completion",
+                            credentialType: "Academic Specialization",
+                            issuedAt: verifyResult.onChainTimestamp || new Date().toISOString(),
+                            achievementDataHash: verifyResult.transactionHash || "",
+                            contractAddress: verifyResult.contractAddress,
+                            transactionHash: verifyResult.transactionHash,
+                            status: "CONFIRMED",
+                            networkId: "EVM Smart Contract",
+                            userId: "",
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                          });
+                        }
+                        setVerifyResult(null);
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      title="Close Audit"
+                      size="sm"
+                      variant="outline"
+                      onPress={() => setVerifyResult(null)}
+                    />
+                  </View>
                 </View>
               )}
             </Card>

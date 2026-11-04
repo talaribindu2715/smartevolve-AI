@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   Image,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
@@ -42,7 +43,11 @@ export default function LandingScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.contentWrapper}>
+      <ScrollView
+        contentContainerStyle={[styles.contentWrapper, isDesktop && styles.contentWrapperDesktop]}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         {/* Top Navbar */}
         <View style={styles.navbar}>
           <View style={styles.brandGroup}>
@@ -94,7 +99,7 @@ export default function LandingScreen() {
 
         {/* Hero Section: Centered & Non-Scrollable */}
         <View style={[styles.heroSection, isDesktop && styles.heroSectionDesktop]}>
-          <View style={styles.heroLeftCol}>
+          <View style={[styles.heroLeftCol, isDesktop && styles.heroLeftColDesktop]}>
             <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
               One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
             </Text>
@@ -113,7 +118,7 @@ export default function LandingScreen() {
             />
           </View>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -123,16 +128,20 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     backgroundColor: "#070B14",
-    overflow: "hidden", // Completely eliminates scrolling
   },
   contentWrapper: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    flexGrow: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     width: "100%",
     maxWidth: 1400,
     alignSelf: "center",
     justifyContent: "space-between",
+  },
+  contentWrapperDesktop: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    flex: 1,
   },
   navbar: {
     flexDirection: "row",
@@ -225,29 +234,35 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   heroSection: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "flex-start",
     width: "100%",
-    paddingBottom: spacing.xxl,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.md,
+    gap: spacing.md,
   },
   heroSectionDesktop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingBottom: spacing.xl,
+    flex: 1,
+    paddingVertical: 0,
+    gap: 0,
   },
   heroLeftCol: {
-    flex: 1,
+    width: "100%",
     maxWidth: 620,
+    alignItems: "center",
     justifyContent: "center",
+  },
+  heroLeftColDesktop: {
+    flex: 1,
     alignItems: "flex-start",
   },
   heroImageContainer: {
     alignItems: "center",
     justifyContent: "center",
-    position: "relative",
-    marginTop: spacing.md,
+    alignSelf: "center",
+    marginTop: spacing.xs,
   },
   heroImageContainerDesktop: {
     flex: 1.1,
@@ -262,21 +277,24 @@ const styles = StyleSheet.create({
     height: 440,
   },
   goldenGearImageMobile: {
-    width: 280,
-    height: 280,
+    width: 210,
+    height: 210,
   },
   heroHeadline: {
     color: "#FFFFFF",
-    fontSize: 42,
+    fontSize: 30,
     fontWeight: "900",
-    lineHeight: 50,
-    letterSpacing: -1.5,
-    marginBottom: spacing.lg,
+    lineHeight: 38,
+    letterSpacing: -1,
+    textAlign: "center",
+    marginBottom: spacing.xs,
   },
   heroHeadlineDesktop: {
     fontSize: 72,
     lineHeight: 80,
     letterSpacing: -2.5,
+    textAlign: "left",
+    marginBottom: spacing.lg,
   },
   heroSub: {
     color: "#94A3B8",
