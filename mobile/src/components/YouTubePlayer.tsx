@@ -51,8 +51,17 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com`;
 
-  const handleOpenExternal = () => {
-    Linking.openURL(youtubeUrl).catch((err) => {
+  const handleOpenExternal = async () => {
+    const appUri = `vnd.youtube:${videoId}`;
+    const webUri = `https://www.youtube.com/watch?v=${videoId}`;
+    try {
+      const supported = await Linking.canOpenURL(appUri);
+      if (supported) {
+        await Linking.openURL(appUri);
+        return;
+      }
+    } catch (_) {}
+    Linking.openURL(webUri).catch((err) => {
       console.warn("Could not open YouTube link:", err);
     });
   };
@@ -107,7 +116,37 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     console.warn("react-native-webview is not available:", e);
   }
 
-  const nativeEmbedUri = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+  const nativeHtml = useMemo(() => {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    id="youtube-player"
+    src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen>
+  </iframe>
+</body>
+</html>`;
+  }, [videoId]);
 
   return (
     <View style={[styles.container, style]}>
@@ -116,11 +155,10 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           <>
             <NativeWebView
               source={{
-                uri: nativeEmbedUri,
-                headers: {
-                  Referer: "https://www.google.com",
-                },
+                html: nativeHtml,
+                baseUrl: "https://com.smartevolve.ai",
               }}
+              userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
               originWhitelist={["*"]}
               style={styles.webView}
               javaScriptEnabled={true}
@@ -129,6 +167,21 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               mediaPlaybackRequiresUserAction={false}
               allowsFullscreenVideo={true}
               mixedContentMode="always"
+              onShouldStartLoadWithRequest={(request: any) => {
+                if (
+                  request.url.startsWith("https://www.youtube.com/embed") ||
+                  request.url.startsWith("https://www.youtube-nocookie.com/embed") ||
+                  request.url.startsWith("about:blank") ||
+                  request.url.startsWith("https://com.smartevolve.ai")
+                ) {
+                  return true;
+                }
+                if (request.url.includes("youtube.com") || request.url.includes("youtu.be")) {
+                  handleOpenExternal();
+                  return false;
+                }
+                return true;
+              }}
               onLoadStart={() => setIsLoading(true)}
               onLoadEnd={() => setIsLoading(false)}
               onError={() => {

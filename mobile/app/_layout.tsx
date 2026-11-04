@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,12 +7,14 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../src/store/authContext";
 import { colors } from "../src/theme/colors";
 import { OTAUpdateModal } from "../src/components/OTAUpdateModal";
+import { API_BASE_URL } from "../src/api/client";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutes cache
-      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes cache
+      retry: 3, // Auto-retry up to 3 times while Render cloud spins up
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // 2s, 4s, 8s backoff
     },
   },
 });
@@ -33,6 +35,11 @@ const paperTheme = {
 };
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Proactively warm up live cloud backend if waking from Render cold standby
+    fetch(`${API_BASE_URL}/api/public/health`, { method: "GET" }).catch(() => {});
+  }, []);
+
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
