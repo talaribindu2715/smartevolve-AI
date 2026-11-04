@@ -99,6 +99,18 @@ export const secureStorage = {
     }
   },
 
+  async isExplicitlyLoggedOut(): Promise<boolean> {
+    if (Platform.OS === "web") {
+      return getWebStorage("smartevolve_logged_out") === "true";
+    }
+    try {
+      const isLoggedOut = await SecureStore.getItemAsync("smartevolve_logged_out");
+      return isLoggedOut === "true";
+    } catch (_) {
+      return false;
+    }
+  },
+
   async clear(): Promise<void> {
     if (Platform.OS === "web") {
       removeWebStorage(ACCESS_TOKEN_KEY);

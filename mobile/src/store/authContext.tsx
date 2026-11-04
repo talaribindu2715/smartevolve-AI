@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { secureStorage } from "../services/secureStorage";
 import { supabase, isSupabaseConfigured } from "../services/supabase";
 import { Profile } from "../types";
