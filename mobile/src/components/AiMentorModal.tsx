@@ -405,3 +405,4 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
 });
+

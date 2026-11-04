@@ -53,3 +53,4 @@ export const FadeInView: React.FC<FadeInViewProps> = ({
     </Animated.View>
   );
 };
+
