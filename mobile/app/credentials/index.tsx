@@ -126,11 +126,11 @@ export default function CredentialsScreen() {
           credentialType: "Academic Specialization",
           issuedAt: new Date().toISOString(),
           achievementDataHash: targetId.trim(),
+          issuerAddress: "0x1234567890123456789012345678901234567890",
+          contractAddress: "0x38b29BfFf1110B0011cCdA0307e531885fF6B272",
+          transactionHash: targetId.trim(),
           status: "CONFIRMED",
           networkId: "EVM Smart Contract",
-          userId: "",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         });
       }
     }
@@ -566,13 +566,11 @@ export default function CredentialsScreen() {
                             credentialType: "Academic Specialization",
                             issuedAt: verifyResult.onChainTimestamp || new Date().toISOString(),
                             achievementDataHash: verifyResult.transactionHash || "",
+                            issuerAddress: verifyResult.contractAddress || "0x1234567890123456789012345678901234567890",
                             contractAddress: verifyResult.contractAddress,
                             transactionHash: verifyResult.transactionHash,
                             status: "CONFIRMED",
                             networkId: "EVM Smart Contract",
-                            userId: "",
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString(),
                           });
                         }
                         setVerifyResult(null);

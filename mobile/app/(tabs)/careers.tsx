@@ -512,7 +512,6 @@ export default function CareersScreen() {
               </ScrollView>
             )}
           </View>
-        )}
 
         {/* TAB 2: MACHINE LEARNING CAREER PREDICTION ENGINE */}
         {activeTab === "ml" && (
