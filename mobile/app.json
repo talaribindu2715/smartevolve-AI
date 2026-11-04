@@ -58,7 +58,8 @@
       },
       "eas": {
         "projectId": "a78e111a-884d-4fc0-9317-782456e20aa4"
-      }
+      },
+      "apiUrl": "https://smartevolve-ai.onrender.com"
     }
   }
 }

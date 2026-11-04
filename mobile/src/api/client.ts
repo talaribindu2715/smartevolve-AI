@@ -26,17 +26,11 @@ import {
   AuthResponse,
 } from "../types";
 
-// Dynamic API base URL configuration:
-// - Android Emulator uses 10.0.2.2 to reach host machine localhost:8080
-// - iOS Simulator and Web use localhost:8080
-// - Production builds use EXPO_PUBLIC_API_URL (e.g. Render backend URL)
-const DEFAULT_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8080"
-    : "http://localhost:8080";
+// Live Render Cloud Backend is the default for production & mobile APK builds
+const PROD_URL = "https://smartevolve-ai.onrender.com";
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL;
+  process.env.EXPO_PUBLIC_API_URL || PROD_URL;
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = await secureStorage.getToken();

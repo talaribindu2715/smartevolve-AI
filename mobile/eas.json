@@ -11,11 +11,21 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://smartevolve-ai.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ohhvhwmmoupcrtieeeov.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oaHZod21tb3VwY3J0aWVlZW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1NDMzMjcsImV4cCI6MjEwOTExOTMyN30.qyrmQ5cVlQMsivLVvzOcmIEMMApXrjBgkG80yc6tkEk"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://smartevolve-ai.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ohhvhwmmoupcrtieeeov.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oaHZod21tb3VwY3J0aWVlZW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1NDMzMjcsImV4cCI6MjEwOTExOTMyN30.qyrmQ5cVlQMsivLVvzOcmIEMMApXrjBgkG80yc6tkEk"
       }
     }
   },

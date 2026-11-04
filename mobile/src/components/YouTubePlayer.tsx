@@ -107,35 +107,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     console.warn("react-native-webview is not available:", e);
   }
 
-  // Robust HTML string preventing YouTube Error 153:
-  // - strict-origin-when-cross-origin meta referrer tag
-  // - Valid origin parameter matching https://www.youtube.com
-  // - Omission of restrictive sandbox attribute which strips referer
-  // - Omission of cross-origin DOM query scripts which trigger tamper detection
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <meta name="referrer" content="strict-origin-when-cross-origin">
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; background-color: #000000; }
-          body, html { width: 100%; height: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-          iframe { width: 100%; height: 100%; border: none; }
-        </style>
-      </head>
-      <body>
-        <iframe 
-          src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-          allowfullscreen
-          referrerpolicy="strict-origin-when-cross-origin">
-        </iframe>
-      </body>
-    </html>
-  `;
+  const nativeEmbedUri = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
 
   return (
     <View style={[styles.container, style]}>
@@ -144,11 +116,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           <>
             <NativeWebView
               source={{
-                html: htmlContent,
-                baseUrl: "https://www.youtube.com",
+                uri: nativeEmbedUri,
                 headers: {
-                  Referer: "https://www.youtube.com",
-                  Origin: "https://www.youtube.com",
+                  Referer: "https://www.google.com",
                 },
               }}
               originWhitelist={["*"]}
@@ -159,7 +129,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               mediaPlaybackRequiresUserAction={false}
               allowsFullscreenVideo={true}
               mixedContentMode="always"
-              userAgent="Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
               onLoadStart={() => setIsLoading(true)}
               onLoadEnd={() => setIsLoading(false)}
               onError={() => {
@@ -192,6 +161,22 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             </View>
           </TouchableOpacity>
         )}
+      </View>
+      <View style={styles.controlsBar}>
+        <View style={styles.streamingMeta}>
+          <View style={styles.liveDot} />
+          <Text style={styles.streamingText}>Direct Player</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.externalBtn}
+          onPress={handleOpenExternal}
+          activeOpacity={0.8}
+        >
+          <Svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444">
+            <Polygon points="5 3 19 12 5 21 5 3" />
+          </Svg>
+          <Text style={styles.externalBtnText}>Open in YouTube App ↗</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

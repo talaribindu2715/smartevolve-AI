@@ -2318,7 +2318,7 @@ export const QUESTION_BANK: Record<string, ArenaQuestion[]> = {
  * Returns a high-capacity question set tailored to the specific video,
  * mixing domain-focused questions and ensuring requested challenge length (15, 30, 45, 50+)
  */
-export function getQuestionsForVideo(skillName?: string, title?: string, count?: number): ArenaQuestion[] {
+export function getQuestionsForVideo(skillName?: string, title?: string, count: number = 30): ArenaQuestion[] {
   const combined = ((skillName || "") + " " + (title || "")).toLowerCase();
   
   let primaryKey = "general";

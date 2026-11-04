@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { colors, radius, spacing } from "../theme/colors";
@@ -8,6 +8,8 @@ interface ErrorBannerProps {
   message?: string;
   onRetry?: () => void;
   isRetrying?: boolean;
+  onDismiss?: () => void;
+  dismissible?: boolean;
 }
 
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({
@@ -15,7 +17,20 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
   message = "Unable to reach the live AI backend. The Render service may be waking from standby (~45s) or your network is reconnecting.",
   onRetry,
   isRetrying = false,
+  onDismiss,
+  dismissible = true,
 }) => {
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) {
+    return null;
+  }
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    onDismiss?.();
+  };
+
   return (
     <View style={styles.banner}>
       <View style={styles.iconCol}>
@@ -26,7 +41,19 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
         </Svg>
       </View>
       <View style={styles.contentCol}>
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{title}</Text>
+          {dismissible && (
+            <TouchableOpacity
+              onPress={handleDismiss}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.closeBtn}
+              accessibilityLabel="Dismiss banner"
+            >
+              <Text style={styles.closeBtnText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.message}>{message}</Text>
         {onRetry && (
           <TouchableOpacity
@@ -62,18 +89,34 @@ const styles = StyleSheet.create({
   contentCol: {
     flex: 1,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   title: {
     color: colors.warning,
     fontSize: 13,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    flex: 1,
+  },
+  closeBtn: {
+    padding: 2,
+    marginLeft: spacing.xs,
+  },
+  closeBtnText: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 14,
   },
   message: {
     color: colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 2,
+    marginTop: 4,
   },
   retryBtn: {
     alignSelf: "flex-start",
