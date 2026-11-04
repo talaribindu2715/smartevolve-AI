@@ -28,6 +28,9 @@
       "output": "single"
     },
     "updates": {
+      "enabled": true,
+      "checkAutomatically": "ALWAYS",
+      "fallbackToCacheTimeout": 0,
       "url": "https://u.expo.dev/a78e111a-884d-4fc0-9317-782456e20aa4"
     },
     "runtimeVersion": {
@@ -36,6 +39,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-updates",
       [
         "expo-build-properties",
         {
