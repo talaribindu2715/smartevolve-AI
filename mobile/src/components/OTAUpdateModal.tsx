@@ -22,7 +22,7 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [autoRestartActive, setAutoRestartActive] = useState(true);
+  const [autoRestartActive, setAutoRestartActive] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{
     version?: string;
     channel?: string;
@@ -66,9 +66,9 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
           runtimeVersion: typeof Updates.runtimeVersion === "string" ? Updates.runtimeVersion : "1.0.0",
         });
 
-        // Open modal & start 3-second auto-restart countdown
+        // Open modal & keep open until user taps Update & Restart Now
         setModalVisible(true);
-        startCountdown();
+        setAutoRestartActive(false);
       }
     } catch (err) {
       console.warn("OTA update check failed or offline:", err);
