@@ -21,7 +21,45 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <ScrollViewStyleReset />
 
         {/* Favicons and Brand Metadata */}
-        <title>SmartEvolve AI</title>
+        <title>SmartEvolve AI — Autonomous Academic Credentialing & AI-Powered Learning</title>
+        <meta name="description" content="SmartEvolve AI: Autonomous academic credentialing, Google Gemini AI skill diagnostics, Polygon EVM blockchain verification, and personalized career roadmaps for engineering scholars." />
+        <meta name="keywords" content="SmartEvolve, AI Skill Analysis, Google Gemini 1.5, Polygon Blockchain, EVM Smart Contracts, Autonomous Credentialing, Full Stack Developer, Machine Learning, Interactive Masterclasses, Academic Verification" />
+        <meta name="author" content="SmartEvolve Academy" />
+
+        {/* Open Graph / Social Sharing */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="SmartEvolve AI" />
+        <meta property="og:title" content="SmartEvolve AI — Autonomous Academic Credentialing & AI-Powered Learning" />
+        <meta property="og:description" content="Validate real-world skills with Google Gemini AI diagnostics and earn tamper-proof cryptographic credentials anchored on Polygon EVM blockchain." />
+        <meta property="og:image" content="/favicon.png" />
+
+        {/* Twitter Cards */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="SmartEvolve AI — Autonomous Academic Credentialing" />
+        <meta name="twitter:description" content="Google Gemini AI skill diagnostics & Polygon blockchain cryptographic verification." />
+
+        {/* Schema.org Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "EducationalOrganization",
+              "name": "SmartEvolve AI Academy",
+              "description": "Autonomous AI-powered engineering curriculum, Google Gemini skill diagnostics, and Polygon EVM cryptographic credentialing.",
+              "url": "https://smart-evolve.vercel.app",
+              "hasCredential": {
+                "@type": "EducationalOccupationalCredential",
+                "credentialCategory": "Certificate of Completion",
+                "recognizedBy": {
+                  "@type": "Organization",
+                  "name": "SmartEvolve Academy"
+                }
+              }
+            }),
+          }}
+        />
+
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

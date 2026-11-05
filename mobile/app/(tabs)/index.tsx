@@ -22,6 +22,8 @@ import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { AiMentorModal } from "../../src/components/AiMentorModal";
 import { colors, radius, spacing } from "../../src/theme/colors";
+import { getStoredEarnedCertificates } from "../../src/services/certificateService";
+import { MASTER_VIDEOS } from "../../src/data/masterVideos";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -58,6 +60,19 @@ export default function DashboardScreen() {
     queryFn: () => api.getTrends(),
   });
 
+  const { data: storedEarnedCerts } = useQuery({
+    queryKey: ["storedEarnedCerts"],
+    queryFn: () => getStoredEarnedCertificates(),
+  });
+
+  const { data: aiHealth } = useQuery({
+    queryKey: ["aiHealth"],
+    queryFn: () => api.checkAiHealth(),
+    retry: 1,
+  });
+
+
+
   const handleRefreshAll = () => {
     refetchDashboard();
     refetchVideos();
@@ -86,6 +101,38 @@ export default function DashboardScreen() {
   const nextRoadmapStep = dashboard?.activeRoadmap?.steps?.find(
     (s) => s.status === "AVAILABLE" || s.status === "IN_PROGRESS"
   );
+
+  // Dynamic Personalized Next Learning Step based on real quiz & course progress
+  const personalizedNextStep = React.useMemo(() => {
+    if (nextRoadmapStep) {
+      return {
+        title: nextRoadmapStep.resourceTitle,
+        skill: nextRoadmapStep.skillName,
+        duration: `${nextRoadmapStep.estimatedMinutes}m`,
+        actionUrl: `/learning/${nextRoadmapStep.resourceId}`,
+        actionLabel: "Continue Task →",
+        badge: "Roadmap Milestone",
+      };
+    }
+
+    const earnedTitles = (storedEarnedCerts || []).map((c) => (c.courseTitle || "").toLowerCase());
+    const nextMaster = MASTER_VIDEOS.find(
+      (v) => !earnedTitles.some((t) => t.includes(v.title.toLowerCase()) || v.title.toLowerCase().includes(t))
+    );
+
+    if (nextMaster) {
+      return {
+        title: nextMaster.title,
+        skill: nextMaster.skillName || nextMaster.category || "Core Specialization",
+        duration: nextMaster.duration || "Masterclass",
+        actionUrl: `/videos/${nextMaster.id || nextMaster.videoId}`,
+        actionLabel: "Start Masterclass →",
+        badge: "AI Skill Recommendation",
+      };
+    }
+
+    return null;
+  }, [nextRoadmapStep, storedEarnedCerts]);
   const latestEvolution = evolutionHistory && evolutionHistory.length > 0 ? evolutionHistory[0] : null;
 
   // Filter in-progress videos for Recently Watched / Continue Learning section
@@ -174,6 +221,44 @@ export default function DashboardScreen() {
             />
           </Card>
         )}
+
+        {/* Autonomous AI Diagnostics & Gemini 1.5 Mentor Card */}
+        <Card style={styles.aiBannerCard}>
+          <View style={styles.aiBannerHeader}>
+            <View style={styles.aiTagRow}>
+              <View style={styles.aiDot} />
+              <Text style={styles.aiTagText}>
+                {aiHealth?.status === "ONLINE" || aiHealth?.working
+                  ? "GOOGLE GEMINI 1.5 FLASH: ACTIVE"
+                  : "SMARTEVOLVE COGNITIVE AI: READY"}
+              </Text>
+            </View>
+            <Badge label="AI Powered" variant="primary" />
+          </View>
+
+          <Text style={styles.aiBannerTitle}>Autonomous Skill Diagnostics & Mentorship</Text>
+          <Text style={styles.aiBannerDesc}>
+            Evaluate your technical proficiency against industry benchmarks, receive adaptive learning roadmaps, and get 24/7 technical interview guidance.
+          </Text>
+
+          <View style={styles.aiActionRow}>
+            <TouchableOpacity
+              style={styles.aiPrimaryBtn}
+              onPress={() => setAiMentorVisible(true)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.aiPrimaryBtnText}>✨ Ask Gemini AI Mentor</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.aiSecondaryBtn}
+              onPress={() => router.push("/(tabs)/evolution")}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.aiSecondaryBtnText}>📊 View Skill Analysis</Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
 
         {/* Quick Actions Bar */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -267,26 +352,29 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Next Recommended Learning Task Callout */}
-        {nextRoadmapStep && (
+        {/* Next Recommended Learning Task / Personalized Milestone */}
+        {personalizedNextStep && (
           <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>🎯 Next Learning Task</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>🎯 Personalized Next Milestone</Text>
+              <Badge label={personalizedNextStep.badge} variant="info" />
+            </View>
             <Card style={styles.nextTaskCard}>
               <View style={styles.nextTaskTop}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.nextTaskTag}>NEXT UP IN ROADMAP</Text>
-                  <Text style={styles.nextTaskTitle}>{nextRoadmapStep.resourceTitle}</Text>
+                  <Text style={styles.nextTaskTag}>RECOMMENDED BY AI ENGINE</Text>
+                  <Text style={styles.nextTaskTitle}>{personalizedNextStep.title}</Text>
                   <Text style={styles.nextTaskSkill}>
-                    Skill Focus: <Text style={{ color: colors.accent, fontWeight: "700" }}>{nextRoadmapStep.skillName}</Text>
+                    Skill Focus: <Text style={{ color: colors.accent, fontWeight: "700" }}>{personalizedNextStep.skill}</Text>
                   </Text>
                 </View>
-                <Badge label={`${nextRoadmapStep.estimatedMinutes}m`} variant="info" />
+                <Badge label={personalizedNextStep.duration} variant="success" />
               </View>
 
               <Button
-                title="Continue Learning Task →"
+                title={personalizedNextStep.actionLabel}
                 size="sm"
-                onPress={() => router.push(`/learning/${nextRoadmapStep.resourceId}`)}
+                onPress={() => router.push(personalizedNextStep.actionUrl as any)}
                 style={{ marginTop: spacing.sm }}
               />
             </Card>
@@ -465,6 +553,78 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
     borderWidth: 1,
     borderRadius: radius.md,
+  },
+  aiBannerCard: {
+    padding: spacing.md,
+    backgroundColor: "rgba(99, 102, 241, 0.08)",
+    borderColor: "rgba(99, 102, 241, 0.35)",
+    borderWidth: 1.5,
+    marginBottom: spacing.lg,
+  },
+  aiBannerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  aiTagRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  aiDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+  },
+  aiTagText: {
+    color: colors.success,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  aiBannerTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  aiBannerDesc: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+    marginBottom: spacing.md,
+  },
+  aiActionRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  aiPrimaryBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+  },
+  aiPrimaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  aiSecondaryBtn: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+  },
+  aiSecondaryBtnText: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: "600",
   },
   heroCard: {
     padding: spacing.lg,

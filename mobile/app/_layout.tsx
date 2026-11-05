@@ -144,7 +144,7 @@ export default function RootLayout() {
                       animation: "fade",
                     }}
                   >
-                    <Stack.Screen name="index" options={{ headerShown: false }} />
+                    <Stack.Screen name="index" options={{ headerShown: false, animation: "none" }} />
                     <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                     <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
                     <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />

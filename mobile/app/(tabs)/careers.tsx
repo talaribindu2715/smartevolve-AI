@@ -20,6 +20,7 @@ import { Button } from "../../src/components/Button";
 import { CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
+import { getStoredEarnedCertificates } from "../../src/services/certificateService";
 import { Career, CareerMlPrediction } from "../../src/types";
 
 const CATEGORIES = [
@@ -205,6 +206,34 @@ export default function CareersScreen() {
     queryKey: ["careers"],
     queryFn: () => api.getCareers(),
   });
+
+  const { data: storedEarnedCerts } = useQuery({
+    queryKey: ["storedEarnedCerts"],
+    queryFn: () => getStoredEarnedCertificates(),
+  });
+
+  // Calculate live dynamic compatibility boost from earned certificates
+  const getDynamicCareerMatch = (career: Career) => {
+    const base = career.compatibilityScore || 70;
+    const certs = storedEarnedCerts || [];
+    if (certs.length === 0) return { score: base, boost: 0, matchedCount: 0 };
+
+    const kw = (career.name + " " + career.category + " " + career.description).toLowerCase();
+    const matched = certs.filter((c) => {
+      const t = (c.courseTitle + " " + (c.category || "")).toLowerCase();
+      if (kw.includes("full-stack") && (t.includes("react") || t.includes("next.js") || t.includes("spring") || t.includes("web"))) return true;
+      if (kw.includes("ai") && (t.includes("ai") || t.includes("machine learning") || t.includes("python") || t.includes("data"))) return true;
+      if (kw.includes("cloud") && (t.includes("docker") || t.includes("kubernetes") || t.includes("aws") || t.includes("cloud"))) return true;
+      if (kw.includes("java") && (t.includes("java") || t.includes("spring"))) return true;
+      if (kw.includes("mobile") && (t.includes("native") || t.includes("react") || t.includes("mobile"))) return true;
+      if (kw.includes("security") && (t.includes("security") || t.includes("blockchain") || t.includes("qa"))) return true;
+      return false;
+    });
+
+    const boost = Math.min(20, matched.length * 8);
+    const score = Math.min(99, base + boost);
+    return { score, boost, matchedCount: matched.length };
+  };
 
   // 2. Machine Learning Career Prediction Query (Random Forest + Centroids)
   const {
@@ -474,12 +503,22 @@ export default function CareersScreen() {
                               </View>
                             </View>
 
-                            <View style={styles.scoreWrap}>
-                              <Text style={[styles.scoreText, { color: getScoreColor(career.compatibilityScore) }]}>
-                                {(career.compatibilityScore ?? 0).toFixed(0)}%
-                              </Text>
-                              <Text style={styles.scoreLabel}>Match</Text>
-                            </View>
+                            {(() => {
+                              const dynamic = getDynamicCareerMatch(career);
+                              return (
+                                <View style={styles.scoreWrap}>
+                                  <Text style={[styles.scoreText, { color: getScoreColor(dynamic.score) }]}>
+                                    {dynamic.score.toFixed(0)}%
+                                  </Text>
+                                  <Text style={styles.scoreLabel}>Match</Text>
+                                  {dynamic.boost > 0 && (
+                                    <View style={{ marginTop: 2 }}>
+                                      <Badge label={`+${dynamic.boost}% Boost`} variant="success" />
+                                    </View>
+                                  )}
+                                </View>
+                              );
+                            })()}
                           </View>
 
                           <Text style={styles.description} numberOfLines={2}>

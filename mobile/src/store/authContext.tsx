@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (event === "SIGNED_OUT") {
             await secureStorage.clear();
             try {
+              queryClient.cancelQueries();
               queryClient.clear();
             } catch (_) {}
             setToken(null);
@@ -130,11 +131,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.auth.signOut({ scope: "local" });
       } catch (_) {}
     }
-    try {
-      await AsyncStorage.clear();
-    } catch (_) {}
     await secureStorage.clear();
     try {
+      await AsyncStorage.multiRemove([
+        "smartevolve_user_session",
+        "smartevolve_cached_profile",
+      ]);
+    } catch (_) {}
+    try {
+      queryClient.cancelQueries();
       queryClient.clear();
     } catch (_) {}
     setToken(null);

@@ -36,24 +36,6 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     const doLogout = async () => {
       await logout();
-      try {
-        if (router.canDismiss()) {
-          router.dismissAll();
-        }
-      } catch (_) {}
-      try {
-        let rootNav: any = navigation;
-        while (rootNav && rootNav.getParent && rootNav.getParent()) {
-          rootNav = rootNav.getParent();
-        }
-        if (rootNav && rootNav.reset) {
-          rootNav.reset({
-            index: 0,
-            routes: [{ name: "index" as never }],
-          });
-          return;
-        }
-      } catch (_) {}
       router.replace("/");
     };
 

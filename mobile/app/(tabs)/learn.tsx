@@ -20,6 +20,7 @@ import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
+import { getStoredEarnedCertificates } from "../../src/services/certificateService";
 import { Roadmap, RoadmapStep } from "../../src/types";
 
 const CAREER_TRACKS = [
@@ -475,6 +476,11 @@ export default function LearnScreen() {
     queryFn: () => api.getActiveRoadmap(),
   });
 
+  const { data: storedEarnedCerts } = useQuery({
+    queryKey: ["storedEarnedCerts"],
+    queryFn: () => getStoredEarnedCertificates(),
+  });
+
   // Query career detail to display required skills & skill gap breakdown on roadmap screen
   const { data: careerDetail } = useQuery({
     queryKey: ["careerDetail", roadmap?.careerId],
@@ -559,7 +565,60 @@ export default function LearnScreen() {
   ];
 
   const fallbackRoadmap = DEFAULT_ROADMAPS[selectedTrackKey] || DEFAULT_ROADMAPS.fullstack;
-  const effectiveRoadmap: Roadmap = (roadmap?.steps && roadmap.steps.length > 0) ? roadmap : fallbackRoadmap;
+  const rawRoadmap: Roadmap = (roadmap?.steps && roadmap.steps.length > 0) ? roadmap : fallbackRoadmap;
+
+  // Dynamically enrich roadmap steps based on earned certificates & passed assessments
+  const effectiveRoadmap: Roadmap = React.useMemo(() => {
+    if (!rawRoadmap || !rawRoadmap.steps) return rawRoadmap;
+    const certs = storedEarnedCerts || [];
+    if (certs.length === 0) return rawRoadmap;
+
+    let hasFoundActive = false;
+    const steps = rawRoadmap.steps.map((step) => {
+      const stepText = (step.resourceTitle + " " + step.skillName).toLowerCase();
+      const isMatched = certs.some((c) => {
+        const ct = (c.courseTitle + " " + (c.category || "")).toLowerCase();
+        if (stepText.includes("typescript") && (ct.includes("react") || ct.includes("next.js") || ct.includes("typescript"))) return true;
+        if (stepText.includes("postgresql") && (ct.includes("sql") || ct.includes("database") || ct.includes("spring"))) return true;
+        if (stepText.includes("spring") && ct.includes("spring")) return true;
+        if (stepText.includes("react") && (ct.includes("react") || ct.includes("next.js"))) return true;
+        if (stepText.includes("python") && ct.includes("python")) return true;
+        if (stepText.includes("docker") && ct.includes("docker")) return true;
+        if (stepText.includes("data") && (ct.includes("data") || ct.includes("machine learning"))) return true;
+        return false;
+      });
+
+      if (isMatched || step.status === "COMPLETED") {
+        return {
+          ...step,
+          status: "COMPLETED" as const,
+          progressPercentage: 100,
+        };
+      }
+
+      if (!hasFoundActive) {
+        hasFoundActive = true;
+        return {
+          ...step,
+          status: "IN_PROGRESS" as const,
+          progressPercentage: Math.max(step.progressPercentage || 0, 45),
+        };
+      }
+
+      return step;
+    });
+
+    const completedCount = steps.filter((s) => s.status === "COMPLETED").length;
+    const pct = Math.round((completedCount / steps.length) * 100);
+
+    return {
+      ...rawRoadmap,
+      steps,
+      completedSteps: completedCount,
+      progressPercentage: pct,
+    };
+  }, [rawRoadmap, storedEarnedCerts]);
+
   const stepsList: RoadmapStep[] = effectiveRoadmap.steps || [];
   const filteredSteps = stepsList.filter((step) => {
     if (selectedPhaseFilter === "ALL") return true;
