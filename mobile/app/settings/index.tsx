@@ -136,11 +136,17 @@ export default function SettingsScreen() {
         }
       } catch (_) {}
       try {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "index" as never }],
-        });
-        return;
+        let rootNav: any = navigation;
+        while (rootNav && rootNav.getParent && rootNav.getParent()) {
+          rootNav = rootNav.getParent();
+        }
+        if (rootNav && rootNav.reset) {
+          rootNav.reset({
+            index: 0,
+            routes: [{ name: "index" as never }],
+          });
+          return;
+        }
       } catch (_) {}
       router.replace("/");
     };

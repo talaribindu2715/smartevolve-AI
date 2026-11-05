@@ -197,29 +197,6 @@ function ResponsiveTabBar({ state, descriptors, navigation }: any) {
 export default function TabsLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
-  const router = useRouter();
-  const navigation = useNavigation();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      try {
-        const parentNav = navigation.getParent();
-        if (parentNav) {
-          parentNav.reset({
-            index: 0,
-            routes: [{ name: "index" as never }],
-          });
-          return;
-        }
-      } catch (_) {}
-      router.replace("/");
-    }
-  }, [isAuthenticated, isLoading]);
-
-  if (!isLoading && !isAuthenticated) {
-    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
-  }
 
   return (
     <Tabs

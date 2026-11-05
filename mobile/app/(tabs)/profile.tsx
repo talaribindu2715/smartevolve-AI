@@ -35,20 +35,26 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     const doLogout = async () => {
+      await logout();
       try {
-        const parentNav = navigation.getParent();
-        if (parentNav) {
-          parentNav.reset({
+        if (router.canDismiss()) {
+          router.dismissAll();
+        }
+      } catch (_) {}
+      try {
+        let rootNav: any = navigation;
+        while (rootNav && rootNav.getParent && rootNav.getParent()) {
+          rootNav = rootNav.getParent();
+        }
+        if (rootNav && rootNav.reset) {
+          rootNav.reset({
             index: 0,
             routes: [{ name: "index" as never }],
           });
-        } else {
-          router.replace("/");
+          return;
         }
-      } catch (_) {
-        router.replace("/");
-      }
-      await logout();
+      } catch (_) {}
+      router.replace("/");
     };
 
     if (Platform.OS === "web") {
