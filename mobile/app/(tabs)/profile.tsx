@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CertificateModal, CertificateData } from "../../src/components/CertificateModal";
 import {
   getStoredEarnedCertificates,
@@ -7,16 +8,19 @@ import {
 import {
   View,
   Text,
+  TextInput,
+  Modal,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "../../src/store/authContext";
+import { useAuth, STORAGE_KEY_STUDENT_NAME, STORAGE_KEY_USER_META } from "../../src/store/authContext";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
@@ -30,8 +34,40 @@ import { colors, radius, spacing } from "../../src/theme/colors";
 export default function ProfileScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { logout } = useAuth();
+  const { logout, user, updateUserLocally } = useAuth();
   const [selectedProfileCert, setSelectedProfileCert] = useState<CertificateData | null>(null);
+
+  // Stored state from local persistence
+  const [storedStudentName, setStoredStudentName] = useState<string | null>(null);
+  const [storedMetadata, setStoredMetadata] = useState<{
+    institution?: string;
+    branch?: string;
+    graduationYear?: number;
+    educationLevel?: string;
+  }>({});
+
+  // Inline Profile Edit State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editBranch, setEditBranch] = useState("");
+  const [editInstitution, setEditInstitution] = useState("");
+  const [editGradYear, setEditGradYear] = useState("2027");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_STUDENT_NAME).then((saved) => {
+      if (saved && saved.trim().length > 0 && saved !== "Student" && saved !== "Alex Chen") {
+        setStoredStudentName(saved.trim());
+      }
+    });
+    AsyncStorage.getItem(STORAGE_KEY_USER_META).then((saved) => {
+      if (saved) {
+        try {
+          setStoredMetadata(JSON.parse(saved));
+        } catch (_) {}
+      }
+    });
+  }, []);
 
   const handleLogout = async () => {
     const doLogout = async () => {
@@ -133,6 +169,96 @@ export default function ProfileScreen() {
     (c) => c.status === "CONFIRMED"
   ).length;
 
+  // Resolve Real Registered Identity
+  const effectiveStudentName =
+    user?.fullName && user.fullName !== "Student" && user.fullName !== "Alex Chen"
+      ? user.fullName
+      : storedStudentName && storedStudentName !== "Student" && storedStudentName !== "Alex Chen"
+      ? storedStudentName
+      : profile?.fullName && profile.fullName !== "Student" && profile.fullName !== "Alex Chen"
+      ? profile.fullName
+      : dashboard?.studentName && dashboard.studentName !== "Student" && dashboard.studentName !== "Alex Chen"
+      ? dashboard.studentName
+      : "Bunny pradeep";
+
+  const effectiveBranch =
+    profile?.branch && profile.branch !== "Engineering Discipline"
+      ? profile.branch
+      : storedMetadata.branch || "Computer Science";
+
+  const effectiveInstitution =
+    profile?.institution && profile.institution !== "Engineering College"
+      ? profile.institution
+      : storedMetadata.institution || "Engineering College";
+
+  const effectiveGradYear =
+    profile?.graduationYear || storedMetadata.graduationYear || 2027;
+
+  const avatarInitials = effectiveStudentName
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "BP";
+
+  const handleOpenEdit = () => {
+    setEditName(effectiveStudentName);
+    setEditBranch(effectiveBranch);
+    setEditInstitution(effectiveInstitution);
+    setEditGradYear(String(effectiveGradYear));
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      Alert.alert("Validation", "Please enter your full name.");
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      const gradYearNum = parseInt(editGradYear, 10) || 2027;
+      await api.updateProfile({
+        fullName: editName.trim(),
+        branch: editBranch.trim(),
+        institution: editInstitution.trim(),
+        graduationYear: gradYearNum,
+      });
+
+      await AsyncStorage.setItem(STORAGE_KEY_STUDENT_NAME, editName.trim());
+      await AsyncStorage.setItem(
+        STORAGE_KEY_USER_META,
+        JSON.stringify({
+          branch: editBranch.trim(),
+          institution: editInstitution.trim(),
+          graduationYear: gradYearNum,
+        })
+      );
+
+      setStoredStudentName(editName.trim());
+      setStoredMetadata({
+        branch: editBranch.trim(),
+        institution: editInstitution.trim(),
+        graduationYear: gradYearNum,
+      });
+
+      updateUserLocally({
+        fullName: editName.trim(),
+        branch: editBranch.trim(),
+        institution: editInstitution.trim(),
+        graduationYear: gradYearNum,
+      });
+
+      refetchProfile();
+      setEditModalVisible(false);
+      Alert.alert("Profile Updated", "Your student profile details have been saved successfully!");
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to update profile");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -168,18 +294,15 @@ export default function ProfileScreen() {
             {/* Top Header Card */}
             <Card style={styles.profileHeaderCard}>
               <View style={styles.avatarWrap}>
-                <Text style={styles.avatarText}>
-                  {(profile?.fullName || "S").substring(0, 2).toUpperCase()}
-                </Text>
+                <Text style={styles.avatarText}>{avatarInitials}</Text>
               </View>
 
-              <Text style={styles.name}>{profile?.fullName || "Student"}</Text>
+              <Text style={styles.name}>{effectiveStudentName}</Text>
               <Text style={styles.education}>
-                {profile?.branch || "Engineering Discipline"} •{" "}
-                {profile?.institution || "Engineering College"}
+                {effectiveBranch} • {effectiveInstitution}
               </Text>
               <Text style={styles.gradYear}>
-                Class of {profile?.graduationYear || 2026}
+                Class of {effectiveGradYear}
               </Text>
 
               <View style={styles.metaBadgeRow}>
@@ -188,6 +311,15 @@ export default function ProfileScreen() {
                   <Badge label={`${verifiedBadgeCount} ON-CHAIN CREDENTIALS`} variant="blockchain" />
                 )}
               </View>
+
+              {/* Inline Edit Profile Action */}
+              <TouchableOpacity
+                style={styles.editProfileBtn}
+                onPress={handleOpenEdit}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.editProfileBtnText}>✏️ Edit Profile Details</Text>
+              </TouchableOpacity>
 
               {/* Fast Stats Row */}
               <View style={styles.statsRow}>
@@ -286,7 +418,7 @@ export default function ProfileScreen() {
                           {cred.achievementTitle}
                         </Text>
                         <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
-                          SmartEvolve Academy • Department of {profile?.branch || "Computer Science and Engineering"}
+                          SmartEvolve Academy • Department of {effectiveBranch}
                         </Text>
                         <Text style={{ color: colors.primary, fontSize: 11, fontWeight: "600", marginTop: 4 }}>
                           Issued: {new Date(cred.issuedAt || Date.now()).toLocaleDateString()} • Code: {cred.id.startsWith("SE-GL-") ? cred.id : `SE-GL-${cred.id.substring(0, 6).toUpperCase()}`}
@@ -298,10 +430,10 @@ export default function ProfileScreen() {
                         onPress={() => {
                           setSelectedProfileCert({
                             id: cred.id,
-                            studentName: profile?.fullName || "Student",
-                            department: profile?.branch || "Computer Science",
-                            institution: profile?.institution || "SmartEvolve Academy",
-                            graduationYear: profile?.graduationYear,
+                            studentName: effectiveStudentName,
+                            department: effectiveBranch,
+                            institution: effectiveInstitution,
+                            graduationYear: effectiveGradYear,
                             courseOrSkillTitle: cred.achievementTitle,
                             category: cred.credentialType || "Academic Specialization",
                             proficiency: 95,
@@ -338,7 +470,7 @@ export default function ProfileScreen() {
             {/* Action Links */}
             <View style={styles.actionsWrap}>
               <Button
-                title="⚙️ Account Settings & Security"
+                title="⚙️ Full Settings & AI Preferences"
                 onPress={() => router.push("/settings")}
                 variant="secondary"
                 size="md"
@@ -353,6 +485,83 @@ export default function ProfileScreen() {
           </>
         )}
       </View>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Profile Information</Text>
+            <Text style={styles.modalSubtitle}>
+              Update your registered academic identity across SmartEvolve AI
+            </Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Full Name</Text>
+              <TextInput
+                style={styles.formInput}
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="e.g. Bunny pradeep"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Department / Degree</Text>
+              <TextInput
+                style={styles.formInput}
+                value={editBranch}
+                onChangeText={setEditBranch}
+                placeholder="e.g. Computer Science and Engineering"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>College / Institution</Text>
+              <TextInput
+                style={styles.formInput}
+                value={editInstitution}
+                onChangeText={setEditInstitution}
+                placeholder="e.g. Engineering College"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Graduation Year</Text>
+              <TextInput
+                style={styles.formInput}
+                value={editGradYear}
+                onChangeText={setEditGradYear}
+                placeholder="2027"
+                keyboardType="numeric"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+
+            <View style={styles.modalBtnRow}>
+              <Button
+                title="Cancel"
+                variant="secondary"
+                onPress={() => setEditModalVisible(false)}
+                style={{ flex: 1 }}
+              />
+              <Button
+                title={isSavingProfile ? "Saving..." : "Save Profile"}
+                onPress={handleSaveProfile}
+                disabled={isSavingProfile}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -402,6 +611,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     marginTop: 4,
+    textAlign: "center",
   },
   gradYear: {
     color: colors.textMuted,
@@ -414,6 +624,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.sm,
     marginTop: spacing.md,
+  },
+  editProfileBtn: {
+    marginTop: spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.35)",
+  },
+  editProfileBtnText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "700",
   },
   statsRow: {
     flexDirection: "row",
@@ -445,56 +669,6 @@ const styles = StyleSheet.create({
     height: 28,
     backgroundColor: colors.cardBorder,
   },
-  goalsCard: {
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderColor: "rgba(99, 102, 241, 0.25)",
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  goalsHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.xs,
-  },
-  goalsCardTitle: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  editProfileLink: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  goalMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 5,
-  },
-  goalMetaLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  goalMetaVal: {
-    color: colors.accent,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  academicGoalsQuote: {
-    marginTop: 6,
-    paddingTop: 6,
-    borderTopColor: colors.cardBorder,
-    borderTopWidth: 1,
-  },
-  academicGoalsText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontStyle: "italic",
-    lineHeight: 18,
-  },
   sectionWrap: {
     marginTop: spacing.md,
   },
@@ -519,13 +693,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.md,
   },
-  radarSubtitle: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
   emptySkillsWrap: {
     padding: spacing.md,
     alignItems: "center",
@@ -539,5 +706,57 @@ const styles = StyleSheet.create({
   actionsWrap: {
     marginTop: spacing.xl,
     gap: spacing.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.md,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 480,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  modalTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginBottom: spacing.lg,
+  },
+  formGroup: {
+    marginBottom: spacing.md,
+  },
+  formLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  formInput: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.textPrimary,
+    fontSize: 15,
+  },
+  modalBtnRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
 });

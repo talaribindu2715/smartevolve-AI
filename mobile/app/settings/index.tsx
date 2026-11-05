@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../../src/store/authContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth, STORAGE_KEY_STUDENT_NAME, STORAGE_KEY_USER_META } from "../../src/store/authContext";
 import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Button } from "../../src/components/Button";
@@ -32,7 +33,7 @@ const LEARNING_STYLES = [
 export default function SettingsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserLocally } = useAuth();
   const queryClient = useQueryClient();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -68,18 +69,31 @@ export default function SettingsScreen() {
   });
 
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.fullName || "");
-      setEducationLevel(profile.educationLevel || "UNDERGRADUATE");
-      setInstitution(profile.institution || "");
-      setBranch(profile.branch || "");
-      setGraduationYear(profile.graduationYear ? profile.graduationYear.toString() : "2026");
-      setPreferredLearningStyle(profile.preferredLearningStyle || LEARNING_STYLES[1]);
-      setAcademicGoals(profile.academicGoals || "");
-      setTargetCareerId(profile.targetCareerId);
-      setInterestsText(profile.interests ? profile.interests.join(", ") : "");
-    }
-  }, [profile]);
+    const init = async () => {
+      const storedName = await AsyncStorage.getItem(STORAGE_KEY_STUDENT_NAME);
+      const effectiveName =
+        user?.fullName && user.fullName !== "Student" && user.fullName !== "Alex Chen"
+          ? user.fullName
+          : profile?.fullName && profile.fullName !== "Student" && profile.fullName !== "Alex Chen"
+          ? profile.fullName
+          : storedName && storedName !== "Student" && storedName !== "Alex Chen"
+          ? storedName
+          : "Bunny pradeep";
+
+      setFullName(effectiveName);
+      if (profile) {
+        setEducationLevel(profile.educationLevel || "UNDERGRADUATE");
+        setInstitution(profile.institution && profile.institution !== "Engineering College" ? profile.institution : "Engineering College");
+        setBranch(profile.branch && profile.branch !== "Engineering Discipline" ? profile.branch : "Computer Science");
+        setGraduationYear(profile.graduationYear ? profile.graduationYear.toString() : "2027");
+        setPreferredLearningStyle(profile.preferredLearningStyle || LEARNING_STYLES[1]);
+        setAcademicGoals(profile.academicGoals || "");
+        setTargetCareerId(profile.targetCareerId);
+        setInterestsText(profile.interests ? profile.interests.join(", ") : "");
+      }
+    };
+    init();
+  }, [profile, user]);
 
   const updateProfileMutation = useMutation({
     mutationFn: () => {
@@ -102,7 +116,24 @@ export default function SettingsScreen() {
         targetCareerId,
       });
     },
-    onSuccess: (updated) => {
+    onSuccess: async (updated) => {
+      await AsyncStorage.setItem(STORAGE_KEY_STUDENT_NAME, fullName.trim());
+      await AsyncStorage.setItem(
+        STORAGE_KEY_USER_META,
+        JSON.stringify({
+          branch: branch.trim(),
+          institution: institution.trim(),
+          graduationYear: parseInt(graduationYear, 10) || 2027,
+          educationLevel,
+        })
+      );
+      updateUserLocally({
+        fullName: fullName.trim(),
+        branch: branch.trim(),
+        institution: institution.trim(),
+        graduationYear: parseInt(graduationYear, 10) || 2027,
+        educationLevel,
+      });
       queryClient.setQueryData(["profile"], updated);
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["activeRoadmap"] });

@@ -53,7 +53,7 @@ class YouTubeServiceTest {
         studentId = UUID.randomUUID();
         mockProfile = Profile.builder()
                 .id(studentId)
-                .fullName("Alex Chen")
+                .fullName("Bunny pradeep")
                 .build();
 
         mockSkill = Skill.builder()

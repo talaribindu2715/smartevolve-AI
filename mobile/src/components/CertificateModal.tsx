@@ -52,11 +52,17 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
     "SE-" + Math.floor(100000 + Math.random() * 900000);
 
   // Student name dynamically pulled from profile or cert
-  const rawName =
-    certificate.studentName && certificate.studentName.trim().length > 0 && certificate.studentName !== "Bindu Talari"
-      ? certificate.studentName
-      : user?.fullName || "Student";
-  const studentName = rawName === "Bindu Talari" ? (user?.fullName || "Student") : rawName;
+  const candidateName =
+    certificate.studentName &&
+    certificate.studentName.trim().length > 0 &&
+    certificate.studentName !== "Bindu Talari" &&
+    certificate.studentName !== "Student" &&
+    certificate.studentName !== "Alex Chen"
+      ? certificate.studentName.trim()
+      : user?.fullName && user.fullName !== "Student" && user.fullName !== "Alex Chen"
+      ? user.fullName.trim()
+      : "Bunny pradeep";
+  const studentName = candidateName;
 
   const issuedDate = certificate.issuedDate
     ? new Date(certificate.issuedDate).toLocaleDateString("en-US", {

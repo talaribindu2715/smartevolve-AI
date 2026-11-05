@@ -37,6 +37,6 @@ public final class SecurityUtils {
         if (auth != null && auth.getPrincipal() instanceof UserPrincipal up) {
             return up.getEmail();
         }
-        return "alex.chen@student.edu";
+        return "bunny.pradeep@student.edu";
     }
 }

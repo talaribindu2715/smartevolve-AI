@@ -61,7 +61,14 @@ export default function LoginScreen() {
         }
 
         if (authData.session) {
-          await login(authData.session.access_token, authData.session.user.id);
+          const userMeta = authData.session.user?.user_metadata || {};
+          const metaName = userMeta.full_name || userMeta.fullName || userMeta.name || "Bunny pradeep";
+          await login(authData.session.access_token, authData.session.user.id, {
+            fullName: metaName,
+            institution: userMeta.institution,
+            branch: userMeta.branch,
+            graduationYear: userMeta.graduation_year ? Number(userMeta.graduation_year) : 2027,
+          });
           router.replace("/(tabs)");
           return;
         }

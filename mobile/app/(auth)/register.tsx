@@ -193,7 +193,13 @@ export default function RegisterScreen() {
       // 3. Complete Session & Login
       setOtpModalVisible(false);
       setLoading(true);
-      await login(token, userId);
+      await login(token, userId, {
+        fullName: pendingFormData.fullName.trim(),
+        institution: pendingFormData.institution || "Engineering College",
+        branch: pendingFormData.branch,
+        graduationYear: pendingFormData.graduationYear ? parseInt(pendingFormData.graduationYear, 10) : 2027,
+        educationLevel: pendingFormData.educationLevel,
+      });
 
       // 4. Save initial profile details
       try {

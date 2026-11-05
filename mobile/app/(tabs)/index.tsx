@@ -22,13 +22,23 @@ import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { AiMentorModal } from "../../src/components/AiMentorModal";
 import { colors, radius, spacing } from "../../src/theme/colors";
-import { useAuth } from "../../src/store/authContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth, STORAGE_KEY_STUDENT_NAME } from "../../src/store/authContext";
 import { getStoredEarnedCertificates } from "../../src/services/certificateService";
 import { MASTER_VIDEOS } from "../../src/data/masterVideos";
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
+  const [storedStudentName, setStoredStudentName] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_STUDENT_NAME).then((saved) => {
+      if (saved && saved.trim().length > 0 && saved !== "Student" && saved !== "Alex Chen") {
+        setStoredStudentName(saved.trim());
+      }
+    });
+  }, []);
   const [aiMentorVisible, setAiMentorVisible] = useState(false);
 
   useEffect(() => {
@@ -86,7 +96,14 @@ export default function DashboardScreen() {
     refetchVideos();
   };
 
-  const studentName = dashboard?.studentName || "Student";
+  const studentName =
+    user?.fullName && user.fullName !== "Student" && user.fullName !== "Alex Chen"
+      ? user.fullName
+      : storedStudentName && storedStudentName !== "Student" && storedStudentName !== "Alex Chen"
+      ? storedStudentName
+      : dashboard?.studentName && dashboard.studentName !== "Student" && dashboard.studentName !== "Alex Chen"
+      ? dashboard.studentName
+      : "Bunny pradeep";
   const careerGoal = dashboard?.targetCareerName || "Not Selected";
   const overallProf = dashboard?.overallProficiency || 0;
   const readiness = dashboard?.careerReadinessScore || 0;

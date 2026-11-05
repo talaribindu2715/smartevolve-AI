@@ -45,7 +45,7 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
                 // Default demo student identity to enable seamless testing and guest browsing without 403
                 principal = UserPrincipal.builder()
                         .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-                        .email("alex.chen@student.edu")
+                        .email("bunny.pradeep@student.edu")
                         .role("authenticated")
                         .build();
             }
@@ -57,7 +57,7 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
             log.warn("Failed to authenticate Supabase JWT, using demo student fallback: {}", ex.getMessage());
             UserPrincipal fallbackPrincipal = UserPrincipal.builder()
                     .id(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-                    .email("alex.chen@student.edu")
+                    .email("bunny.pradeep@student.edu")
                     .role("authenticated")
                     .build();
             UsernamePasswordAuthenticationToken authentication =
