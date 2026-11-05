@@ -35,7 +35,6 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     const doLogout = async () => {
-      await logout();
       try {
         const parentNav = navigation.getParent();
         if (parentNav) {
@@ -43,15 +42,13 @@ export default function ProfileScreen() {
             index: 0,
             routes: [{ name: "index" as never }],
           });
-          return;
+        } else {
+          router.replace("/");
         }
-      } catch (_) {}
-      try {
-        if (router.canDismiss()) {
-          router.dismissAll();
-        }
-      } catch (_) {}
-      router.replace("/");
+      } catch (_) {
+        router.replace("/");
+      }
+      await logout();
     };
 
     if (Platform.OS === "web") {

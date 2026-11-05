@@ -217,6 +217,10 @@ export default function TabsLayout() {
     }
   }, [isAuthenticated, isLoading]);
 
+  if (!isLoading && !isAuthenticated) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
+
   return (
     <Tabs
       tabBar={(props) => <ResponsiveTabBar {...props} />}

@@ -139,39 +139,24 @@ export default function ForgotPasswordScreen() {
             />
           </View>
         ) : (
-          <View style={styles.successCard}>
-            <View style={styles.successBadge}>
-              <Text style={styles.successBadgeText}>✓ DIRECT LINK DISPATCHED</Text>
-            </View>
-            <Text style={styles.successTitle}>Check Your Inbox</Text>
-            <Text style={styles.successDesc}>
-              We sent a direct password reset link to{"\n"}
-              <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>{email}</Text>
-            </Text>
-
-            <View style={styles.instructionBox}>
-              <Text style={styles.instructionTitle}>No OTP Verification Required</Text>
-              <Text style={styles.instructionText}>
-                1. Open the email sent from SmartEvolve AI.{"\n"}
-                2. Click the <Text style={{ color: colors.primary, fontWeight: "700" }}>Reset Password</Text> link.{"\n"}
-                3. The link opens the website directly where you can enter and confirm your new password.
-              </Text>
-            </View>
-
-            <Button
-              title="Return to Sign In"
+          <View style={styles.sentHyperlinksWrap}>
+            <TouchableOpacity
+              style={styles.hyperlinkItem}
               onPress={() => router.replace("/(auth)/login")}
-              size="md"
-              variant="outline"
-              style={{ marginTop: spacing.xs, width: "100%" }}
-            />
+              activeOpacity={0.7}
+            >
+              <Text style={styles.primaryHyperlinkText}>Return to Sign In</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.resendBtn}
+              style={styles.hyperlinkItem}
               onPress={handleSendResetEmail}
               disabled={loading}
+              activeOpacity={0.7}
             >
-              <Text style={styles.resendBtnText}>Didn't receive email? Tap to resend link</Text>
+              <Text style={styles.secondaryHyperlinkText}>
+                {loading ? "Resending link..." : "Didn't receive email? Tap to resend link"}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -327,6 +312,31 @@ const styles = StyleSheet.create({
   resendBtnText: {
     color: colors.primary,
     fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  sentHyperlinksWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.xl,
+    gap: 16,
+  },
+  hyperlinkItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryHyperlinkText: {
+    color: "#818CF8",
+    fontSize: 16,
+    fontWeight: "800",
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  secondaryHyperlinkText: {
+    color: "#94A3B8",
+    fontSize: 14.5,
     fontWeight: "600",
     textAlign: "center",
   },

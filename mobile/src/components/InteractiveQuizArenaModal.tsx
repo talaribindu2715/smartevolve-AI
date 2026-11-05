@@ -59,7 +59,22 @@ export function InteractiveQuizArenaModal({
   const [earnedDelta, setEarnedDelta] = useState(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoAdvanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const progressAnim = useRef(new Animated.Value(1)).current;
+
+  const clearAutoAdvanceTimer = () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+  };
+
+  const scheduleAutoAdvance = (delayMs: number = 1400) => {
+    clearAutoAdvanceTimer();
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      handleNext();
+    }, delayMs);
+  };
 
   // Platform themes
   const getTheme = () => {
@@ -124,6 +139,7 @@ export function InteractiveQuizArenaModal({
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      clearAutoAdvanceTimer();
     };
   }, [currentIdx, visible, isAnswered, isFinished]);
 
@@ -134,6 +150,7 @@ export function InteractiveQuizArenaModal({
     setStreak(0);
     setEarnedDelta(0);
     setAnswersMap((prev) => ({ ...prev, [currentQ.id]: -1 }));
+    scheduleAutoAdvance(1400);
   };
 
   const handleSelect = (idx: number) => {
@@ -161,9 +178,13 @@ export function InteractiveQuizArenaModal({
       setStreak(0);
       setEarnedDelta(0);
     }
+
+    // Automatically transition to the next question after brief verification
+    scheduleAutoAdvance(1400);
   };
 
   const handleNext = () => {
+    clearAutoAdvanceTimer();
     if (currentIdx < questions.length - 1) {
       setCurrentIdx((prev) => prev + 1);
       setIsAnswered(false);
@@ -173,20 +194,21 @@ export function InteractiveQuizArenaModal({
       // Completed all questions
       setIsFinished(true);
       let correct = 0;
+      const finalAnswers = { ...answersMap };
+      if (selectedOption !== null) {
+        finalAnswers[currentQ.id] = selectedOption;
+      }
       questions.forEach((q) => {
-        if (answersMap[q.id] === q.correctIndex) {
+        if (finalAnswers[q.id] === q.correctIndex) {
           correct += 1;
         }
       });
-      // In case current question was just answered
-      if (selectedOption === currentQ.correctIndex) {
-        correct = Math.max(correct, Object.values(answersMap).filter((v, i) => questions[i] && v === questions[i].correctIndex).length);
-      }
-      onComplete(correct, questions.length, answersMap);
+      onComplete(correct, questions.length, finalAnswers);
     }
   };
 
   const handleRestart = () => {
+    clearAutoAdvanceTimer();
     setCurrentIdx(0);
     setSelectedOption(null);
     setAnswersMap({});
@@ -206,10 +228,16 @@ export function InteractiveQuizArenaModal({
   const accuracyPct = Math.round((totalCorrect / Math.max(1, questions.length)) * 100);
   const isPassed = accuracyPct >= 60;
 
+  const handleClose = () => {
+    clearAutoAdvanceTimer();
+    if (timerRef.current) clearInterval(timerRef.current);
+    onClose();
+  };
+
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={handleClose}>
       <View style={styles.container}>
         {/* Top Game Navigation Header */}
         <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
@@ -234,7 +262,7 @@ export function InteractiveQuizArenaModal({
               </View>
             )}
 
-            <TouchableOpacity style={styles.exitBtn} onPress={onClose}>
+            <TouchableOpacity style={styles.exitBtn} onPress={handleClose}>
               <Text style={styles.exitBtnText}>✕ Exit</Text>
             </TouchableOpacity>
           </View>

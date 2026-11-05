@@ -124,13 +124,21 @@ export default function LandingScreen() {
           {/* Top Right Actions */}
           <View style={styles.navActions}>
             {isDesktop && !isAuthenticated ? (
-              <View style={styles.authButtonsRow}>
-                <TouchableOpacity style={styles.primaryCtaBtn} onPress={navigateToRegister}>
-                  <Text style={styles.primaryCtaText}>Start Learning Free →</Text>
+              <View style={styles.navHyperlinksRow}>
+                <TouchableOpacity
+                  onPress={navigateToLogin}
+                  activeOpacity={0.7}
+                  style={styles.navHyperlinkItem}
+                >
+                  <Text style={styles.navSecondaryHyperlinkText}>Sign In to Workspace</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.secondaryCtaBtn} onPress={navigateToLogin}>
-                  <Text style={styles.secondaryCtaText}>Sign In to Workspace</Text>
+                <TouchableOpacity
+                  onPress={navigateToRegister}
+                  activeOpacity={0.7}
+                  style={styles.navHyperlinkItem}
+                >
+                  <Text style={styles.navPrimaryHyperlinkText}>Start Learning Free →</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -166,8 +174,8 @@ export default function LandingScreen() {
             </Animated.View>
           </View>
 
-          {/* Hyperlink Actions Just Below the Image (Exchanged Positions) */}
-          {(!isAuthenticated || !isDesktop) && (
+          {/* Hyperlink Actions Just Below the Image on Mobile Only */}
+          {!isDesktop && !isAuthenticated && (
             <View style={styles.hyperlinkLinksWrap}>
               <TouchableOpacity
                 onPress={navigateToLogin}
@@ -251,44 +259,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  authButtonsRow: {
+  navHyperlinksRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
+    gap: 16,
   },
-  primaryCtaBtn: {
-    backgroundColor: "#6366F1",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  primaryCtaText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  secondaryCtaBtn: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(255, 255, 255, 0.22)",
-    borderWidth: 1,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+  navHyperlinkItem: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
   },
-  secondaryCtaText: {
-    color: "#FFFFFF",
-    fontSize: 13,
+  navSecondaryHyperlinkText: {
+    color: "#E2E8F0",
+    fontSize: 14.5,
     fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  navPrimaryHyperlinkText: {
+    color: "#818CF8",
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   dashboardPill: {
     backgroundColor: "rgba(99, 102, 241, 0.2)",
