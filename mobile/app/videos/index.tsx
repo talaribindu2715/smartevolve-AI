@@ -207,7 +207,12 @@ export default function VideoAcademyScreen() {
         </View>
 
         {/* Library Navigation Tabs */}
-        <View style={styles.viewTabsRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.viewTabsScrollView}
+          contentContainerStyle={styles.viewTabsScrollContent}
+        >
           <TouchableOpacity
             style={[styles.viewTab, activeViewTab === "all" && styles.viewTabActive]}
             onPress={() => setActiveViewTab("all")}
@@ -243,7 +248,7 @@ export default function VideoAcademyScreen() {
               Completed ({completedVideos.length})
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
 
         {/* Skills Category Filter Pills */}
         {activeViewTab === "all" && (
@@ -476,10 +481,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 4,
   },
-  viewTabsRow: {
+  viewTabsScrollView: {
+    marginBottom: spacing.md,
+  },
+  viewTabsScrollContent: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: spacing.md,
+    paddingRight: spacing.md,
   },
   viewTab: {
     paddingHorizontal: 12,
@@ -506,6 +514,7 @@ const styles = StyleSheet.create({
   },
   filterPillsScroll: {
     gap: 8,
+    paddingRight: spacing.md,
   },
   filterPill: {
     paddingHorizontal: 12,
