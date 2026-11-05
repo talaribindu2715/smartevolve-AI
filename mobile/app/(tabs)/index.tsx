@@ -365,12 +365,10 @@ export default function DashboardScreen() {
           <View style={styles.sectionWrap}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>🎯 Personalized Next Milestone</Text>
-              <Badge label={personalizedNextStep.badge} variant="info" />
             </View>
             <Card style={styles.nextTaskCard}>
               <View style={styles.nextTaskTop}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.nextTaskTag}>RECOMMENDED BY AI ENGINE</Text>
                   <Text style={styles.nextTaskTitle}>{personalizedNextStep.title}</Text>
                   <Text style={styles.nextTaskSkill}>
                     Skill Focus: <Text style={{ color: colors.accent, fontWeight: "700" }}>{personalizedNextStep.skill}</Text>
