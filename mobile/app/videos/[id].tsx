@@ -404,73 +404,20 @@ export default function VideoDetailScreen() {
           </View>
         </View>
 
-        {/* Learning Verification & Progress Status (Verified Automatic Unlocking) */}
-        <Card style={[styles.progressCard, isCompleted && { borderColor: "#10B981", backgroundColor: "rgba(16, 185, 129, 0.08)" }]}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <Text style={{ fontSize: 24 }}>{isCompleted ? "🏆" : "🔒"}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.progressCardTitle, isCompleted && { color: "#10B981" }]}>
-                {isCompleted ? "Course Mastered & Certificate Ready!" : "Certificate Verification & Completion Status"}
-              </Text>
-              <Text style={styles.progressCardSub}>
-                {isCompleted
-                  ? "Congratulations! You have fulfilled the academic study requirements. Your official SmartEvolve certificate is unlocked and ready to view or download."
-                  : "Watch the video masterclass or click 'Mark as Completed' below to test and preview your certificate immediately."}
-              </Text>
-            </View>
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-            <View style={{ flex: 1, padding: 8, backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 6, borderWidth: 1, borderColor: colors.cardBorder }}>
-              <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "700" }}>STUDY STATUS</Text>
-              <Text style={{ fontSize: 12, color: isCompleted ? colors.success : colors.warning, fontWeight: "700", marginTop: 2 }}>
-                {isCompleted ? "Completed ✓" : "In Progress ⏳"}
-              </Text>
-            </View>
-            <View style={{ flex: 1, padding: 8, backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: 6, borderWidth: 1, borderColor: colors.cardBorder }}>
-              <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: "700" }}>SKILL QUIZ EVALUATION</Text>
-              <Text style={{ fontSize: 12, color: quizSubmitted ? (quizScore >= Math.ceil(quizQuestions.length * 0.6) ? colors.success : colors.error) : colors.textMuted, fontWeight: "700", marginTop: 2 }}>
-                {quizSubmitted ? `${Math.round((quizScore / quizQuestions.length) * 100)}% (${quizScore >= Math.ceil(quizQuestions.length * 0.6) ? "Passed ✓" : "Retake Quiz"})` : "Optional Quiz Below ✍️"}
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons: Mark as Completed & View Certificate */}
-          <View style={styles.certActionsRow}>
-            <TouchableOpacity
-              style={[styles.markCompletedBtn, isCompleted && styles.markCompletedBtnActive]}
-              onPress={handleMarkCompleted}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.markCompletedBtnText}>
-                {isCompleted ? "✓ Video Completed" : "✓ Mark Video as Completed"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.viewCertBtn, !isPassingScore && { opacity: 0.85 }]}
-              onPress={() => {
-                if (isPassingScore) {
-                  setShowCertModal(true);
-                } else {
-                  Alert.alert(
-                    "Quiz Assessment Required (≥60%)",
-                    `To unlock and view your official SmartEvolve Certificate for '${effectiveVideo.title}', you must pass the course quiz with at least 60%.\n\nTake the quiz below to unlock your certificate!`,
-                    [
-                      { text: "Take Quiz", onPress: () => setActiveTab("quiz") },
-                      { text: "Cancel", style: "cancel" },
-                    ]
-                  );
-                }
-              }}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.viewCertBtnText}>
-                {isPassingScore ? "🎓 View Official SmartEvolve Certificate" : "🔒 Complete Quiz (≥60%) to Unlock Certificate"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
+        {/* Certificate Display: Hidden completely until user completes both video watching and quiz */}
+        {isCompleted && isPassingScore ? (
+          <TouchableOpacity
+            style={styles.viewCertificateOnlyBtn}
+            onPress={() => setShowCertModal(true)}
+            activeOpacity={0.85}
+          >
+            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
+              <Path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <Path d="M6 12v5c3 3 9 3 12 0v-5" />
+            </Svg>
+            <Text style={styles.viewCertificateOnlyBtnText}>View Certificate</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* Segmented Tab Navigation */}
         <View style={styles.tabsRow}>
@@ -970,6 +917,28 @@ const styles = StyleSheet.create({
   actionButtonsRow: {
     flexDirection: "column",
     gap: spacing.xs,
+  },
+  viewCertificateOnlyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#10B981",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  viewCertificateOnlyBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   tabsRow: {
     flexDirection: "row",

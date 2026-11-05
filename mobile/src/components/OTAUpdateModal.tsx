@@ -5,10 +5,9 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  ActivityIndicator,
+  Animated,
   Platform,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
 import * as Updates from "expo-updates";
 import { colors, radius, spacing } from "../theme/colors";
 
@@ -21,13 +20,13 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState<{
-    version?: string;
-    channel?: string;
-    runtimeVersion?: string;
-  }>({});
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Animated Rocket Floating & Pulsing
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const flameAnim = useRef(new Animated.Value(0.85)).current;
 
   useEffect(() => {
     // Fresh app startup delay: precisely 3 seconds after opening the APK
@@ -39,6 +38,62 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [initialDelayMs]);
+
+  useEffect(() => {
+    if (modalVisible) {
+      const floatLoop = Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(floatAnim, {
+              toValue: -12,
+              duration: 1100,
+              useNativeDriver: true,
+            }),
+            Animated.timing(flameAnim, {
+              toValue: 1.3,
+              duration: 1100,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(floatAnim, {
+              toValue: 0,
+              duration: 1100,
+              useNativeDriver: true,
+            }),
+            Animated.timing(flameAnim, {
+              toValue: 0.85,
+              duration: 1100,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+
+      const pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1.0,
+            duration: 1300,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      floatLoop.start();
+      pulseLoop.start();
+
+      return () => {
+        floatLoop.stop();
+        pulseLoop.stop();
+      };
+    }
+  }, [modalVisible]);
 
   // Execute OTA check
   const runUpdateCheck = async () => {
@@ -56,11 +111,6 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
         // Fetch the OTA bundle
         await Updates.fetchUpdateAsync();
         setIsDownloading(false);
-
-        setUpdateInfo({
-          channel: Updates.channel || "production",
-          runtimeVersion: typeof Updates.runtimeVersion === "string" ? Updates.runtimeVersion : "1.0.0",
-        });
 
         // Open modal & keep visible permanently until user chooses an action
         setModalVisible(true);
@@ -98,48 +148,44 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
     <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={handleDismiss}>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          {/* Top Banner Icon */}
-          <View style={styles.iconCircle}>
-            <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
-              <Path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </Svg>
+          {/* Animated Rocket Launch Icon */}
+          <View style={styles.rocketWrapper}>
+            <Animated.View
+              style={[
+                styles.glowCircle,
+                { transform: [{ scale: pulseAnim }] },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.rocketContainer,
+                { transform: [{ translateY: floatAnim }] },
+              ]}
+            >
+              <Text style={styles.rocketEmoji}>🚀</Text>
+              <Animated.View
+                style={[
+                  styles.thrustFlame,
+                  { transform: [{ scale: flameAnim }] },
+                ]}
+              />
+            </Animated.View>
           </View>
 
-          <Text style={styles.headerTag}>OVER-THE-AIR UPDATE READY</Text>
-          <Text style={styles.title}>SmartEvolve AI Update</Text>
+          {/* Heading and Description */}
+          <Text style={styles.title}>New Update Available</Text>
           <Text style={styles.description}>
-            A fresh new application update has been successfully downloaded. Restart to apply latest courses, question banks, and video optimizations immediately.
+            New update available, please update.
           </Text>
 
-          {/* Version / Channel details */}
-          <View style={styles.metaBox}>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Channel:</Text>
-              <Text style={styles.metaValue}>{updateInfo.channel || "EAS Production"}</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Runtime:</Text>
-              <Text style={styles.metaValue}>v{updateInfo.runtimeVersion || "1.0.0"}</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Status:</Text>
-              <Text style={[styles.metaValue, { color: "#10B981" }]}>✓ Ready to Execute</Text>
-            </View>
-          </View>
+          {/* Action Button: Update & Restart */}
+          <TouchableOpacity style={styles.restartBtn} onPress={triggerReload} activeOpacity={0.85}>
+            <Text style={styles.restartBtnText}>Update & Restart</Text>
+          </TouchableOpacity>
 
-          {/* Action Buttons */}
-          <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.laterBtn} onPress={handleDismiss}>
-              <Text style={styles.laterBtnText}>Later</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.restartBtn} onPress={triggerReload}>
-              <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
-                <Path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-              </Svg>
-              <Text style={styles.restartBtnText}>Update & Restart Now</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.laterBtn} onPress={handleDismiss} activeOpacity={0.7}>
+            <Text style={styles.laterBtnText}>Later</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -149,152 +195,107 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.78)",
+    backgroundColor: "rgba(0, 0, 0, 0.82)",
     justifyContent: "center",
     alignItems: "center",
-    padding: spacing.md,
+    padding: spacing.lg,
     zIndex: 99999,
   },
   card: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 360,
     backgroundColor: "#0B0F19",
-    borderRadius: radius.lg,
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "rgba(99, 102, 241, 0.4)",
-    padding: spacing.lg,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
     alignItems: "center",
     shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 16,
   },
-  iconCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "#6366F1",
+  rocketWrapper: {
+    width: 104,
+    height: 104,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.sm,
-    shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 6,
+    marginBottom: 16,
+    position: "relative",
   },
-  headerTag: {
-    color: "#6366F1",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.5,
-    marginBottom: 4,
+  glowCircle: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "rgba(99, 102, 241, 0.16)",
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.35)",
+  },
+  rocketContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rocketEmoji: {
+    fontSize: 52,
+    lineHeight: 60,
+  },
+  thrustFlame: {
+    width: 16,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#F59E0B",
+    marginTop: -4,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
   title: {
     color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 21,
+    fontWeight: "900",
     textAlign: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 8,
+    letterSpacing: -0.3,
   },
   description: {
     color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  metaBox: {
-    width: "100%",
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-    gap: 6,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  metaLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  metaValue: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  countdownBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(99, 102, 241, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    width: "100%",
-    marginBottom: spacing.md,
-  },
-  countdownText: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  countdownDigit: {
-    color: "#818CF8",
-    fontWeight: "900",
     fontSize: 14,
-  },
-  pauseBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: radius.sm,
-  },
-  pauseBtnText: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  btnRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    width: "100%",
-  },
-  laterBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  laterBtnText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: "700",
+    lineHeight: 20,
+    textAlign: "center",
+    marginBottom: 24,
   },
   restartBtn: {
-    flex: 2,
-    flexDirection: "row",
+    width: "100%",
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    backgroundColor: "#6366F1",
-    borderRadius: radius.md,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
   },
   restartBtnText: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+  laterBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 8,
+  },
+  laterBtnText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
-
