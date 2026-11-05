@@ -203,7 +203,10 @@ export default function TabsLayout() {
       tabBar={(props) => <ResponsiveTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        sceneStyle: isDesktop ? { marginLeft: SIDEBAR_WIDTH } : undefined,
+        sceneStyle: {
+          backgroundColor: colors.background,
+          ...(isDesktop ? { marginLeft: SIDEBAR_WIDTH } : {}),
+        },
       }}
     >
       <Tabs.Screen
