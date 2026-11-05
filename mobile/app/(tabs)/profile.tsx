@@ -305,10 +305,10 @@ export default function ProfileScreen() {
                         onPress={() => {
                           setSelectedProfileCert({
                             id: cred.id,
-                            studentName: profile?.fullName || "Bindu Talari",
-                            department: profile?.branch || "Computer Science and Engineering",
-                            institution: profile?.institution || "K.S.R.M. College of Engineering (Autonomous)",
-                            graduationYear: profile?.graduationYear || 2026,
+                            studentName: profile?.fullName || "Student",
+                            department: profile?.branch || "Computer Science",
+                            institution: profile?.institution || "SmartEvolve Academy",
+                            graduationYear: profile?.graduationYear,
                             courseOrSkillTitle: cred.achievementTitle,
                             category: cred.credentialType || "Academic Specialization",
                             proficiency: 95,

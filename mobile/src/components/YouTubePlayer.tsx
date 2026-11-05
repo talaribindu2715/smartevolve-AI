@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,9 @@ import {
   Linking,
   Platform,
   Image,
+  AppState,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path, Polygon } from "react-native-svg";
 import { colors, radius, spacing } from "../theme/colors";
 
@@ -33,6 +35,17 @@ export const extractYouTubeVideoId = (input: string): string => {
   return match && match[2].length === 11 ? match[2] : trimmed;
 };
 
+export const formatTime = (seconds: number): string => {
+  if (isNaN(seconds) || seconds <= 0) return "0:00";
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  if (hrs > 0) {
+    return `${hrs}:${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+};
+
 export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   videoIdOrUrl,
   title,
@@ -47,13 +60,147 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
 
   const videoId = useMemo(() => extractYouTubeVideoId(videoIdOrUrl), [videoIdOrUrl]);
+  const [startSeconds, setStartSeconds] = useState<number>(0);
+  const [isLoadedStorage, setIsLoadedStorage] = useState<boolean>(false);
+  const [resumedTimeDisplay, setResumedTimeDisplay] = useState<number | null>(null);
+  const [playerKey, setPlayerKey] = useState<number>(1);
+  const lastSavedTimeRef = useRef<number>(0);
+
   const fallbackThumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-  const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=https://www.youtube.com`;
+
+  // 1. Load saved playback position from AsyncStorage
+  useEffect(() => {
+    let isMounted = true;
+    if (!videoId) {
+      setIsLoadedStorage(true);
+      return;
+    }
+
+    AsyncStorage.getItem(`smartevolve_video_resume_${videoId}`)
+      .then((val) => {
+        if (!isMounted) return;
+        if (val) {
+          const parsed = parseInt(val, 10);
+          if (!isNaN(parsed) && parsed > 3) {
+            setStartSeconds(parsed);
+            setResumedTimeDisplay(parsed);
+            lastSavedTimeRef.current = parsed;
+          } else {
+            setStartSeconds(0);
+            setResumedTimeDisplay(null);
+            lastSavedTimeRef.current = 0;
+          }
+        } else {
+          setStartSeconds(0);
+          setResumedTimeDisplay(null);
+          lastSavedTimeRef.current = 0;
+        }
+        setIsLoadedStorage(true);
+      })
+      .catch(() => {
+        if (isMounted) setIsLoadedStorage(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [videoId]);
+
+  // 2. Position saving helpers
+  const savePosition = (timeInSeconds: number) => {
+    const sec = Math.floor(timeInSeconds);
+    if (sec > 3 && Math.abs(sec - lastSavedTimeRef.current) >= 2) {
+      lastSavedTimeRef.current = sec;
+      AsyncStorage.setItem(`smartevolve_video_resume_${videoId}`, String(sec)).catch(() => {});
+    }
+  };
+
+  const handleVideoEnded = () => {
+    lastSavedTimeRef.current = 0;
+    setResumedTimeDisplay(null);
+    AsyncStorage.removeItem(`smartevolve_video_resume_${videoId}`).catch(() => {});
+    onEnded?.();
+  };
+
+  const handleResetToStart = async () => {
+    lastSavedTimeRef.current = 0;
+    setStartSeconds(0);
+    setResumedTimeDisplay(null);
+    await AsyncStorage.removeItem(`smartevolve_video_resume_${videoId}`).catch(() => {});
+    setPlayerKey((k) => k + 1);
+  };
+
+  // 3. Web message listener for YouTube Iframe API
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+
+    const handleWebMessage = (event: MessageEvent) => {
+      try {
+        let data = event.data;
+        if (typeof data === "string") {
+          data = JSON.parse(data);
+        }
+        if (data && data.event === "infoDelivery" && data.info) {
+          if (typeof data.info.currentTime === "number") {
+            savePosition(data.info.currentTime);
+          }
+          if (data.info.playerState === 0) {
+            handleVideoEnded();
+          } else if (data.info.playerState === 2) {
+            // Paused: explicitly persist current time immediately
+            if (typeof data.info.currentTime === "number" && data.info.currentTime > 3) {
+              const sec = Math.floor(data.info.currentTime);
+              lastSavedTimeRef.current = sec;
+              AsyncStorage.setItem(`smartevolve_video_resume_${videoId}`, String(sec)).catch(() => {});
+            }
+          }
+        }
+      } catch (_) {}
+    };
+
+    window.addEventListener("message", handleWebMessage);
+
+    // Persist position on tab close / reload
+    const handleBeforeUnload = () => {
+      if (lastSavedTimeRef.current > 3 && videoId) {
+        try {
+          localStorage.setItem(`smartevolve_video_resume_${videoId}`, String(lastSavedTimeRef.current));
+        } catch (_) {}
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("message", handleWebMessage);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [videoId]);
+
+  // 4. Mobile AppState listener (save timestamp if app is minimized or backgrounded)
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState.match(/inactive|background/)) {
+        if (lastSavedTimeRef.current > 3 && videoId) {
+          AsyncStorage.setItem(
+            `smartevolve_video_resume_${videoId}`,
+            String(lastSavedTimeRef.current)
+          ).catch(() => {});
+        }
+      }
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, [videoId]);
 
   const handleOpenExternal = async () => {
-    const appUri = `vnd.youtube:${videoId}`;
-    const webUri = `https://www.youtube.com/watch?v=${videoId}`;
+    const resumeSeconds = lastSavedTimeRef.current || startSeconds || 0;
+    const timeParam = resumeSeconds > 3 ? `&t=${resumeSeconds}s` : "";
+    const appUri = `vnd.youtube:${videoId}${resumeSeconds > 3 ? `?t=${resumeSeconds}` : ""}`;
+    const webUri = `https://www.youtube.com/watch?v=${videoId}${timeParam}`;
     try {
       const supported = await Linking.canOpenURL(appUri);
       if (supported) {
@@ -66,12 +213,19 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     });
   };
 
-  // For Web platform
+  // Web Platform
   if (Platform.OS === "web") {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://www.youtube.com";
+    const webEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&start=${startSeconds}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+
     return (
       <View style={[styles.container, style]}>
         <View style={styles.playerFrame}>
-          {!isPlaying ? (
+          {!isLoadedStorage ? (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : !isPlaying ? (
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.thumbnailPoster}
@@ -85,12 +239,15 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
                 </Svg>
               </View>
               <View style={styles.watchBadge}>
-                <Text style={styles.watchBadgeText}>Click to Watch Masterclass</Text>
+                <Text style={styles.watchBadgeText}>
+                  {startSeconds > 3 ? `Resume Masterclass from ${formatTime(startSeconds)}` : "Click to Watch Masterclass"}
+                </Text>
               </View>
             </TouchableOpacity>
           ) : (
             <iframe
-              src={embedUrl}
+              key={`web-player-${videoId}-${playerKey}`}
+              src={webEmbedUrl}
               title={title || "SmartEvolve Masterclass"}
               style={{
                 width: "100%",
@@ -103,6 +260,31 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               allowFullScreen
             />
           )}
+        </View>
+
+        <View style={styles.controlsBar}>
+          <View style={styles.streamingMeta}>
+            <View style={styles.liveDot} />
+            <Text style={styles.streamingText}>Direct Player</Text>
+            {resumedTimeDisplay && resumedTimeDisplay > 3 ? (
+              <View style={styles.resumePill}>
+                <Text style={styles.resumePillText}>⏱️ Resumed at {formatTime(resumedTimeDisplay)}</Text>
+                <TouchableOpacity onPress={handleResetToStart} style={styles.resetBtn}>
+                  <Text style={styles.resetBtnText}>↺ Reset to 0:00</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.externalBtn}
+            onPress={handleOpenExternal}
+            activeOpacity={0.8}
+          >
+            <Svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444">
+              <Polygon points="5 3 19 12 5 21 5 3" />
+            </Svg>
+            <Text style={styles.externalBtnText}>Open in YouTube App ↗</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -130,7 +312,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       background-color: #000000;
       overflow: hidden;
     }
-    iframe {
+    #player {
       width: 100%;
       height: 100%;
       border: 0;
@@ -138,22 +320,82 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   </style>
 </head>
 <body>
-  <iframe
-    id="youtube-player"
-    src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    allowfullscreen>
-  </iframe>
+  <div id="player"></div>
+  <script>
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var player;
+    var timer = null;
+
+    function postMsg(type, currentTime, state) {
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: type,
+          currentTime: currentTime,
+          playerState: state
+        }));
+      }
+    }
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        videoId: '${videoId}',
+        playerVars: {
+          autoplay: 1,
+          start: ${startSeconds},
+          playsinline: 1,
+          rel: 0,
+          modestbranding: 1
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerReady(event) {
+      if (${startSeconds} > 0 && player.seekTo) {
+        player.seekTo(${startSeconds}, true);
+      }
+      player.playVideo();
+    }
+
+    function onPlayerStateChange(event) {
+      // 1 = PLAYING, 2 = PAUSED, 0 = ENDED
+      if (event.data === 1) {
+        if (!timer) {
+          timer = setInterval(function() {
+            if (player && player.getCurrentTime) {
+              postMsg('TIME_UPDATE', Math.floor(player.getCurrentTime()), 1);
+            }
+          }, 2000);
+        }
+      } else {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        if (player && player.getCurrentTime) {
+          postMsg(event.data === 0 ? 'VIDEO_ENDED' : 'TIME_UPDATE', Math.floor(player.getCurrentTime()), event.data);
+        }
+      }
+    }
+  </script>
 </body>
 </html>`;
-  }, [videoId]);
+  }, [videoId, startSeconds, playerKey]);
 
   return (
     <View style={[styles.container, style]}>
       <View style={styles.playerFrame}>
-        {NativeWebView && !hasError ? (
+        {NativeWebView && !hasError && isLoadedStorage ? (
           <>
             <NativeWebView
+              key={`native-player-${videoId}-${playerKey}`}
               source={{
                 html: nativeHtml,
                 baseUrl: "https://com.smartevolve.ai",
@@ -167,6 +409,16 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               mediaPlaybackRequiresUserAction={false}
               allowsFullscreenVideo={true}
               mixedContentMode="always"
+              onMessage={(event: any) => {
+                try {
+                  const data = JSON.parse(event.nativeEvent.data);
+                  if (data.type === "TIME_UPDATE" && typeof data.currentTime === "number") {
+                    savePosition(data.currentTime);
+                  } else if (data.type === "VIDEO_ENDED") {
+                    handleVideoEnded();
+                  }
+                } catch (_) {}
+              }}
               onShouldStartLoadWithRequest={(request: any) => {
                 if (
                   request.url.startsWith("https://www.youtube.com/embed") ||
@@ -210,7 +462,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               </Svg>
             </View>
             <View style={styles.watchBadge}>
-              <Text style={styles.watchBadgeText}>Tap to Play in YouTube App ↗</Text>
+              <Text style={styles.watchBadgeText}>
+                {startSeconds > 3 ? `Resume in YouTube App from ${formatTime(startSeconds)} ↗` : "Tap to Play in YouTube App ↗"}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -219,6 +473,14 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         <View style={styles.streamingMeta}>
           <View style={styles.liveDot} />
           <Text style={styles.streamingText}>Direct Player</Text>
+          {resumedTimeDisplay && resumedTimeDisplay > 3 ? (
+            <View style={styles.resumePill}>
+              <Text style={styles.resumePillText}>⏱️ Resumed at {formatTime(resumedTimeDisplay)}</Text>
+              <TouchableOpacity onPress={handleResetToStart} style={styles.resetBtn}>
+                <Text style={styles.resetBtnText}>↺ Reset to 0:00</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
         <TouchableOpacity
           style={styles.externalBtn}
@@ -318,6 +580,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: 8,
     backgroundColor: colors.surface,
@@ -327,18 +591,47 @@ const styles = StyleSheet.create({
   streamingMeta: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
   },
   liveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.success,
-    marginRight: spacing.xs + 2,
   },
   streamingText: {
     color: colors.textSecondary,
     fontSize: 12,
     fontWeight: "500",
+  },
+  resumePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderColor: "rgba(99, 102, 241, 0.35)",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    gap: 6,
+    marginLeft: 4,
+  },
+  resumePillText: {
+    color: "#818CF8",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  resetBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: radius.sm,
+  },
+  resetBtnText: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: "600",
   },
   externalBtn: {
     flexDirection: "row",

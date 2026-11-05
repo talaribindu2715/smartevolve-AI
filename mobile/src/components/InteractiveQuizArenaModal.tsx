@@ -435,7 +435,7 @@ export function InteractiveQuizArenaModal({
                   <View style={{ flex: 1 }}>
                     <Text style={styles.certUnlockTitle}>🎓 Official Certificate Unlocked!</Text>
                     <Text style={styles.certUnlockSub}>
-                      SmartEvolve Academy & K.S.R.M. College of Engineering verified credential is ready.
+                      Your SmartEvolve Academy verified credential is ready.
                     </Text>
                   </View>
                   <TouchableOpacity

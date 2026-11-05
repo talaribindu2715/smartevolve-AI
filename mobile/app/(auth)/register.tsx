@@ -394,7 +394,7 @@ export default function RegisterScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={styles.input}
-                  placeholder="K.S.R.M. College of Engineering"
+                  placeholder="e.g. University / College name"
                   placeholderTextColor={colors.textMuted}
                   onBlur={onBlur}
                   onChangeText={onChange}

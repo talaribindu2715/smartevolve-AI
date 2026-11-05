@@ -74,7 +74,7 @@ export default function VideoDetailScreen() {
         score: correctCount,
         total,
         percentage: Math.round((correctCount / total) * 100),
-        studentName: profile?.fullName || "Bindu Talari",
+        studentName: profile?.fullName || "Student",
       }).then(() => {
         queryClient.invalidateQueries({ queryKey: ["credentials"] });
         queryClient.invalidateQueries({ queryKey: ["storedEarnedCerts"] });
@@ -288,7 +288,7 @@ export default function VideoDetailScreen() {
         score: correctCount,
         total: quizQuestions.length,
         percentage: scorePct,
-        studentName: profile?.fullName || "Bindu Talari",
+        studentName: profile?.fullName || "Student",
       }).then(() => {
         queryClient.invalidateQueries({ queryKey: ["credentials"] });
         queryClient.invalidateQueries({ queryKey: ["storedEarnedCerts"] });
@@ -718,10 +718,10 @@ export default function VideoDetailScreen() {
           onClose={() => setShowCertModal(false)}
           certificate={{
             id: "SE-GL-" + (effectiveVideo.videoId || "CERT").toUpperCase(),
-            studentName: profile?.fullName || "Bindu Talari",
-            department: profile?.branch || "Computer Science and Engineering",
-            institution: profile?.institution || "K.S.R.M. College of Engineering (Autonomous)",
-            graduationYear: profile?.graduationYear || 2026,
+            studentName: profile?.fullName || "Student",
+            department: profile?.branch || "Computer Science",
+            institution: profile?.institution || "SmartEvolve Academy",
+            graduationYear: profile?.graduationYear,
             courseOrSkillTitle: effectiveVideo.title,
             category: effectiveVideo.category || effectiveVideo.skillName || "Computer Science",
             proficiency: quizSubmitted ? Math.round((quizScore / quizQuestions.length) * 100) : 95,
