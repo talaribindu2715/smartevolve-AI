@@ -2,7 +2,8 @@ import React, { useEffect, Component, ErrorInfo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../src/api/queryClient";
 import { PaperProvider, MD3DarkTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../src/store/authContext";
@@ -88,15 +89,7 @@ class AppErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState>
   }
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes cache
-      retry: 3, // Auto-retry up to 3 times while Render cloud spins up
-      retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000), // 2s, 4s, 8s backoff
-    },
-  },
-});
+
 
 const paperTheme = {
   ...MD3DarkTheme,

@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../src/store/authContext";
 import { api } from "../../src/api/client";
@@ -31,6 +31,7 @@ const LEARNING_STYLES = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
 
@@ -129,6 +130,18 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     const doLogout = async () => {
       await logout();
+      try {
+        if (router.canDismiss()) {
+          router.dismissAll();
+        }
+      } catch (_) {}
+      try {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "index" as never }],
+        });
+        return;
+      } catch (_) {}
       router.replace("/");
     };
 

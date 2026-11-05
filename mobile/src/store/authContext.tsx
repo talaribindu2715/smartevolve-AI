@@ -4,6 +4,7 @@ import { secureStorage } from "../services/secureStorage";
 import { supabase, isSupabaseConfigured } from "../services/supabase";
 import { Profile } from "../types";
 import { api } from "../api/client";
+import { queryClient } from "../api/queryClient";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -49,6 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (_) {}
           } else if (event === "SIGNED_OUT") {
             await secureStorage.clear();
+            try {
+              queryClient.clear();
+            } catch (_) {}
             setToken(null);
             setUser(null);
             setIsAuthenticated(false);
@@ -130,6 +134,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.clear();
     } catch (_) {}
     await secureStorage.clear();
+    try {
+      queryClient.clear();
+    } catch (_) {}
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);

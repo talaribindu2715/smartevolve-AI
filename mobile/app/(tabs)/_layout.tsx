@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs, useRouter, useNavigation } from "expo-router";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { colors, radius, spacing } from "../../src/theme/colors";
 import { useAuth } from "../../src/store/authContext";
@@ -197,6 +197,25 @@ function ResponsiveTabBar({ state, descriptors, navigation }: any) {
 export default function TabsLayout() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
+  const router = useRouter();
+  const navigation = useNavigation();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      try {
+        const parentNav = navigation.getParent();
+        if (parentNav) {
+          parentNav.reset({
+            index: 0,
+            routes: [{ name: "index" as never }],
+          });
+          return;
+        }
+      } catch (_) {}
+      router.replace("/");
+    }
+  }, [isAuthenticated, isLoading]);
 
   return (
     <Tabs

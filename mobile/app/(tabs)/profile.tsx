@@ -14,7 +14,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useNavigation } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../src/store/authContext";
 import { api } from "../../src/api/client";
@@ -29,13 +29,23 @@ import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { logout } = useAuth();
   const [selectedProfileCert, setSelectedProfileCert] = useState<CertificateData | null>(null);
-
 
   const handleLogout = async () => {
     const doLogout = async () => {
       await logout();
+      try {
+        const parentNav = navigation.getParent();
+        if (parentNav) {
+          parentNav.reset({
+            index: 0,
+            routes: [{ name: "index" as never }],
+          });
+          return;
+        }
+      } catch (_) {}
       try {
         if (router.canDismiss()) {
           router.dismissAll();

@@ -123,13 +123,7 @@ export default function LandingScreen() {
 
           {/* Top Right Actions */}
           <View style={styles.navActions}>
-            {isAuthenticated ? (
-              <TouchableOpacity style={styles.dashboardPill} onPress={() => router.push("/(tabs)")}>
-                <Text style={styles.dashboardPillText}>
-                  Dashboard ({user?.fullName?.split(" ")[0] || "Active"}) →
-                </Text>
-              </TouchableOpacity>
-            ) : isDesktop ? (
+            {isDesktop && !isAuthenticated ? (
               <View style={styles.authButtonsRow}>
                 <TouchableOpacity style={styles.primaryCtaBtn} onPress={navigateToRegister}>
                   <Text style={styles.primaryCtaText}>Start Learning Free →</Text>
@@ -173,7 +167,7 @@ export default function LandingScreen() {
           </View>
 
           {/* Hyperlink Actions Just Below the Image (Exchanged Positions) */}
-          {!isAuthenticated && (
+          {(!isAuthenticated || !isDesktop) && (
             <View style={styles.hyperlinkLinksWrap}>
               <TouchableOpacity
                 onPress={navigateToLogin}
