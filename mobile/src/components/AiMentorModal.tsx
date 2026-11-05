@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View,
   Text,
@@ -159,6 +160,37 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     Array<{ sender: "user" | "gemini"; text: string; isGemini?: boolean }>
   >([]);
   const [isAsking, setIsAsking] = useState(false);
+  const [customKey, setCustomKey] = useState("");
+  const [inputKey, setInputKey] = useState("");
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [keySavedStatus, setKeySavedStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem("smartevolve_gemini_api_key").then((val) => {
+      if (val) {
+        setCustomKey(val);
+        setInputKey(val);
+      }
+    }).catch(() => {});
+  }, [visible]);
+
+  const handleSaveCustomKey = async () => {
+    const trimmed = inputKey.trim();
+    if (!trimmed) {
+      await AsyncStorage.removeItem("smartevolve_gemini_api_key");
+      setCustomKey("");
+      setKeySavedStatus("Key removed. Using platform cognitive AI.");
+      setTimeout(() => setKeySavedStatus(null), 3500);
+      return;
+    }
+    await AsyncStorage.setItem("smartevolve_gemini_api_key", trimmed);
+    setCustomKey(trimmed);
+    setKeySavedStatus("✓ Gemini API Key saved securely on device!");
+    setTimeout(() => {
+      setKeySavedStatus(null);
+      setShowKeyConfig(false);
+    }, 2000);
+  };
 
   const {
     data: aiHealth,
@@ -179,6 +211,36 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     setIsAsking(true);
 
     try {
+      // 1. Direct Google Gemini 1.5 Flash Call if custom key is present
+      const effectiveKey = customKey.trim();
+      if (effectiveKey && effectiveKey.length > 15) {
+        try {
+          const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey}`;
+          const gRes = await fetch(geminiEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: textToSend }] }],
+            }),
+          });
+          if (gRes.ok) {
+            const gData = await gRes.json();
+            const gText = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (gText && gText.trim().length > 0) {
+              setChatLog((prev) => [
+                ...prev,
+                { sender: "gemini", text: gText.trim(), isGemini: true },
+              ]);
+              setIsAsking(false);
+              return;
+            }
+          }
+        } catch (clientEx) {
+          console.warn("Direct Gemini call note:", clientEx);
+        }
+      }
+
+      // 2. Fallback to Cloud Backend AI Advisor & Cognitive Engine
       const res = await api.askAiMentor(textToSend);
       const replyText = getIntelligentMentorResponse(textToSend, res?.reply);
       setChatLog((prev) => [
@@ -186,7 +248,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         {
           sender: "gemini",
           text: replyText,
-          isGemini: res?.isGeminiPowered || res?.aiProvider === "GEMINI" || isGeminiLive,
+          isGemini: res?.isGeminiPowered || res?.aiProvider === "GEMINI" || isGeminiLive || !!effectiveKey,
         },
       ]);
     } catch (err: any) {
@@ -254,10 +316,49 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                 Engine: {isGeminiLive ? (aiHealth?.model || "Gemini 1.5 Flash") : "SmartEvolve Cognitive Core v2.4"} • Latency: {aiHealth?.latencyMs || 48}ms
               </Text>
             </View>
-            <TouchableOpacity style={styles.refreshHealthBtn} onPress={() => refetchHealth()}>
-              <Text style={styles.refreshHealthBtnText}>🔄 Test</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+              <TouchableOpacity
+                style={[styles.refreshHealthBtn, { backgroundColor: showKeyConfig ? colors.primary : "rgba(255,255,255,0.08)" }]}
+                onPress={() => setShowKeyConfig(!showKeyConfig)}
+              >
+                <Text style={styles.refreshHealthBtnText}>⚙️ Key</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.refreshHealthBtn} onPress={() => refetchHealth()}>
+                <Text style={styles.refreshHealthBtnText}>🔄 Test</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Collapsible Custom Gemini Key Settings */}
+          {showKeyConfig && (
+            <View style={styles.keyConfigCard}>
+              <Text style={styles.keyConfigTitle}>Google Gemini API Key Setup</Text>
+              <Text style={styles.keyConfigDesc}>
+                Paste your personal Gemini API key from Google AI Studio (aistudio.google.com/app/apikey) to connect directly:
+              </Text>
+              <TextInput
+                style={styles.keyInput}
+                value={inputKey}
+                onChangeText={setInputKey}
+                placeholder="AIzaSy..."
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={false}
+              />
+              <View style={styles.keyActionRow}>
+                <TouchableOpacity style={styles.keySaveBtn} onPress={handleSaveCustomKey} activeOpacity={0.8}>
+                  <Text style={styles.keySaveBtnText}>Save API Key</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keyCloseBtn} onPress={() => setShowKeyConfig(false)} activeOpacity={0.8}>
+                  <Text style={styles.keyCloseBtnText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+              {keySavedStatus ? (
+                <Text style={styles.keyStatusText}>{keySavedStatus}</Text>
+              ) : null}
+            </View>
+          )}
 
           {/* Quick Prompts */}
           <View style={styles.quickPromptsWrap}>
@@ -386,6 +487,70 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "700",
+  },
+  keyConfigCard: {
+    backgroundColor: "rgba(99, 102, 241, 0.09)",
+    borderColor: "rgba(99, 102, 241, 0.35)",
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  keyConfigTitle: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  keyConfigDesc: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: spacing.xs,
+  },
+  keyInput: {
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    borderColor: colors.cardBorder,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontFamily: "monospace",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: spacing.xs,
+  },
+  keyActionRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  keySaveBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+  },
+  keySaveBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  keyCloseBtn: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+  },
+  keyCloseBtnText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  keyStatusText: {
+    color: colors.success,
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 6,
   },
   healthBanner: {
     flexDirection: "row",

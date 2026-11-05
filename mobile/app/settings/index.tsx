@@ -130,6 +130,17 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     const doLogout = async () => {
       await logout();
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.href = "/";
+        return;
+      }
+      try {
+        const parentNav = navigation.getParent();
+        if (parentNav && parentNav.navigate) {
+          parentNav.navigate("index" as never);
+          return;
+        }
+      } catch (_) {}
       router.replace("/");
     };
 

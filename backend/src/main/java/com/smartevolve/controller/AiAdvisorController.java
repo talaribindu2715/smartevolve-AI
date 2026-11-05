@@ -24,7 +24,15 @@ public class AiAdvisorController {
     @GetMapping("/health")
     @Operation(summary = "Check Google Gemini AI connection and health status")
     public ResponseEntity<java.util.Map<String, Object>> getAiHealth() {
-        return ResponseEntity.ok(geminiAiService.checkGeminiHealth());
+        try {
+            return ResponseEntity.ok(geminiAiService.checkGeminiHealth());
+        } catch (Exception ex) {
+            java.util.Map<String, Object> fallback = new java.util.HashMap<>();
+            fallback.put("status", "ERROR");
+            fallback.put("working", false);
+            fallback.put("message", "Service notice: " + ex.getMessage());
+            return ResponseEntity.ok(fallback);
+        }
     }
 
     @GetMapping("/skill-analysis")

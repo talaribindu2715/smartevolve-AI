@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -22,12 +22,20 @@ import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { AiMentorModal } from "../../src/components/AiMentorModal";
 import { colors, radius, spacing } from "../../src/theme/colors";
+import { useAuth } from "../../src/store/authContext";
 import { getStoredEarnedCertificates } from "../../src/services/certificateService";
 import { MASTER_VIDEOS } from "../../src/data/masterVideos";
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [aiMentorVisible, setAiMentorVisible] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, isAuthLoading]);
 
   const {
     data: dashboard,

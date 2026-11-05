@@ -138,7 +138,7 @@ export default function EvolutionScreen() {
           <Card style={styles.trendCard}>
             <View style={styles.trendRow}>
               <View style={styles.trendCol}>
-                <Text style={styles.trendVal}>{trends.growthTrajectory || "BALANCED"}</Text>
+                <Text style={styles.trajectoryVal} numberOfLines={1}>{trends.growthTrajectory || "BALANCED"}</Text>
                 <Text style={styles.trendSub}>Trajectory</Text>
               </View>
               <View style={styles.divider} />
@@ -434,6 +434,18 @@ const styles = StyleSheet.create({
   trendCol: {
     flex: 1,
     alignItems: "center",
+  },
+  trajectoryVal: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    overflow: "hidden",
+    textAlign: "center",
   },
   trendVal: {
     color: colors.primary,

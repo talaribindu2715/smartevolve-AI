@@ -304,36 +304,42 @@ public class GeminiAiService {
      */
     public Map<String, Object> checkGeminiHealth() {
         Map<String, Object> res = new LinkedHashMap<>();
-        boolean hasKey = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
-        res.put("provider", "GOOGLE_GEMINI");
-        res.put("model", geminiModel);
-        res.put("apiKeyConfigured", hasKey);
+        try {
+            boolean hasKey = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
+            res.put("provider", "GOOGLE_GEMINI");
+            res.put("model", geminiModel != null ? geminiModel : "gemini-1.5-flash");
+            res.put("apiKeyConfigured", hasKey);
 
-        if (!hasKey) {
-            res.put("status", "NOT_CONFIGURED");
-            res.put("working", false);
-            res.put("message", "GEMINI_API_KEY environment variable is not configured on the server. Set GEMINI_API_KEY in Render dashboard to activate Gemini AI.");
-            return res;
-        }
+            if (!hasKey) {
+                res.put("status", "NOT_CONFIGURED");
+                res.put("working", false);
+                res.put("message", "GEMINI_API_KEY is not configured on the server. Set GEMINI_API_KEY in Render dashboard or paste it directly in the app AI Mentor.");
+                return res;
+            }
 
-        long start = System.currentTimeMillis();
-        String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
-        String apiResponse = callGeminiApi(testPrompt);
-        long latencyMs = System.currentTimeMillis() - start;
+            long start = System.currentTimeMillis();
+            String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
+            String apiResponse = callGeminiApi(testPrompt);
+            long latencyMs = System.currentTimeMillis() - start;
 
-        if (apiResponse != null && !apiResponse.isBlank()) {
-            res.put("status", "ONLINE");
-            res.put("working", true);
-            res.put("latencyMs", latencyMs);
-            res.put("geminiResponse", apiResponse.trim());
-            res.put("message", "Google Gemini AI API is connected and responding in real-time!");
-        } else {
+            if (apiResponse != null && !apiResponse.isBlank()) {
+                res.put("status", "ONLINE");
+                res.put("working", true);
+                res.put("latencyMs", latencyMs);
+                res.put("geminiResponse", apiResponse.trim());
+                res.put("message", "Google Gemini AI API is connected and responding in real-time!");
+            } else {
+                res.put("status", "ERROR");
+                res.put("working", false);
+                res.put("latencyMs", latencyMs);
+                res.put("message", "Gemini API call returned empty. Verify GEMINI_API_KEY in Render dashboard.");
+            }
+        } catch (Exception ex) {
+            log.error("Gemini health check error: ", ex);
             res.put("status", "ERROR");
             res.put("working", false);
-            res.put("latencyMs", latencyMs);
-            res.put("message", "Gemini API call failed. Verify that GEMINI_API_KEY has Gemini 1.5 Flash access enabled.");
+            res.put("message", "Gemini service notice: " + ex.getMessage());
         }
-
         return res;
     }
 
@@ -346,7 +352,10 @@ public class GeminiAiService {
         }
 
         try {
-            String url = String.format("%s/%s:generateContent?key=%s", geminiBaseUrl, geminiModel, geminiApiKey);
+            String cleanKey = geminiApiKey.trim().replaceAll("^[\"']|[\"']$", "");
+            String cleanModel = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-1.5-flash";
+            String cleanBase = (geminiBaseUrl != null && !geminiBaseUrl.isBlank()) ? geminiBaseUrl.trim() : "https://generativelanguage.googleapis.com/v1beta/models";
+            String url = cleanBase + "/" + cleanModel + ":generateContent?key=" + cleanKey;
 
             Map<String, Object> part = Map.of("text", prompt);
             Map<String, Object> content = Map.of("parts", List.of(part));

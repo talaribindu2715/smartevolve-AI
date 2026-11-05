@@ -17,6 +17,7 @@ import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { CardSkeleton, Skeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
+import { MASTER_VIDEOS } from "../../src/data/masterVideos";
 
 export default function CareerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,6 +36,37 @@ export default function CareerDetailScreen() {
     queryFn: () => api.getCareerDetail(id!),
     enabled: !!id,
   });
+
+  // Find top matching masterclass for this career
+  const primaryCareerVideo = React.useMemo(() => {
+    if (!career) return null;
+    const kw = (career.name + " " + career.category + " " + (career.description || "")).toLowerCase();
+    const matched = MASTER_VIDEOS.find((v) => {
+      const vt = (v.title + " " + (v.skillName || "") + " " + (v.category || "")).toLowerCase();
+      if (kw.includes("full-stack") || kw.includes("full stack")) {
+        return vt.includes("next.js") || vt.includes("react") || vt.includes("web");
+      }
+      if (kw.includes("ai") || kw.includes("machine learning")) {
+        return vt.includes("machine learning") || vt.includes("python") || vt.includes("ai");
+      }
+      if (kw.includes("cloud") || kw.includes("devops")) {
+        return vt.includes("docker") || vt.includes("kubernetes") || vt.includes("aws");
+      }
+      if (kw.includes("java")) {
+        return vt.includes("java") || vt.includes("spring");
+      }
+      return vt.includes(career.name.toLowerCase());
+    });
+    return matched || MASTER_VIDEOS[0];
+  }, [career]);
+
+  const findVideoForSkill = (skillName: string) => {
+    const sn = (skillName || "").toLowerCase();
+    return MASTER_VIDEOS.find((v) => {
+      const vt = (v.title + " " + (v.skillName || "") + " " + (v.category || "")).toLowerCase();
+      return vt.includes(sn) || sn.includes((v.skillName || "").toLowerCase());
+    });
+  };
 
   const setGoalMutation = useMutation({
     mutationFn: () => api.setCareerGoal(id!),
@@ -163,8 +195,14 @@ export default function CareerDetailScreen() {
                   />
                 )}
                 <Button
-                  title="Video Lessons"
-                  onPress={() => router.push("/videos")}
+                  title="🎬 Video Lessons"
+                  onPress={() => {
+                    if (primaryCareerVideo) {
+                      router.push(`/videos/${primaryCareerVideo.id || primaryCareerVideo.videoId}` as any);
+                    } else {
+                      router.push("/videos");
+                    }
+                  }}
                   variant="outline"
                   size="md"
                 />
@@ -259,6 +297,19 @@ export default function CareerDetailScreen() {
                       value={gap.currentProficiency}
                       targetValue={gap.requiredProficiency}
                     />
+                    {(() => {
+                      const skV = findVideoForSkill(gap.skillName);
+                      if (!skV) return null;
+                      return (
+                        <TouchableOpacity
+                          style={styles.gapVideoPill}
+                          onPress={() => router.push(`/videos/${skV.id || skV.videoId}` as any)}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={styles.gapVideoPillText}>▶ Watch {gap.skillName} Lesson</Text>
+                        </TouchableOpacity>
+                      );
+                    })()}
                   </View>
                 ))}
               </Card>
@@ -468,6 +519,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
     textTransform: "uppercase",
+  },
+  gapVideoPill: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    borderColor: "rgba(99, 102, 241, 0.35)",
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 6,
+  },
+  gapVideoPillText: {
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "700",
   },
   gapRow: {
     marginVertical: spacing.xs,
