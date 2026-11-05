@@ -172,23 +172,23 @@ export default function LandingScreen() {
             </Animated.View>
           </View>
 
-          {/* Hyperlink Actions Just Below the Image */}
+          {/* Hyperlink Actions Just Below the Image (Exchanged Positions) */}
           {!isAuthenticated && (
             <View style={styles.hyperlinkLinksWrap}>
-              <TouchableOpacity
-                onPress={navigateToRegister}
-                activeOpacity={0.7}
-                style={styles.hyperlinkItem}
-              >
-                <Text style={styles.primaryHyperlinkText}>Start Learning Free →</Text>
-              </TouchableOpacity>
-
               <TouchableOpacity
                 onPress={navigateToLogin}
                 activeOpacity={0.7}
                 style={styles.hyperlinkItem}
               >
                 <Text style={styles.secondaryHyperlinkText}>Sign In to Workspace</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={navigateToRegister}
+                activeOpacity={0.7}
+                style={styles.hyperlinkItem}
+              >
+                <Text style={styles.primaryHyperlinkText}>Start Learning Free →</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -321,23 +321,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  secondaryHyperlinkText: {
+    color: "#E2E8F0",
+    fontSize: 15.5,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
   primaryHyperlinkText: {
     color: "#818CF8",
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: "800",
     letterSpacing: 0.3,
-  },
-  secondaryHyperlinkText: {
-    color: "#94A3B8",
-    fontSize: 14.5,
-    fontWeight: "600",
-    letterSpacing: 0.2,
   },
   heroSection: {
     width: "100%",
     alignItems: "center",
     justifyContent: "flex-start",
-    paddingTop: 4,
+    paddingTop: 24,
     paddingBottom: spacing.sm,
     gap: 8,
   },
