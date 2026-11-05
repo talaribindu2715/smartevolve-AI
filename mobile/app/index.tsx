@@ -334,12 +334,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   heroSection: {
+    flex: 1,
     width: "100%",
     alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: 24,
-    paddingBottom: spacing.sm,
-    gap: 8,
+    justifyContent: "center",
+    paddingTop: 44,
+    paddingBottom: 36,
+    gap: 10,
   },
   heroSectionDesktop: {
     flexDirection: "row",
@@ -347,6 +348,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     paddingVertical: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
     gap: 0,
   },
   heroLeftCol: {
