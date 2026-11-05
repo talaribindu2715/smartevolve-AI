@@ -113,61 +113,63 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <AppErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <PaperProvider theme={paperTheme}>
-              <StatusBar style="light" backgroundColor={colors.background} />
-              <OTAUpdateModal initialDelayMs={3000} />
-              <Stack
-                screenOptions={{
-                  headerStyle: { backgroundColor: colors.background },
-                  headerTintColor: colors.textPrimary,
-                  headerShadowVisible: false,
-                  contentStyle: { backgroundColor: colors.background },
-                }}
-              >
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/reset-password" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="career/[id]"
-                  options={{ title: "Career Analysis", headerShown: true }}
-                />
-                <Stack.Screen
-                  name="learning/[id]"
-                  options={{ title: "Learning Module", headerShown: true }}
-                />
-                <Stack.Screen
-                  name="assessment/[id]"
-                  options={{ title: "Skill Assessment", headerShown: true }}
-                />
-                <Stack.Screen
-                  name="credentials/index"
-                  options={{ title: "Blockchain Credentials", headerShown: true }}
-                />
-                <Stack.Screen
-                  name="settings/index"
-                  options={{ title: "Settings", headerShown: true }}
-                />
-                <Stack.Screen
-                  name="videos/index"
-                  options={{ title: "SmartEvolve Academy", headerShown: true }}
-                />
-                <Stack.Screen
-                  name="videos/[id]"
-                  options={{ title: "Video Masterclass", headerShown: true }}
-                />
-              </Stack>
-            </PaperProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </AppErrorBoundary>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <AppErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <PaperProvider theme={paperTheme}>
+                <StatusBar style="light" backgroundColor={colors.background} />
+                <OTAUpdateModal initialDelayMs={3000} />
+                <Stack
+                  screenOptions={{
+                    headerStyle: { backgroundColor: colors.background },
+                    headerTintColor: colors.textPrimary,
+                    headerShadowVisible: false,
+                    contentStyle: { backgroundColor: colors.background },
+                  }}
+                >
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)/register" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)/forgot-password" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)/reset-password" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="career/[id]"
+                    options={{ title: "Career Analysis", headerShown: true }}
+                  />
+                  <Stack.Screen
+                    name="learning/[id]"
+                    options={{ title: "Learning Module", headerShown: true }}
+                  />
+                  <Stack.Screen
+                    name="assessment/[id]"
+                    options={{ title: "Skill Assessment", headerShown: true }}
+                  />
+                  <Stack.Screen
+                    name="credentials/index"
+                    options={{ title: "Blockchain Credentials", headerShown: true }}
+                  />
+                  <Stack.Screen
+                    name="settings/index"
+                    options={{ title: "Settings", headerShown: true }}
+                  />
+                  <Stack.Screen
+                    name="videos/index"
+                    options={{ title: "SmartEvolve Academy", headerShown: true }}
+                  />
+                  <Stack.Screen
+                    name="videos/[id]"
+                    options={{ title: "Video Masterclass", headerShown: true }}
+                  />
+                </Stack>
+              </PaperProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </AppErrorBoundary>
+      </View>
     </SafeAreaProvider>
   );
 }

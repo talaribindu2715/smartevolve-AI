@@ -21,8 +21,6 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [autoRestartActive, setAutoRestartActive] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{
     version?: string;
     channel?: string;
@@ -30,7 +28,6 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
   }>({});
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Fresh app startup delay: precisely 3 seconds after opening the APK
@@ -40,7 +37,6 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
   }, [initialDelayMs]);
 
@@ -66,9 +62,8 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
           runtimeVersion: typeof Updates.runtimeVersion === "string" ? Updates.runtimeVersion : "1.0.0",
         });
 
-        // Open modal & keep open until user taps Update & Restart Now
+        // Open modal & keep visible permanently until user chooses an action
         setModalVisible(true);
-        setAutoRestartActive(false);
       }
     } catch (err) {
       console.warn("OTA update check failed or offline:", err);
@@ -78,33 +73,7 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
     }
   };
 
-  const startCountdown = () => {
-    setCountdown(3);
-    setAutoRestartActive(true);
-
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev === null) return null;
-        if (prev <= 1) {
-          clearInterval(countdownIntervalRef.current!);
-          triggerReload();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handlePauseCountdown = () => {
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    setAutoRestartActive(false);
-    setCountdown(null);
-  };
-
   const triggerReload = async () => {
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     try {
       if (Updates.isEnabled) {
         await Updates.reloadAsync();
@@ -120,7 +89,6 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
   };
 
   const handleDismiss = () => {
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     setModalVisible(false);
   };
 
@@ -158,18 +126,6 @@ export function OTAUpdateModal({ initialDelayMs = 3000 }: OTAUpdateModalProps) {
               <Text style={[styles.metaValue, { color: "#10B981" }]}>✓ Ready to Execute</Text>
             </View>
           </View>
-
-          {/* Auto Restart Indicator */}
-          {autoRestartActive && countdown !== null && (
-            <View style={styles.countdownBox}>
-              <Text style={styles.countdownText}>
-                Restarting automatically in <Text style={styles.countdownDigit}>{countdown}s</Text>
-              </Text>
-              <TouchableOpacity onPress={handlePauseCountdown} style={styles.pauseBtn}>
-                <Text style={styles.pauseBtnText}>Pause</Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* Action Buttons */}
           <View style={styles.btnRow}>

@@ -6,7 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "smartevolve",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0F19",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
@@ -17,6 +18,7 @@
       "supportsTablet": true
     },
     "android": {
+      "backgroundColor": "#0B0F19",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0F19"
@@ -26,7 +28,8 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "backgroundColor": "#0B0F19"
     },
     "updates": {
       "enabled": true,
