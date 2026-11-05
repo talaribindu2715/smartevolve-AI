@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Share,
+  Linking,
   useWindowDimensions,
 } from "react-native";
 import * as Print from "expo-print";
@@ -526,11 +527,18 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
         );
       }
     } catch (err: any) {
-      console.warn("In-app PDF generation issue:", err);
-      Alert.alert(
-        "Certificate Ready",
-        `Generated ${dynamicFileName}.\n\nFile saved to device.`
-      );
+      console.warn("In-app native PDF unavailable, opening print engine:", err);
+      const origin = "https://smartevolve-ai-mobile-sand.vercel.app";
+      const printUrl = `${origin}/credentials?verify=${encodeURIComponent(certCode)}&name=${encodeURIComponent(studentName)}&title=${encodeURIComponent(certificate.courseOrSkillTitle)}&print=1`;
+      try {
+        await Linking.openURL(printUrl);
+      } catch (_) {
+        Share.share({
+          title: dynamicFileName,
+          message: `Official Certificate for ${studentName} - ${certificate.courseOrSkillTitle}\n\nVerify and Download: ${printUrl}`,
+          url: printUrl,
+        });
+      }
     } finally {
       setIsGeneratingPdf(false);
     }

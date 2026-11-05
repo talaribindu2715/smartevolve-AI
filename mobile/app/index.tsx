@@ -10,12 +10,14 @@ import {
   Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useAuth } from "../src/store/authContext";
 import { colors, radius, spacing } from "../src/theme/colors";
 
 export default function LandingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { isAuthenticated, isLoading, user } = useAuth();
   const isDesktop = width >= 768;
@@ -86,13 +88,13 @@ export default function LandingScreen() {
   const gearImageSize = isDesktop ? 440 : Math.min(Math.round(width * 0.74), 310);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
       <ScrollView
         contentContainerStyle={[styles.contentWrapper, isDesktop && styles.contentWrapperDesktop]}
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        {/* Top Navbar with Action Buttons */}
+        {/* Top Navbar */}
         <View style={styles.navbar}>
           <View style={styles.brandGroup}>
             <View style={styles.logoBadge}>
@@ -119,7 +121,7 @@ export default function LandingScreen() {
             </Text>
           </View>
 
-          {/* Top Right Actions: Start Learning Free & Sign In to Workspace */}
+          {/* Top Right Actions */}
           <View style={styles.navActions}>
             {isAuthenticated ? (
               <TouchableOpacity style={styles.dashboardPill} onPress={() => router.push("/(tabs)")}>
@@ -127,7 +129,7 @@ export default function LandingScreen() {
                   Dashboard ({user?.fullName?.split(" ")[0] || "Active"}) →
                 </Text>
               </TouchableOpacity>
-            ) : (
+            ) : isDesktop ? (
               <View style={styles.authButtonsRow}>
                 <TouchableOpacity style={styles.primaryCtaBtn} onPress={navigateToRegister}>
                   <Text style={styles.primaryCtaText}>Start Learning Free →</Text>
@@ -137,6 +139,10 @@ export default function LandingScreen() {
                   <Text style={styles.secondaryCtaText}>Sign In to Workspace</Text>
                 </TouchableOpacity>
               </View>
+            ) : (
+              <TouchableOpacity style={styles.mobileNavSignInBtn} onPress={navigateToLogin}>
+                <Text style={styles.mobileNavSignInText}>Sign In</Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -147,6 +153,19 @@ export default function LandingScreen() {
             <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
               One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
             </Text>
+
+            {/* Mobile Hero Actions - Beautifully centered and aligned */}
+            {!isDesktop && !isAuthenticated && (
+              <View style={styles.mobileHeroActions}>
+                <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
+                  <Text style={styles.heroPrimaryBtnText}>Start Learning Free →</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
+                  <Text style={styles.heroSecondaryBtnText}>Sign In to Workspace</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Right Column: Golden Blockchain & AI Gear Image */}
@@ -201,12 +220,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   brandGroup: {
     flexDirection: "row",
@@ -286,6 +303,60 @@ const styles = StyleSheet.create({
   dashboardPillText: {
     color: "#FFFFFF",
     fontSize: 13,
+    fontWeight: "700",
+  },
+  mobileNavSignInBtn: {
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderColor: "rgba(99, 102, 241, 0.4)",
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  mobileNavSignInText: {
+    color: "#818CF8",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  mobileHeroActions: {
+    width: "100%",
+    maxWidth: 360,
+    alignItems: "center",
+    gap: 10,
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  heroPrimaryBtn: {
+    backgroundColor: "#6366F1",
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  heroPrimaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  heroSecondaryBtn: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 1,
+    width: "100%",
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroSecondaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "700",
   },
   heroSection: {
