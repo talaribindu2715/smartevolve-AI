@@ -139,11 +139,7 @@ export default function LandingScreen() {
                   <Text style={styles.secondaryCtaText}>Sign In to Workspace</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
-              <TouchableOpacity style={styles.mobileNavSignInBtn} onPress={navigateToLogin}>
-                <Text style={styles.mobileNavSignInText}>Sign In</Text>
-              </TouchableOpacity>
-            )}
+            ) : null}
           </View>
         </View>
 
@@ -153,22 +149,9 @@ export default function LandingScreen() {
             <Text style={[styles.heroHeadline, isDesktop && styles.heroHeadlineDesktop]}>
               One Platform.{"\n"}Every Skill. Every{"\n"}Credential.
             </Text>
-
-            {/* Mobile Hero Actions - Beautifully centered and aligned */}
-            {!isDesktop && !isAuthenticated && (
-              <View style={styles.mobileHeroActions}>
-                <TouchableOpacity style={styles.heroPrimaryBtn} onPress={navigateToRegister}>
-                  <Text style={styles.heroPrimaryBtnText}>Start Learning Free →</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.heroSecondaryBtn} onPress={navigateToLogin}>
-                  <Text style={styles.heroSecondaryBtnText}>Sign In to Workspace</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
 
-          {/* Right Column: Golden Blockchain & AI Gear Image */}
+          {/* Golden Blockchain & AI Gear Image */}
           <View style={[styles.heroImageContainer, isDesktop && styles.heroImageContainerDesktop]}>
             <Animated.View
               style={{
@@ -188,6 +171,27 @@ export default function LandingScreen() {
               />
             </Animated.View>
           </View>
+
+          {/* Hyperlink Actions Just Below the Image */}
+          {!isAuthenticated && (
+            <View style={styles.hyperlinkLinksWrap}>
+              <TouchableOpacity
+                onPress={navigateToRegister}
+                activeOpacity={0.7}
+                style={styles.hyperlinkItem}
+              >
+                <Text style={styles.primaryHyperlinkText}>Start Learning Free →</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={navigateToLogin}
+                activeOpacity={0.7}
+                style={styles.hyperlinkItem}
+              >
+                <Text style={styles.secondaryHyperlinkText}>Sign In to Workspace</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -305,59 +309,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  mobileNavSignInBtn: {
-    backgroundColor: "rgba(99, 102, 241, 0.15)",
-    borderColor: "rgba(99, 102, 241, 0.4)",
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
+  hyperlinkLinksWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.md,
+    gap: 8,
   },
-  mobileNavSignInText: {
+  hyperlinkItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryHyperlinkText: {
     color: "#818CF8",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  mobileHeroActions: {
-    width: "100%",
-    maxWidth: 360,
-    alignItems: "center",
-    gap: 10,
-    marginTop: 14,
-    marginBottom: 8,
-  },
-  heroPrimaryBtn: {
-    backgroundColor: "#6366F1",
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#6366F1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  heroPrimaryBtnText: {
-    color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "800",
+    letterSpacing: 0.3,
   },
-  heroSecondaryBtn: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderWidth: 1,
-    width: "100%",
-    paddingVertical: 13,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroSecondaryBtnText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
+  secondaryHyperlinkText: {
+    color: "#94A3B8",
+    fontSize: 14.5,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
   heroSection: {
     width: "100%",
