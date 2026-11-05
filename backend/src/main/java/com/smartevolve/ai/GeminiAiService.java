@@ -222,11 +222,7 @@ public class GeminiAiService {
         AiResult aiResult = executeAiPrompt(prompt);
         boolean isAiPowered = !"HEURISTIC".equals(aiResult.provider);
 
-        String reply = isAiPowered ? aiResult.text : String.format(
-                "That is a great question regarding %s! In SmartEvolve AI, we recommend focusing on conceptual understanding first, followed immediately by code practice. " +
-                "Check your active Roadmap in the Learn tab to unlock the next milestone, and complete the diagnostic quiz to calibrate your proficiency.",
-                (careerContext != null ? careerContext : "your learning path")
-        );
+        String reply = isAiPowered ? aiResult.text : generateIntelligentFallback(userMessage, careerContext);
 
         List<String> followUps = Arrays.asList(
                 "What specific projects should I build for my portfolio?",
@@ -240,6 +236,67 @@ public class GeminiAiService {
                 .isGeminiPowered(isAiPowered)
                 .aiProvider(aiResult.provider)
                 .build();
+    }
+
+    /**
+     * Topic-aware intelligent cognitive fallback when cloud AI providers are unconfigured or offline.
+     */
+    private String generateIntelligentFallback(String userMessage, String careerContext) {
+        String msg = (userMessage != null ? userMessage.toLowerCase().trim() : "");
+        String career = (careerContext != null ? careerContext : "Full Stack Software Engineering");
+
+        if (msg.contains("full stack") || msg.contains("web dev") || msg.contains("frontend") || msg.contains("backend") || msg.contains("carer") || msg.contains("career")) {
+            return "Starting a career in Full Stack Development is a high-growth pathway! Here is your structured mastery roadmap in SmartEvolve AI:\n\n" +
+                    "1. Frontend Engineering (Weeks 1-3):\n" +
+                    "   • Master modern TypeScript, React 19 component architecture, and responsive state management.\n" +
+                    "   • Build dynamic user interfaces connected to live RESTful APIs.\n\n" +
+                    "2. Backend Architecture (Weeks 4-6):\n" +
+                    "   • Build scalable REST APIs using Spring Boot or Node.js/Express.\n" +
+                    "   • Implement JWT authentication, role-based access control (RBAC), and transactional integrity.\n\n" +
+                    "3. Data & System Design (Weeks 7-9):\n" +
+                    "   • Master PostgreSQL relational schema modeling, indexing, and Redis caching.\n\n" +
+                    "4. DevOps & On-Chain Verification (Weeks 10+):\n" +
+                    "   • Containerize using Docker and deploy to production.\n" +
+                    "   • Complete the Capstone Roadmap assessment in the Learn tab to mint your EVM-verified blockchain credential!";
+        } else if (msg.contains("blockchain") || msg.contains("verification") || msg.contains("evm") || msg.contains("smart contract") || msg.contains("credential") || msg.contains("certificate")) {
+            return "SmartEvolve AI secures academic credentials using a multi-layer EVM blockchain architecture:\n\n" +
+                    "1. Automated Prerequisite Validation:\n" +
+                    "   • Kahn's Directed Acyclic Graph (DAG) algorithm validates competency prerequisites across your learning roadmap.\n\n" +
+                    "2. Cryptographic Digest (SHA-256):\n" +
+                    "   • Your verified quiz scores, institutional identity, and completion timestamps are hashed into a tamper-evident digest.\n\n" +
+                    "3. On-Chain Smart Contract Minting:\n" +
+                    "   • The digest is permanently registered on Polygon/Ethereum Sepolia smart contracts, issuing a unique transaction hash.\n\n" +
+                    "4. Frictionless Global Verification:\n" +
+                    "   • Any employer or institution can scan your certificate's QR code to verify on-chain authenticity instantly without third-party reliance.";
+        } else if (msg.contains("project") || msg.contains("portfolio") || msg.contains("build") || msg.contains("resume")) {
+            return "To stand out to elite tech recruiters in " + career + ", build these 3 production-grade portfolio projects:\n\n" +
+                    "1. Full-Stack Multi-Tenant SaaS Platform:\n" +
+                    "   • Features: Stripe/Razorpay payment gateway, OAuth2 authentication, and background worker queues.\n\n" +
+                    "2. Distributed Real-Time Collaboration Hub:\n" +
+                    "   • Features: WebSockets / Socket.io, Redis Pub/Sub, live presence detection, and optimistic UI updates.\n\n" +
+                    "3. Decentralized Verifiable Credential Registry:\n" +
+                    "   • Features: Solidity smart contracts, IPFS decentralized storage, and ethers.js wallet integration.\n\n" +
+                    "Tip: Link these directly to your GitHub in your SmartEvolve profile!";
+        } else if (msg.contains("interview") || msg.contains("job") || msg.contains("prep") || msg.contains("coding")) {
+            return "Here is your 3-phase technical interview acceleration plan for " + career + ":\n\n" +
+                    "• Phase 1: Data Structures & Algorithms: Master Two-Pointers, Sliding Window, Graph BFS/DFS, and Dynamic Programming.\n" +
+                    "• Phase 2: System Design & Architecture: Practice load balancing, database sharding, caching strategies, and CAP theorem trade-offs.\n" +
+                    "• Phase 3: Behavioral STAR Framework: Prepare real stories about production debugging, architectural trade-offs, and teamwork.\n\n" +
+                    "Start with the diagnostic assessments in the Learn tab to measure your proficiency under timed conditions!";
+        } else if (msg.contains("ai") || msg.contains("machine learning") || msg.contains("ml") || msg.contains("python")) {
+            return "The AI & Cognitive Systems pathway requires a balance of core machine learning and modern LLM engineering:\n\n" +
+                    "1. Foundations: Python vectorization (NumPy), exploratory data analysis (Pandas), and Linear Algebra.\n" +
+                    "2. Predictive ML: Scikit-learn classification, regression, and Random Forest models.\n" +
+                    "3. Modern LLM & RAG Systems: Retrieval-Augmented Generation (RAG) using LangChain/LlamaIndex, Vector Databases (Pinecone/pgvector), and prompt orchestration.\n\n" +
+                    "Navigate to the Learn tab and switch your Career Track to 'AI / Machine Learning Engineer' to activate targeted modules!";
+        } else {
+            return "Regarding \"" + userMessage + "\":\n\n" +
+                    "In " + career + ", practical application yields the highest learning retention. Here is your immediate action plan:\n\n" +
+                    "1. Review Core Modules: Open your active roadmap in the Learn tab to tackle the highest-weighted skill gaps.\n" +
+                    "2. Hands-on Code Practice: Implement practical examples for each concept before moving to the next phase.\n" +
+                    "3. Validate Knowledge: Take the end-of-module assessment quiz to recalibrate your cognitive proficiency score.\n\n" +
+                    "Ask me anything specific about algorithms, system architecture, database design, or blockchain verification!";
+        }
     }
 
     /**

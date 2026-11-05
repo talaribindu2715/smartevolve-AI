@@ -129,7 +129,7 @@ export default function SettingsScreen() {
   const handleLogout = async () => {
     const doLogout = async () => {
       await logout();
-      router.replace("/(auth)/login");
+      router.replace("/");
     };
 
     if (Platform.OS === "web") {

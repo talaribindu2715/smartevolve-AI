@@ -241,7 +241,6 @@ export default function EvolutionScreen() {
           <View style={styles.recsSectionWrap}>
             <View style={styles.recsHeaderRow}>
               <Text style={styles.sectionHeading}>Current Adaptive Recommendations</Text>
-              <Badge label="Active Pipeline" variant="primary" />
             </View>
             <Text style={styles.sectionSub}>
               Targeted learning actions calibrated to your recent performance delta:
@@ -266,7 +265,12 @@ export default function EvolutionScreen() {
         )}
 
         {/* Filter Pills for Timeline Events */}
-        <View style={styles.filterPillsRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterPillsRow}
+          style={{ marginBottom: spacing.md }}
+        >
           <TouchableOpacity
             style={[styles.filterPill, selectedFilter === "ALL" && styles.filterPillActive]}
             onPress={() => setSelectedFilter("ALL")}
@@ -291,7 +295,7 @@ export default function EvolutionScreen() {
               Modules & Videos
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
 
         {/* Timeline Events List */}
         <View style={styles.timelineList}>

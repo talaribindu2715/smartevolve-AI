@@ -407,7 +407,6 @@ export default function DashboardScreen() {
         <View style={styles.sectionWrap}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>AI Adaptive Recommendations</Text>
-            <Badge label="Auto-Updated" variant="info" />
           </View>
 
           {dashboard?.recommendations && dashboard.recommendations.length > 0 ? (

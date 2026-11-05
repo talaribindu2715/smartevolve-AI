@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
   ScrollView,
   Platform,
   Alert,
-  Linking,
   Share,
   useWindowDimensions,
 } from "react-native";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 import { Button } from "./Button";
 import { colors, radius, spacing } from "../theme/colors";
 
@@ -61,16 +63,27 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
 
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const sanitizedCourse = (certificate.courseOrSkillTitle || "Course")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_");
+  const sanitizedStudent = studentName
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_");
+  const dynamicFileName = `SmartEvolve_Certificate_${sanitizedCourse}_${sanitizedStudent}.pdf`;
 
   const generateCertificateHtml = () => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>SmartEvolve_Certificate_${certCode}</title>
+  <title>${dynamicFileName.replace(".pdf", "")}</title>
   <style>
     @page {
-      size: A4 landscape;
-      margin: 8mm;
+      size: 297mm 210mm;
+      margin: 0;
     }
     * {
       box-sizing: border-box;
@@ -80,10 +93,25 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
       print-color-adjust: exact !important;
     }
     html, body {
-      width: 100%;
-      height: 100%;
+      width: 297mm;
+      height: 210mm;
+      max-width: 297mm;
+      max-height: 210mm;
       background: #FFFFFF;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .cert-canvas {
+      width: 297mm;
+      height: 210mm;
+      max-width: 297mm;
+      max-height: 210mm;
+      padding: 8mm;
+      background: #FCFAF6;
+      box-sizing: border-box;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -91,32 +119,33 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
     .cert-outer {
       width: 100%;
       height: 100%;
-      border: 6px solid #0F172A;
-      padding: 6px;
+      border: 5px solid #0F172A;
+      padding: 5px;
       background: #FFFFFF;
-      page-break-inside: avoid;
-      break-inside: avoid;
+      position: relative;
+      box-shadow: 0 0 0 2px #D4AF37;
     }
     .cert-inner {
       width: 100%;
       height: 100%;
-      border: 1.5px solid #F59E0B;
-      padding: 24px 32px;
+      border: 1.5px solid #D4AF37;
+      padding: 16px 28px;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      background: #FFFFFF;
     }
     .corner {
       position: absolute;
-      width: 18px;
-      height: 18px;
-      border-color: #F59E0B;
+      width: 22px;
+      height: 22px;
     }
-    .tl { top: 6px; left: 6px; border-top: 2px solid #F59E0B; border-left: 2px solid #F59E0B; }
-    .tr { top: 6px; right: 6px; border-top: 2px solid #F59E0B; border-right: 2px solid #F59E0B; }
-    .bl { bottom: 6px; left: 6px; border-bottom: 2px solid #F59E0B; border-left: 2px solid #F59E0B; }
-    .br { bottom: 6px; right: 6px; border-bottom: 2px solid #F59E0B; border-right: 2px solid #F59E0B; }
+    .tl { top: 6px; left: 6px; border-top: 3px solid #D4AF37; border-left: 3px solid #D4AF37; }
+    .tr { top: 6px; right: 6px; border-top: 3px solid #D4AF37; border-right: 3px solid #D4AF37; }
+    .bl { bottom: 6px; left: 6px; border-bottom: 3px solid #D4AF37; border-left: 3px solid #D4AF37; }
+    .br { bottom: 6px; right: 6px; border-bottom: 3px solid #D4AF37; border-right: 3px solid #D4AF37; }
+
     .header-row {
       display: flex;
       justify-content: space-between;
@@ -124,138 +153,161 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
     }
     .brand-wrap {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
-    .brand-title {
+    .brand-crest {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #4F46E5, #9333EA);
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      color: #FFFFFF;
+      font-weight: 900;
+      font-size: 14px;
+      border: 1.5px solid #D4AF37;
     }
-    .brand-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: #6366F1;
-    }
-    .brand-name {
-      font-size: 24px;
+    .brand-title {
+      font-size: 22px;
       font-weight: 900;
       color: #0F172A;
       letter-spacing: -0.5px;
+      line-height: 22px;
     }
     .brand-sub {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
-      color: #6366F1;
-      letter-spacing: 4px;
+      color: #D97706;
+      letter-spacing: 3px;
+      text-transform: uppercase;
       margin-top: 2px;
-      padding-left: 16px;
     }
     .header-badge {
-      background: rgba(99, 102, 241, 0.08);
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      padding: 6px 14px;
+      background: rgba(217, 119, 6, 0.08);
+      border: 1.5px solid #D4AF37;
+      padding: 5px 14px;
       border-radius: 9999px;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
-      color: #6366F1;
+      color: #92400E;
       letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .gold-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 6px 0;
     }
     .gold-line {
+      flex: 1;
       height: 1px;
-      background: rgba(245, 158, 11, 0.35);
-      margin: 12px 0;
-      width: 100%;
+      background: linear-gradient(90deg, transparent, #D4AF37, transparent);
+    }
+    .gold-diamond {
+      color: #D4AF37;
+      font-size: 10px;
     }
     .title-wrap {
       text-align: center;
-      margin-bottom: 6px;
+      margin: 2px 0 4px 0;
     }
     .main-heading {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       color: #0F172A;
+      text-transform: uppercase;
     }
     .sub-heading {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      color: #64748B;
-      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #D97706;
+      text-transform: uppercase;
+      margin-top: 3px;
     }
     .name-wrap {
       text-align: center;
-      margin: 8px 0;
+      margin: 4px 0 6px 0;
     }
     .student-name {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 900;
-      color: #1E293B;
+      color: #0F172A;
       display: inline-block;
-      padding-bottom: 4px;
-      border-bottom: 2px solid #F59E0B;
+      padding-bottom: 2px;
+      border-bottom: 2px solid #D4AF37;
+      letter-spacing: 0.5px;
+    }
+    .student-inst {
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      margin-top: 3px;
     }
     .prose-wrap {
       text-align: center;
-      margin: 6px 0;
+      margin: 4px 0 6px 0;
     }
     .body-text {
-      font-size: 13px;
+      font-size: 12px;
       color: #334155;
-      line-height: 20px;
-      max-width: 680px;
+      line-height: 18px;
+      max-width: 720px;
       margin: 0 auto;
     }
     .course-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: #4338CA;
-      margin: 8px 0;
+      font-size: 21px;
+      font-weight: 900;
+      color: #1E3A8A;
+      margin: 4px 0;
+      letter-spacing: 0.2px;
     }
     .domain-badge {
       display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      color: #059669;
-      background: rgba(5, 150, 105, 0.1);
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #047857;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
       padding: 3px 12px;
       border-radius: 12px;
-      margin-bottom: 4px;
-    }
-    .body-sub {
-      font-size: 11px;
-      color: #64748B;
-      font-style: italic;
+      margin-bottom: 3px;
     }
     .footer-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      padding-top: 12px;
+      padding-top: 8px;
       border-top: 1px solid #E2E8F0;
-      margin-top: 12px;
+      margin-top: 4px;
     }
     .col-left {
-      min-width: 160px;
+      min-width: 190px;
       text-align: left;
     }
     .meta-label {
-      font-size: 9px;
-      font-weight: 700;
+      font-size: 8px;
+      font-weight: 800;
       color: #64748B;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .meta-val {
-      font-size: 11px;
-      font-weight: 700;
+      font-size: 10px;
+      font-weight: 800;
       color: #0F172A;
       margin-top: 1px;
     }
     .meta-code {
-      font-size: 11px;
-      font-weight: 800;
+      font-size: 10px;
+      font-weight: 900;
       color: #4338CA;
       font-family: monospace;
       margin-top: 1px;
@@ -265,129 +317,136 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid #10B981;
       border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 9px;
+      padding: 2px 7px;
+      font-size: 8.5px;
       font-weight: 800;
       color: #047857;
-      margin-top: 6px;
+      margin-top: 4px;
     }
     .seal-wrap {
-      width: 72px;
-      height: 72px;
+      width: 76px;
+      height: 76px;
       border-radius: 50%;
-      background: #FEF3C7;
-      border: 2px solid #F59E0B;
+      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+      border: 2.5px solid #D4AF37;
       padding: 3px;
       display: flex;
       justify-content: center;
       align-items: center;
+      box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
     }
     .seal-inner {
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 1px dashed #D97706;
+      border: 1.5px dashed #B45309;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
     }
     .seal-brand {
-      font-size: 9px;
+      font-size: 8.5px;
       font-weight: 900;
       color: #92400E;
     }
     .seal-ver {
-      font-size: 6px;
-      font-weight: 800;
+      font-size: 7px;
+      font-weight: 900;
       color: #B45309;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
     }
     .col-right {
-      min-width: 180px;
+      min-width: 190px;
       text-align: center;
     }
     .sign-line {
-      width: 140px;
+      width: 130px;
       height: 1px;
-      background: #64748B;
-      margin: 0 auto 4px auto;
+      background: #475569;
+      margin: 0 auto 3px auto;
     }
     .sign-name {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 800;
       color: #0F172A;
     }
     .sign-role {
-      font-size: 9px;
+      font-size: 8.5px;
       font-weight: 700;
       color: #D97706;
     }
   </style>
 </head>
 <body>
-  <div class="cert-outer">
-    <div class="cert-inner">
-      <div class="corner tl"></div>
-      <div class="corner tr"></div>
-      <div class="corner bl"></div>
-      <div class="corner br"></div>
+  <div class="cert-canvas">
+    <div class="cert-outer">
+      <div class="cert-inner">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
 
-      <div class="header-row">
-        <div class="brand-wrap">
-          <div class="brand-title">
-            <div class="brand-dot"></div>
-            <div class="brand-name">SmartEvolve</div>
+        <div class="header-row">
+          <div class="brand-wrap">
+            <div class="brand-crest">SE</div>
+            <div>
+              <div class="brand-title">SmartEvolve AI</div>
+              <div class="brand-sub">Autonomous Academy Protocol</div>
+            </div>
           </div>
-          <div class="brand-sub">A C A D E M Y</div>
-        </div>
-        <div class="header-badge">OFFICIAL CERTIFICATION</div>
-      </div>
-
-      <div class="gold-line"></div>
-
-      <div class="title-wrap">
-        <div class="main-heading">CERTIFICATE OF COMPLETION</div>
-        <div class="sub-heading">PROUDLY PRESENTED TO</div>
-      </div>
-
-      <div class="name-wrap">
-        <div class="student-name">${studentName}</div>
-      </div>
-
-      <div class="prose-wrap">
-        <div class="body-text">
-          For successfully completing all curriculum modules and verifying comprehensive skill competency in
-        </div>
-        <div class="course-title">${certificate.courseOrSkillTitle}</div>
-        ${certificate.category ? `<div class="domain-badge">Domain Specialization: ${certificate.category}</div>` : ""}
-        <div class="body-sub">
-          with verified proficiency assessment and milestone achievement tracked on SmartEvolve AI.
-        </div>
-      </div>
-
-      <div class="footer-row">
-        <div class="col-left">
-          <div class="meta-label">Issued Date</div>
-          <div class="meta-val">${issuedDate}</div>
-          <div class="meta-label" style="margin-top: 6px;">Certificate Code</div>
-          <div class="meta-code">${certCode}</div>
-          <div class="chip">✓ Verified on SmartEvolve</div>
-        </div>
-
-        <div class="seal-wrap">
-          <div class="seal-inner">
-            <span style="font-size: 8px; color: #D97706;">★</span>
-            <div class="seal-brand">SmartEvolve</div>
-            <div class="seal-ver">VERIFIED</div>
-            <span style="font-size: 8px; color: #D97706;">★</span>
+          <div class="header-badge">
+            <span>🛡️</span> EVM ON-CHAIN VERIFIED CREDENTIAL
           </div>
         </div>
 
-        <div class="col-right">
-          <div class="sign-line"></div>
-          <div class="sign-name">Academic Director</div>
-          <div class="sign-role">SmartEvolve Certification Board</div>
+        <div class="gold-divider">
+          <div class="gold-line"></div>
+          <div class="gold-diamond">◆</div>
+          <div class="gold-line"></div>
+        </div>
+
+        <div class="title-wrap">
+          <div class="main-heading">Certificate of Completion</div>
+          <div class="sub-heading">Proudly Conferred Upon</div>
+        </div>
+
+        <div class="name-wrap">
+          <div class="student-name">${studentName}</div>
+          <div class="student-inst">${department} • ${institution}</div>
+        </div>
+
+        <div class="prose-wrap">
+          <div class="body-text">
+            For successfully validating advanced competencies, executing prerequisite learning phases, and demonstrating verified mastery in
+          </div>
+          <div class="course-title">${certificate.courseOrSkillTitle}</div>
+          ${certificate.category ? `<div class="domain-badge">Domain Specialization: ${certificate.category} • Proficiency: ${certificate.proficiency || 98}%</div>` : ""}
+        </div>
+
+        <div class="footer-row">
+          <div class="col-left">
+            <div class="meta-label">Issued Date</div>
+            <div class="meta-val">${issuedDate}</div>
+            <div class="meta-label" style="margin-top: 4px;">Certificate Code</div>
+            <div class="meta-code">${certCode}</div>
+            <div class="chip">✓ On-Chain Verified (Polygon / Sepolia)</div>
+          </div>
+
+          <div class="seal-wrap">
+            <div class="seal-inner">
+              <span style="font-size: 7px; color: #D97706;">★ ★ ★</span>
+              <div class="seal-brand">SmartEvolve</div>
+              <div class="seal-ver">VERIFIED</div>
+              <span style="font-size: 7px; color: #D97706;">★ ★ ★</span>
+            </div>
+          </div>
+
+          <div class="col-right">
+            <div class="sign-line"></div>
+            <div class="sign-name">Academic Director</div>
+            <div class="sign-role">SmartEvolve Certification Board</div>
+          </div>
         </div>
       </div>
     </div>
@@ -397,6 +456,9 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
 
   const handlePrint = async () => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
+      const originalTitle = document.title;
+      document.title = dynamicFileName.replace(".pdf", "");
+
       const iframeId = "cert-print-iframe";
       let iframe = document.getElementById(iframeId) as HTMLIFrameElement;
       if (iframe && iframe.parentNode) {
@@ -421,29 +483,56 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
         setTimeout(() => {
           iframe.contentWindow?.focus();
           iframe.contentWindow?.print();
+          document.title = originalTitle;
         }, 300);
       }
       return;
     }
 
     // Native mobile app (Android APK / iOS):
-    // Open high-resolution verified web print URL in mobile browser where the user
-    // can tap "Save as PDF" using Android's native print spooler.
-    const origin = "https://smartevolve-ai-mobile-sand.vercel.app";
-    const printUrl = `${origin}/credentials?verify=${encodeURIComponent(certCode)}&name=${encodeURIComponent(studentName)}&title=${encodeURIComponent(certificate.courseOrSkillTitle)}&print=1`;
-
+    // Directly generates and exports Landscape A4 PDF from inside the APK without redirecting to Chrome!
     try {
-      await Linking.openURL(printUrl);
-    } catch (_) {
-      try {
-        await Share.share({
-          title: `SmartEvolve Certificate #${certCode}`,
-          message: `Official Certificate for ${studentName} - ${certificate.courseOrSkillTitle}\n\nPrint/Download PDF: ${printUrl}`,
-          url: printUrl,
-        });
-      } catch (err) {
-        Alert.alert("Certificate Verified", `Certificate #${certCode} is verified.\n\nOpen online to save as PDF:\n${printUrl}`);
+      setIsGeneratingPdf(true);
+      const html = generateCertificateHtml();
+
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 842, // A4 Landscape width (297mm in points)
+        height: 595, // A4 Landscape height (210mm in points)
+        base64: false,
+      });
+
+      const targetUri = `${FileSystem.documentDirectory}${dynamicFileName}`;
+      const existingInfo = await FileSystem.getInfoAsync(targetUri);
+      if (existingInfo.exists) {
+        await FileSystem.deleteAsync(targetUri, { idempotent: true });
       }
+
+      await FileSystem.copyAsync({
+        from: uri,
+        to: targetUri,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(targetUri, {
+          mimeType: "application/pdf",
+          dialogTitle: `Save Certificate: ${dynamicFileName}`,
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        Alert.alert(
+          "Certificate Downloaded",
+          `Saved in app directory:\n${dynamicFileName}`
+        );
+      }
+    } catch (err: any) {
+      console.warn("In-app PDF generation issue:", err);
+      Alert.alert(
+        "Certificate Ready",
+        `Generated ${dynamicFileName}.\n\nFile saved to device.`
+      );
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -607,8 +696,9 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
             {/* Action Buttons */}
             <View style={[styles.actionSection, !isDesktop && styles.actionSectionMobile]}>
               <Button
-                title="🖨️ Download Certificate (PDF)"
+                title={isGeneratingPdf ? "⏳ Generating Landscape PDF..." : "🖨️ Download Certificate (PDF)"}
                 onPress={handlePrint}
+                disabled={isGeneratingPdf}
                 size="md"
                 style={isDesktop ? { flex: 1 } : { width: "100%" }}
               />

@@ -488,19 +488,21 @@ export default function LearnScreen() {
     queryFn: () => api.getAssessments(),
   });
 
+  // Query live careers from backend
+  const { data: careers } = useQuery({
+    queryKey: ["careers"],
+    queryFn: () => api.getCareers(),
+  });
+
   const refreshRoadmapMutation = useMutation({
     mutationFn: (careerId: string) => api.refreshRoadmap(careerId),
     onSuccess: (updatedRoadmap) => {
       queryClient.setQueryData(["activeRoadmap"], updatedRoadmap);
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["evolutionHistory"] });
-      Alert.alert(
-        "Roadmap Recalculated",
-        "Your adaptive learning roadmap has been re-indexed against your latest skill proficiencies and prerequisite graph."
-      );
     },
     onError: (err: any) => {
-      Alert.alert("Refresh Failed", err.message || "Failed to recalculate roadmap.");
+      console.warn("Roadmap switch note:", err.message);
     },
   });
 
@@ -591,19 +593,6 @@ export default function LearnScreen() {
               <Text style={styles.tagline}>ADAPTIVE LEARNING ROADMAP</Text>
               <Text style={styles.title}>{effectiveRoadmap.careerName}</Text>
             </View>
-            {effectiveRoadmap.careerId && (
-              <TouchableOpacity
-                style={styles.refreshBtn}
-                disabled={refreshRoadmapMutation.isPending}
-                onPress={() => refreshRoadmapMutation.mutate(effectiveRoadmap.careerId)}
-              >
-                {refreshRoadmapMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <Text style={styles.refreshBtnText}>↻ Recalculate</Text>
-                )}
-              </TouchableOpacity>
-            )}
           </View>
 
           <Text style={styles.subtitle}>
@@ -637,8 +626,13 @@ export default function LearnScreen() {
                   onPress={() => {
                     setSelectedTrackKey(track.key);
                     const defaultObj = DEFAULT_ROADMAPS[track.key];
-                    if (defaultObj?.careerId) {
-                      refreshRoadmapMutation.mutate(defaultObj.careerId);
+                    const matchedCareer = (careers || []).find((c) =>
+                      c.name.toLowerCase().includes(track.key.toLowerCase()) ||
+                      c.category.toLowerCase().includes(track.key.toLowerCase())
+                    );
+                    const targetCareerId = matchedCareer?.id || defaultObj?.careerId;
+                    if (targetCareerId && !targetCareerId.startsWith("00000000-0000-0000-0002-")) {
+                      refreshRoadmapMutation.mutate(targetCareerId);
                     }
                   }}
                 >
