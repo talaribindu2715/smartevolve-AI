@@ -22,7 +22,8 @@ import { Button } from "../../src/components/Button";
 import { VideoCard } from "../../src/components/VideoCard";
 import { CertificateModal } from "../../src/components/CertificateModal";
 import { InteractiveQuizArenaModal } from "../../src/components/InteractiveQuizArenaModal";
-import { getMasterVideoById } from "../../src/data/masterVideos";
+import { YouTubeVideo } from "../../src/types";
+import { MASTER_VIDEOS, getMasterVideoById } from "../../src/data/masterVideos";
 import { saveEarnedCertificate } from "../../src/services/certificateService";
 import { colors, radius, spacing } from "../../src/theme/colors";
 
@@ -39,6 +40,18 @@ export default function VideoDetailScreen() {
 
   const [activeTab, setActiveTab] = useState<"quiz" | "related">("quiz");
   const [isSaved, setIsSaved] = useState(false);
+  const scrollRef = React.useRef<ScrollView>(null);
+
+  // Reset quiz progress and scroll to top when video ID changes
+  useEffect(() => {
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setLocalCompleted(false);
+    setShowCertModal(false);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [id]);
 
   // In-line Skill Quiz State
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -148,6 +161,51 @@ export default function VideoDetailScreen() {
       }),
     enabled: !!effectiveVideo?.skillId,
   });
+
+  // Curated Related Videos: Backend results merged with full MASTER_VIDEOS catalog
+  const effectiveRelatedVideos = React.useMemo(() => {
+    if (!effectiveVideo) return [];
+
+    const currentId = effectiveVideo.id;
+    const currentVid = effectiveVideo.videoId;
+    const currentSkill = (effectiveVideo.skillName || "").toLowerCase().trim();
+    const currentCategory = (effectiveVideo.category || "").toLowerCase().trim();
+
+    // 1. Backend results (filtered to exclude current video)
+    const backendItems = (relatedVideos || []).filter(
+      (v) => v.videoId !== currentVid && v.id !== currentId
+    );
+
+    // 2. Discover related courses from MASTER_VIDEOS catalog
+    const sameSkill: YouTubeVideo[] = [];
+    const sameCategory: YouTubeVideo[] = [];
+    const otherRecs: YouTubeVideo[] = [];
+
+    MASTER_VIDEOS.forEach((v) => {
+      if (v.videoId === currentVid || v.id === currentId) return;
+
+      const vSkill = (v.skillName || "").toLowerCase().trim();
+      const vCat = (v.category || "").toLowerCase().trim();
+
+      if (currentSkill && (vSkill === currentSkill || vSkill.includes(currentSkill) || currentSkill.includes(vSkill))) {
+        sameSkill.push(v);
+      } else if (currentCategory && vCat === currentCategory) {
+        sameCategory.push(v);
+      } else {
+        otherRecs.push(v);
+      }
+    });
+
+    // Merge in priority order, deduplicating by videoId
+    const mergedMap = new Map<string, YouTubeVideo>();
+    [...backendItems, ...sameSkill, ...sameCategory, ...otherRecs].forEach((v) => {
+      if (v.videoId && !mergedMap.has(v.videoId)) {
+        mergedMap.set(v.videoId, v);
+      }
+    });
+
+    return Array.from(mergedMap.values()).slice(0, 10);
+  }, [effectiveVideo, relatedVideos]);
 
   // Watchlist persistence
   useEffect(() => {
@@ -352,7 +410,7 @@ export default function VideoDetailScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.responsiveWrapper}>
         {/* Back Link */}
         <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
@@ -435,7 +493,7 @@ export default function VideoDetailScreen() {
             onPress={() => setActiveTab("related")}
           >
             <Text style={[styles.tabBtnText, activeTab === "related" && styles.tabBtnTextActive]}>
-              Related Videos
+              Related Videos ({effectiveRelatedVideos.length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -683,19 +741,28 @@ export default function VideoDetailScreen() {
         {/* Tab 3: Related Videos */}
         {activeTab === "related" && (
           <View style={styles.tabContent}>
-            {relatedVideos && relatedVideos.length > 0 ? (
-              relatedVideos
-                .filter((v) => v.videoId !== effectiveVideo.videoId)
-                .map((v) => (
-                  <VideoCard
-                    key={v.id}
-                    video={v}
-                    layout="horizontal"
-                    onPress={(item) => router.push(`/videos/${item.id || item.videoId}`)}
-                  />
-                ))
+            <View style={styles.relatedSectionHeader}>
+              <Text style={styles.relatedSectionTitle}>
+                Recommended Masterclasses & Related Courses
+              </Text>
+              <Text style={styles.relatedSectionSubtitle}>
+                Curated courses aligned with {effectiveVideo?.skillName || effectiveVideo?.category || "this masterclass"}
+              </Text>
+            </View>
+
+            {effectiveRelatedVideos && effectiveRelatedVideos.length > 0 ? (
+              effectiveRelatedVideos.map((v) => (
+                <VideoCard
+                  key={v.id || v.videoId}
+                  video={v}
+                  layout="horizontal"
+                  onPress={(item) => router.push(`/videos/${item.id || item.videoId}`)}
+                />
+              ))
             ) : (
-              <Text style={styles.emptySub}>No additional videos for this skill yet.</Text>
+              <View style={{ paddingVertical: spacing.xl, alignItems: "center" }}>
+                <Text style={styles.emptySub}>No additional videos found.</Text>
+              </View>
             )}
           </View>
         )}
@@ -966,6 +1033,22 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     marginBottom: spacing.lg,
+  },
+  relatedSectionHeader: {
+    marginBottom: spacing.md,
+    paddingHorizontal: 2,
+  },
+  relatedSectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  relatedSectionSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+    marginBottom: spacing.xs,
   },
   bodyCard: {
     padding: spacing.md,
