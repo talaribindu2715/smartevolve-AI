@@ -21,7 +21,7 @@ interface AiMentorModalProps {
   onClose: () => void;
 }
 
-export type AiProvider = "anthropic" | "gemini";
+export type AiProvider = "gemini" | "groq" | "anthropic";
 
 function getIntelligentMentorResponse(userText: string, backendReply?: string): string {
   // If backend provided a custom non-repetitive response, use it:
@@ -161,84 +161,184 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
   >([]);
   const [isAsking, setIsAsking] = useState(false);
 
-  // Provider Selection State (Anthropic Claude vs Google Gemini)
-  const [selectedProvider, setSelectedProvider] = useState<AiProvider>("anthropic");
-  const [anthropicKey, setAnthropicKey] = useState("");
+  // Provider Selection State (Gemini vs Groq vs Anthropic)
+  const [selectedProvider, setSelectedProvider] = useState<AiProvider>("gemini");
   const [geminiKey, setGeminiKey] = useState("");
+  const [groqKey, setGroqKey] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
   const [inputKey, setInputKey] = useState("");
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [keySavedStatus, setKeySavedStatus] = useState<string | null>(null);
+  const [isVerifyingKey, setIsVerifyingKey] = useState(false);
 
   useEffect(() => {
     // Load stored keys and selected provider
     AsyncStorage.multiGet([
       "smartevolve_ai_provider",
-      "smartevolve_anthropic_api_key",
       "smartevolve_gemini_api_key",
-    ]).then(([provItem, antItem, gemItem]) => {
-      const storedProv = (provItem?.[1] as AiProvider) || "anthropic";
-      const storedAnt = antItem?.[1] || "";
+      "smartevolve_groq_api_key",
+      "smartevolve_anthropic_api_key",
+    ]).then(([provItem, gemItem, groqItem, antItem]) => {
+      const storedProv = (provItem?.[1] as AiProvider) || "gemini";
       const storedGem = gemItem?.[1] || "";
+      const storedGroq = groqItem?.[1] || "";
+      const storedAnt = antItem?.[1] || "";
 
-      setAnthropicKey(storedAnt);
       setGeminiKey(storedGem);
+      setGroqKey(storedGroq);
+      setAnthropicKey(storedAnt);
       setSelectedProvider(storedProv);
-      setInputKey(storedProv === "anthropic" ? storedAnt : storedGem);
+
+      if (storedProv === "gemini") setInputKey(storedGem);
+      else if (storedProv === "groq") setInputKey(storedGroq);
+      else if (storedProv === "anthropic") setInputKey(storedAnt);
     }).catch(() => {});
   }, [visible]);
 
   const handleSelectProvider = (prov: AiProvider) => {
     setSelectedProvider(prov);
     AsyncStorage.setItem("smartevolve_ai_provider", prov).catch(() => {});
-    setInputKey(prov === "anthropic" ? anthropicKey : geminiKey);
+    if (prov === "gemini") setInputKey(geminiKey);
+    else if (prov === "groq") setInputKey(groqKey);
+    else if (prov === "anthropic") setInputKey(anthropicKey);
+    setKeySavedStatus(null);
   };
 
   const handleKeyInputChange = (text: string) => {
     setInputKey(text);
-    // Auto-detect provider by key prefix
     const trimmed = text.trim();
-    if (trimmed.startsWith("sk-ant-") && selectedProvider !== "anthropic") {
-      setSelectedProvider("anthropic");
-    } else if (trimmed.startsWith("AIza") && selectedProvider !== "gemini") {
+    if (trimmed.startsWith("AIza") && selectedProvider !== "gemini") {
       setSelectedProvider("gemini");
+    } else if (trimmed.startsWith("gsk_") && selectedProvider !== "groq") {
+      setSelectedProvider("groq");
+    } else if (trimmed.startsWith("sk-ant-") && selectedProvider !== "anthropic") {
+      setSelectedProvider("anthropic");
+    }
+  };
+
+  // Live in-app key verification test
+  const handleTestKeyDirectly = async (keyToTest?: string) => {
+    const rawKey = (keyToTest || inputKey).trim();
+    if (!rawKey) {
+      setKeySavedStatus("⚠️ Please paste an API key first to test it.");
+      return;
+    }
+
+    setIsVerifyingKey(true);
+    setKeySavedStatus("Testing connection to " + selectedProvider.toUpperCase() + " API...");
+
+    try {
+      if (selectedProvider === "gemini") {
+        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${rawKey}`;
+        const res = await fetch(testUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Say 'Gemini is online!' in 3 words." }] }],
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          const reply = data.candidates[0].content.parts[0].text.trim();
+          setKeySavedStatus(`✓ SUCCESS! Google Gemini replied: "${reply}"`);
+        } else {
+          const errMsg = data?.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+          setKeySavedStatus(`❌ Google Gemini Error: ${errMsg}`);
+        }
+      } else if (selectedProvider === "groq") {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${rawKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: "Say 'Groq is online!' in 3 words." }],
+            max_tokens: 30,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data?.choices?.[0]?.message?.content) {
+          const reply = data.choices[0].message.content.trim();
+          setKeySavedStatus(`✓ SUCCESS! Groq Llama 3.3 replied: "${reply}"`);
+        } else {
+          const errMsg = data?.error?.message || `HTTP ${res.status}`;
+          setKeySavedStatus(`❌ Groq Error: ${errMsg}`);
+        }
+      } else if (selectedProvider === "anthropic") {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": rawKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-3-5-haiku-20241022",
+            max_tokens: 30,
+            messages: [{ role: "user", content: "Say 'Claude is online!' in 3 words." }],
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data?.content?.[0]?.text) {
+          const reply = data.content[0].text.trim();
+          setKeySavedStatus(`✓ SUCCESS! Anthropic Claude replied: "${reply}"`);
+        } else {
+          const errMsg = data?.error?.message || `HTTP ${res.status}`;
+          setKeySavedStatus(`❌ Anthropic Error: ${errMsg}`);
+        }
+      }
+    } catch (err: any) {
+      setKeySavedStatus(`❌ Connection error: ${err?.message || "Check network/CORS"}`);
+    } finally {
+      setIsVerifyingKey(false);
     }
   };
 
   const handleSaveCustomKey = async () => {
     const trimmed = inputKey.trim();
     if (!trimmed) {
-      if (selectedProvider === "anthropic") {
-        await AsyncStorage.removeItem("smartevolve_anthropic_api_key");
-        setAnthropicKey("");
-      } else {
+      if (selectedProvider === "gemini") {
         await AsyncStorage.removeItem("smartevolve_gemini_api_key");
         setGeminiKey("");
+      } else if (selectedProvider === "groq") {
+        await AsyncStorage.removeItem("smartevolve_groq_api_key");
+        setGroqKey("");
+      } else {
+        await AsyncStorage.removeItem("smartevolve_anthropic_api_key");
+        setAnthropicKey("");
       }
       setKeySavedStatus("Key removed. Using platform cognitive AI.");
       setTimeout(() => setKeySavedStatus(null), 3500);
       return;
     }
 
-    if (selectedProvider === "anthropic") {
-      await AsyncStorage.setItem("smartevolve_anthropic_api_key", trimmed);
-      setAnthropicKey(trimmed);
-      setKeySavedStatus("✓ Anthropic Claude API Key saved securely on device!");
-    } else {
+    if (selectedProvider === "gemini") {
       await AsyncStorage.setItem("smartevolve_gemini_api_key", trimmed);
       setGeminiKey(trimmed);
       setKeySavedStatus("✓ Google Gemini API Key saved securely on device!");
+    } else if (selectedProvider === "groq") {
+      await AsyncStorage.setItem("smartevolve_groq_api_key", trimmed);
+      setGroqKey(trimmed);
+      setKeySavedStatus("✓ Groq API Key saved securely on device!");
+    } else {
+      await AsyncStorage.setItem("smartevolve_anthropic_api_key", trimmed);
+      setAnthropicKey(trimmed);
+      setKeySavedStatus("✓ Anthropic Claude API Key saved securely on device!");
     }
     await AsyncStorage.setItem("smartevolve_ai_provider", selectedProvider);
 
-    setTimeout(() => {
-      setKeySavedStatus(null);
-      setShowKeyConfig(false);
-    }, 2000);
+    // Auto-verify key immediately
+    handleTestKeyDirectly(trimmed);
   };
 
   const {
     data: aiHealth,
-    isLoading: isHealthLoading,
     refetch: refetchHealth,
   } = useQuery({
     queryKey: ["aiHealth"],
@@ -246,7 +346,13 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     enabled: visible,
   });
 
-  const activeKey = selectedProvider === "anthropic" ? anthropicKey.trim() : geminiKey.trim();
+  const getActiveKey = () => {
+    if (selectedProvider === "gemini") return geminiKey.trim();
+    if (selectedProvider === "groq") return groqKey.trim();
+    return anthropicKey.trim();
+  };
+
+  const activeKey = getActiveKey();
   const isServerAiOnline = aiHealth?.status === "ONLINE" || aiHealth?.working === true;
   const isAiLive = !!activeKey || isServerAiOnline;
 
@@ -261,7 +367,76 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     const effectiveKey = activeKey;
 
     try {
-      // 1. Direct Client Call to Anthropic Claude if Anthropic key is present
+      // 1. Direct Call: Google Gemini 1.5
+      if (selectedProvider === "gemini" && effectiveKey && effectiveKey.length > 15) {
+        try {
+          const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey}`;
+          const gRes = await fetch(geminiEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: textToSend }] }],
+            }),
+          });
+          if (gRes.ok) {
+            const gData = await gRes.json();
+            const gText = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (gText && gText.trim().length > 0) {
+              setChatLog((prev) => [
+                ...prev,
+                {
+                  sender: "mentor",
+                  text: gText.trim(),
+                  providerLabel: "🔵 Powered by Google Gemini 1.5",
+                },
+              ]);
+              setIsAsking(false);
+              return;
+            }
+          }
+        } catch (clientEx) {
+          console.warn("Direct Gemini call note (routing via backend):", clientEx);
+        }
+      }
+
+      // 2. Direct Call: Groq Llama 3.3 (Ultra-Fast & 100% Free)
+      if (selectedProvider === "groq" && effectiveKey && effectiveKey.length > 10) {
+        try {
+          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${effectiveKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [{ role: "user", content: textToSend }],
+              temperature: 0.7,
+              max_tokens: 1024,
+            }),
+          });
+          if (groqRes.ok) {
+            const grData = await groqRes.json();
+            const grText = grData?.choices?.[0]?.message?.content;
+            if (grText && grText.trim().length > 0) {
+              setChatLog((prev) => [
+                ...prev,
+                {
+                  sender: "mentor",
+                  text: grText.trim(),
+                  providerLabel: "⚡ Powered by Groq Llama 3.3 (High Speed)",
+                },
+              ]);
+              setIsAsking(false);
+              return;
+            }
+          }
+        } catch (clientEx) {
+          console.warn("Direct Groq call note (routing via backend):", clientEx);
+        }
+      }
+
+      // 3. Direct Call: Anthropic Claude
       if (selectedProvider === "anthropic" && effectiveKey && effectiveKey.length > 15) {
         try {
           const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -300,39 +475,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         }
       }
 
-      // 2. Direct Client Call to Google Gemini if Gemini key is present
-      if (selectedProvider === "gemini" && effectiveKey && effectiveKey.length > 15) {
-        try {
-          const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey}`;
-          const gRes = await fetch(geminiEndpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: textToSend }] }],
-            }),
-          });
-          if (gRes.ok) {
-            const gData = await gRes.json();
-            const gText = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (gText && gText.trim().length > 0) {
-              setChatLog((prev) => [
-                ...prev,
-                {
-                  sender: "mentor",
-                  text: gText.trim(),
-                  providerLabel: "✨ Powered by Google Gemini 1.5",
-                },
-              ]);
-              setIsAsking(false);
-              return;
-            }
-          }
-        } catch (clientEx) {
-          console.warn("Direct Gemini call note (routing via backend):", clientEx);
-        }
-      }
-
-      // 3. Robust Backend Call (Supports Anthropic, Gemini, OpenAI, or Cognitive Fallback)
+      // 4. Robust Server-Side Call (Handles all providers via Spring Boot)
       const res = await api.askAiMentor(
         textToSend,
         undefined,
@@ -344,10 +487,12 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
       const provider = res?.aiProvider || (res?.isGeminiPowered ? "GEMINI" : "HEURISTIC");
 
       let label = "💡 SmartEvolve Adaptive AI";
-      if (provider === "ANTHROPIC" || (selectedProvider === "anthropic" && !!effectiveKey)) {
+      if (provider === "GEMINI" || (selectedProvider === "gemini" && !!effectiveKey)) {
+        label = "🔵 Powered by Google Gemini 1.5";
+      } else if (provider === "GROQ" || (selectedProvider === "groq" && !!effectiveKey)) {
+        label = "⚡ Powered by Groq Llama 3.3";
+      } else if (provider === "ANTHROPIC" || (selectedProvider === "anthropic" && !!effectiveKey)) {
         label = "🟣 Powered by Anthropic Claude 3.5";
-      } else if (provider === "GEMINI" || (selectedProvider === "gemini" && !!effectiveKey)) {
-        label = "✨ Powered by Google Gemini 1.5";
       } else if (provider === "OPENAI") {
         label = "🟢 Powered by OpenAI GPT-4o";
       }
@@ -390,7 +535,11 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
             <View>
               <Text style={styles.headerTag}>SMARTEVOLVE COGNITIVE ADVISOR</Text>
               <Text style={styles.headerTitle}>
-                {selectedProvider === "anthropic" ? "Anthropic Claude 3.5 Mentor" : "Google Gemini AI Mentor"}
+                {selectedProvider === "gemini"
+                  ? "Google Gemini 1.5 AI Mentor"
+                  : selectedProvider === "groq"
+                  ? "Groq Llama 3.3 AI Mentor"
+                  : "Anthropic Claude 3.5 Mentor"}
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -409,24 +558,34 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
               <Text
                 style={[
                   styles.healthTitle,
-                  { color: isAiLive ? (selectedProvider === "anthropic" ? "#C084FC" : colors.success) : "#60A5FA" },
+                  {
+                    color: isAiLive
+                      ? selectedProvider === "anthropic"
+                        ? "#C084FC"
+                        : selectedProvider === "groq"
+                        ? "#F59E0B"
+                        : colors.success
+                      : "#60A5FA",
+                  },
                 ]}
               >
-                {selectedProvider === "anthropic" && (activeKey || aiHealth?.provider === "ANTHROPIC")
+                {selectedProvider === "gemini" && (activeKey || aiHealth?.provider === "GOOGLE_GEMINI")
+                  ? "🔵 Google Gemini 1.5: Active & Operational"
+                  : selectedProvider === "groq" && activeKey
+                  ? "⚡ Groq Llama 3.3: Active & Operational"
+                  : selectedProvider === "anthropic" && (activeKey || aiHealth?.provider === "ANTHROPIC")
                   ? "🟣 Anthropic Claude 3.5: Active & Operational"
-                  : selectedProvider === "gemini" && (activeKey || aiHealth?.provider === "GOOGLE_GEMINI")
-                  ? "🟢 Google Gemini AI: Active & Operational"
                   : isServerAiOnline
                   ? `🟢 ${aiHealth?.provider || "Cloud AI"}: Active & Operational`
                   : "⚡ SmartEvolve Cognitive AI: Active & Operational"}
               </Text>
               <Text style={styles.healthSub}>
-                {selectedProvider === "anthropic"
-                  ? (activeKey ? "Personal Anthropic Claude key active. Real-time reasoning enabled." : (aiHealth?.message || "Trained on Full-Stack, AI & Web3 architectures. Instant dynamic guidance."))
-                  : (activeKey ? "Personal Google Gemini key active." : (aiHealth?.message || "Trained on Full-Stack, AI & Web3 architectures. Instant dynamic guidance."))}
+                {activeKey
+                  ? `Personal ${selectedProvider.toUpperCase()} key connected on device.`
+                  : (aiHealth?.message || "Trained on Full-Stack, AI & Web3 architectures. Instant dynamic guidance.")}
               </Text>
               <Text style={styles.healthLatency}>
-                Engine: {selectedProvider === "anthropic" ? "Claude 3.5 Haiku" : (aiHealth?.model || "Gemini 1.5 Flash")} • Latency: {aiHealth?.latencyMs || 42}ms
+                Engine: {selectedProvider === "gemini" ? "Gemini 1.5 Flash" : selectedProvider === "groq" ? "Llama 3.3 70B" : "Claude 3.5 Haiku"} • Latency: {aiHealth?.latencyMs || 38}ms
               </Text>
             </View>
             <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
@@ -437,10 +596,10 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                 ]}
                 onPress={() => setShowKeyConfig(!showKeyConfig)}
               >
-                <Text style={styles.refreshHealthBtnText}>⚙️ Provider / Key</Text>
+                <Text style={styles.refreshHealthBtnText}>⚙️ Setup Key</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.refreshHealthBtn} onPress={() => refetchHealth()}>
-                <Text style={styles.refreshHealthBtnText}>🔄 Test</Text>
+                <Text style={styles.refreshHealthBtnText}>🔄 Server</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -448,30 +607,13 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
           {/* Collapsible Custom API Key & Provider Settings */}
           {showKeyConfig && (
             <View style={styles.keyConfigCard}>
-              <Text style={styles.keyConfigTitle}>AI Provider & API Key Setup</Text>
+              <Text style={styles.keyConfigTitle}>Choose AI Provider & Connect Free Key</Text>
               <Text style={styles.keyConfigDesc}>
-                Choose your AI engine and paste your personal API key. Keys are saved securely on your device:
+                Select an AI provider below. Gemini and Groq are 100% free with no credit card required:
               </Text>
 
               {/* Provider Selector Tabs */}
               <View style={styles.providerTabsRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.providerTab,
-                    selectedProvider === "anthropic" && styles.providerTabActivePurple,
-                  ]}
-                  onPress={() => handleSelectProvider("anthropic")}
-                >
-                  <Text
-                    style={[
-                      styles.providerTabText,
-                      selectedProvider === "anthropic" && styles.providerTabTextActive,
-                    ]}
-                  >
-                    🟣 Anthropic Claude (Recommended)
-                  </Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity
                   style={[
                     styles.providerTab,
@@ -485,19 +627,64 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                       selectedProvider === "gemini" && styles.providerTabTextActive,
                     ]}
                   >
-                    🔵 Google Gemini 1.5
+                    🔵 Google Gemini (Free)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.providerTab,
+                    selectedProvider === "groq" && styles.providerTabActiveAmber,
+                  ]}
+                  onPress={() => handleSelectProvider("groq")}
+                >
+                  <Text
+                    style={[
+                      styles.providerTabText,
+                      selectedProvider === "groq" && styles.providerTabTextActive,
+                    ]}
+                  >
+                    ⚡ Groq Llama 3.3 (Free & Fast)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.providerTab,
+                    selectedProvider === "anthropic" && styles.providerTabActivePurple,
+                  ]}
+                  onPress={() => handleSelectProvider("anthropic")}
+                >
+                  <Text
+                    style={[
+                      styles.providerTabText,
+                      selectedProvider === "anthropic" && styles.providerTabTextActive,
+                    ]}
+                  >
+                    🟣 Claude ($5 min)
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Helpful Guide Text */}
+              <Text style={styles.providerHintText}>
+                {selectedProvider === "gemini"
+                  ? "💡 Google Gemini is 100% FREE. Get your key in 30 seconds from aistudio.google.com/app/apikey (no card needed)."
+                  : selectedProvider === "groq"
+                  ? "⚡ Groq is 100% FREE & Ultra-Fast. Sign in with Google at console.groq.com/keys and click 'Create API Key' (no card needed)."
+                  : "💳 Anthropic Claude requires adding billing credits ($5.00 min deposit) at platform.claude.com."}
+              </Text>
 
               <TextInput
                 style={styles.keyInput}
                 value={inputKey}
                 onChangeText={handleKeyInputChange}
                 placeholder={
-                  selectedProvider === "anthropic"
-                    ? "sk-ant-api03-... (from console.anthropic.com)"
-                    : "AIzaSy... (from aistudio.google.com)"
+                  selectedProvider === "gemini"
+                    ? "Paste AIzaSy... (from aistudio.google.com)"
+                    : selectedProvider === "groq"
+                    ? "Paste gsk_... (from console.groq.com)"
+                    : "Paste sk-ant-api03-... (from console.anthropic.com)"
                 }
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
@@ -506,15 +693,46 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
               />
 
               <View style={styles.keyActionRow}>
-                <TouchableOpacity style={styles.keySaveBtn} onPress={handleSaveCustomKey} activeOpacity={0.8}>
-                  <Text style={styles.keySaveBtnText}>Save API Key</Text>
+                <TouchableOpacity
+                  style={styles.keySaveBtn}
+                  onPress={handleSaveCustomKey}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.keySaveBtnText}>Save Key</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.keyCloseBtn} onPress={() => setShowKeyConfig(false)} activeOpacity={0.8}>
+
+                <TouchableOpacity
+                  style={[styles.keyTestBtn, isVerifyingKey && { opacity: 0.6 }]}
+                  onPress={() => handleTestKeyDirectly()}
+                  disabled={isVerifyingKey}
+                  activeOpacity={0.8}
+                >
+                  {isVerifyingKey ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles.keyTestBtnText}>⚡ Test & Verify Key</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.keyCloseBtn}
+                  onPress={() => setShowKeyConfig(false)}
+                  activeOpacity={0.8}
+                >
                   <Text style={styles.keyCloseBtnText}>Close</Text>
                 </TouchableOpacity>
               </View>
+
               {keySavedStatus ? (
-                <Text style={styles.keyStatusText}>{keySavedStatus}</Text>
+                <Text
+                  style={[
+                    styles.keyStatusText,
+                    keySavedStatus.startsWith("❌") && { color: "#F87171" },
+                    keySavedStatus.startsWith("⚠️") && { color: "#FBBF24" },
+                  ]}
+                >
+                  {keySavedStatus}
+                </Text>
               ) : null}
             </View>
           )}
@@ -540,10 +758,18 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
             {chatLog.length === 0 ? (
               <View style={styles.emptyChat}>
                 <Text style={styles.emptyChatEmoji}>
-                  {selectedProvider === "anthropic" ? "🟣🧠" : "🤖✨"}
+                  {selectedProvider === "anthropic"
+                    ? "🟣🧠"
+                    : selectedProvider === "groq"
+                    ? "⚡🧠"
+                    : "🔵✨"}
                 </Text>
                 <Text style={styles.emptyChatTitle}>
-                  {selectedProvider === "anthropic" ? "Ask Anthropic Claude Anything" : "Ask Gemini AI Anything"}
+                  {selectedProvider === "gemini"
+                    ? "Ask Google Gemini AI Anything"
+                    : selectedProvider === "groq"
+                    ? "Ask Groq Llama 3.3 Anything"
+                    : "Ask Anthropic Claude Anything"}
                 </Text>
                 <Text style={styles.emptyChatSub}>
                   Ask technical questions, get advice on required skills, career roadmaps, or interview prep.
@@ -563,6 +789,8 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                       style={[
                         styles.geminiBadge,
                         msg.providerLabel?.includes("Anthropic") && { color: "#C084FC" },
+                        msg.providerLabel?.includes("Groq") && { color: "#F59E0B" },
+                        msg.providerLabel?.includes("Gemini") && { color: "#60A5FA" },
                       ]}
                     >
                       {msg.providerLabel || "💡 SmartEvolve Adaptive AI"}
@@ -574,9 +802,22 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
             )}
             {isAsking && (
               <View style={[styles.msgBubble, styles.geminiBubble, { flexDirection: "row", gap: 8, alignItems: "center" }]}>
-                <ActivityIndicator size="small" color={selectedProvider === "anthropic" ? "#C084FC" : colors.primary} />
+                <ActivityIndicator
+                  size="small"
+                  color={
+                    selectedProvider === "anthropic"
+                      ? "#C084FC"
+                      : selectedProvider === "groq"
+                      ? "#F59E0B"
+                      : colors.primary
+                  }
+                />
                 <Text style={styles.msgText}>
-                  {selectedProvider === "anthropic" ? "Claude 3.5 is analyzing..." : "Gemini AI is analyzing..."}
+                  {selectedProvider === "gemini"
+                    ? "Gemini AI is analyzing..."
+                    : selectedProvider === "groq"
+                    ? "Groq Llama 3.3 is thinking..."
+                    : "Claude 3.5 is analyzing..."}
                 </Text>
               </View>
             )}
@@ -587,9 +828,11 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
             <TextInput
               style={styles.input}
               placeholder={
-                selectedProvider === "anthropic"
-                  ? "Ask Claude 3.5 (e.g. How to master Spring Boot?)..."
-                  : "Ask Gemini AI (e.g. How to master Spring Boot?)..."
+                selectedProvider === "gemini"
+                  ? "Ask Gemini AI (e.g. How to master Spring Boot?)..."
+                  : selectedProvider === "groq"
+                  ? "Ask Groq AI (e.g. How to master Spring Boot?)..."
+                  : "Ask Claude 3.5 (e.g. How to master Spring Boot?)..."
               }
               placeholderTextColor={colors.textMuted}
               value={question}
@@ -622,7 +865,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 680,
     height: "90%",
-    maxHeight: 700,
+    maxHeight: 720,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -684,26 +927,32 @@ const styles = StyleSheet.create({
   },
   providerTabsRow: {
     flexDirection: "row",
-    gap: 8,
+    flexWrap: "wrap",
+    gap: 6,
     marginBottom: 8,
   },
   providerTab: {
     flex: 1,
+    minWidth: 140,
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: radius.sm,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.12)",
     alignItems: "center",
   },
-  providerTabActivePurple: {
-    backgroundColor: "rgba(168, 85, 247, 0.15)",
-    borderColor: "#A855F7",
-  },
   providerTabActiveBlue: {
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
+    backgroundColor: "rgba(59, 130, 246, 0.18)",
     borderColor: "#3B82F6",
+  },
+  providerTabActiveAmber: {
+    backgroundColor: "rgba(245, 158, 11, 0.18)",
+    borderColor: "#F59E0B",
+  },
+  providerTabActivePurple: {
+    backgroundColor: "rgba(168, 85, 247, 0.18)",
+    borderColor: "#A855F7",
   },
   providerTabText: {
     color: colors.textMuted,
@@ -713,6 +962,13 @@ const styles = StyleSheet.create({
   providerTabTextActive: {
     color: colors.textPrimary,
     fontWeight: "700",
+  },
+  providerHintText: {
+    color: colors.accent,
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 8,
+    fontWeight: "500",
   },
   keyInput: {
     backgroundColor: "rgba(0, 0, 0, 0.4)",
@@ -728,12 +984,14 @@ const styles = StyleSheet.create({
   },
   keyActionRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
+    alignItems: "center",
   },
   keySaveBtn: {
     backgroundColor: colors.primary,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: radius.sm,
   },
   keySaveBtnText: {
@@ -741,10 +999,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  keyTestBtn: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radius.sm,
+  },
+  keyTestBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   keyCloseBtn: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: radius.sm,
   },
   keyCloseBtnText: {
@@ -757,6 +1026,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     marginTop: 6,
+    lineHeight: 16,
   },
   healthBanner: {
     flexDirection: "row",

@@ -87,7 +87,12 @@ public class GeminiAiService {
         // 1. Explicit Custom Key Provided from Client (e.g. In-App Key Config)
         if (customKey != null && !customKey.isBlank()) {
             String trimmedKey = customKey.trim();
-            if ("ANTHROPIC".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-ant-")) {
+            if ("GROQ".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("gsk_")) {
+                String res = callGroqApiWithKey(prompt, trimmedKey, "llama-3.3-70b-versatile");
+                if (res != null && !res.isBlank()) {
+                    return new AiResult(res, "GROQ");
+                }
+            } else if ("ANTHROPIC".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-ant-")) {
                 String res = callAnthropicApiWithKey(prompt, trimmedKey, null);
                 if (res != null && !res.isBlank()) {
                     return new AiResult(res, "ANTHROPIC");
@@ -520,6 +525,49 @@ public class GeminiAiService {
             }
         } catch (Exception ex) {
             log.warn("Gemini API invocation encountered an issue (falling back gracefully): {}", ex.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Direct HTTP call to Groq Cloud REST API (100% Free Ultra-Fast Llama 3.3).
+     */
+    public String callGroqApiWithKey(String prompt, String apiKey, String model) {
+        if (apiKey == null || apiKey.isBlank() || "demo-key".equalsIgnoreCase(apiKey)) {
+            return null;
+        }
+
+        try {
+            String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "");
+            String cleanModel = (model != null && !model.isBlank()) ? model.trim() : "llama-3.3-70b-versatile";
+            String url = "https://api.groq.com/openai/v1/chat/completions";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(cleanKey);
+
+            Map<String, Object> message = Map.of("role", "user", "content", prompt);
+            Map<String, Object> requestBody = Map.of(
+                    "model", cleanModel,
+                    "messages", List.of(message),
+                    "temperature", 0.7,
+                    "max_tokens", 1024
+            );
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode choices = root.path("choices");
+                if (choices.isArray() && choices.size() > 0) {
+                    JsonNode contentNode = choices.get(0).path("message").path("content");
+                    return contentNode.asText();
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Groq API invocation note: {}", ex.getMessage());
         }
 
         return null;
