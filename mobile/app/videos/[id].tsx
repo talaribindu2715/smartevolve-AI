@@ -21,7 +21,6 @@ import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { VideoCard } from "../../src/components/VideoCard";
 import { CertificateModal } from "../../src/components/CertificateModal";
-import { InteractiveQuizArenaModal } from "../../src/components/InteractiveQuizArenaModal";
 import { YouTubeVideo } from "../../src/types";
 import { MASTER_VIDEOS, getMasterVideoById } from "../../src/data/masterVideos";
 import { saveEarnedCertificate } from "../../src/services/certificateService";
@@ -62,72 +61,6 @@ export default function VideoDetailScreen() {
   const [showCertModal, setShowCertModal] = useState(false);
   const [localCompleted, setLocalCompleted] = useState(false);
 
-  // Interactive Quiz Arena Mode State (Kahoot / Wayground / Quizizz - zero external login)
-  const [arenaModalVisible, setArenaModalVisible] = useState(false);
-  const [arenaPlatform, setArenaPlatform] = useState<"kahoot" | "wayground" | "quizizz">("kahoot");
-  const [selectedPoolSize, setSelectedPoolSize] = useState<number>(30);
-
-  const launchArena = (plat: "kahoot" | "wayground" | "quizizz") => {
-    setArenaPlatform(plat);
-    setArenaModalVisible(true);
-  };
-
-  const handleArenaComplete = (correctCount: number, total: number, answers: Record<number, number>) => {
-    setSelectedAnswers(answers);
-    setQuizScore(correctCount);
-    setQuizSubmitted(true);
-
-    const isPassing = correctCount >= Math.ceil(total * 0.6);
-    if (isPassing) {
-      updateProgressMutation.mutate("COMPLETED");
-      saveEarnedCertificate({
-        courseTitle: effectiveVideo?.title || "Masterclass",
-        courseId: effectiveVideo?.videoId || effectiveVideo?.id || "course",
-        category: effectiveVideo?.category || effectiveVideo?.skillName || "Computer Science",
-        score: correctCount,
-        total,
-        percentage: Math.round((correctCount / total) * 100),
-        studentName: profile?.fullName || "Student",
-      }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ["credentials"] });
-        queryClient.invalidateQueries({ queryKey: ["storedEarnedCerts"] });
-      }).catch(() => {});
-    }
-
-    // Persist to PostgreSQL database directly
-    api.submitCourseQuizResult({
-      courseOrVideoId: effectiveVideo?.videoId || effectiveVideo?.id || "course",
-      courseTitle: effectiveVideo?.title || "Masterclass",
-      skillName: effectiveVideo?.skillName || "Computer Science",
-      score: correctCount,
-      totalQuestions: total,
-      timeTakenSeconds: 90,
-      attemptNumber: quizAttempts,
-      difficulty: effectiveVideo?.difficulty || "INTERMEDIATE",
-      platform: arenaPlatform.toUpperCase(),
-    }).then(() => {
-      setDbPersisted(true);
-    }).catch((err) => {
-      console.warn("Arena persist notice:", err);
-    });
-
-    if (effectiveVideo) {
-      api.updateVideoProgress({
-        videoId: effectiveVideo.id,
-        youtubeVideoId: effectiveVideo.videoId,
-        watchedSeconds: (effectiveVideo.estimatedMinutes || 30) * 60,
-        totalSeconds: (effectiveVideo.estimatedMinutes || 30) * 60,
-        status: "COMPLETED",
-      }).catch(() => {});
-    }
-
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["evolutionHistory"] });
-    queryClient.invalidateQueries({ queryKey: ["evolutionTrends"] });
-    queryClient.invalidateQueries({ queryKey: ["studentSkills"] });
-    queryClient.invalidateQueries({ queryKey: ["credentials"] });
-  };
-
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: () => api.getProfile(),
@@ -144,8 +77,8 @@ export default function VideoDetailScreen() {
   const effectiveVideo = video || fallbackVideo;
 
   const quizQuestions = React.useMemo(() => {
-    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize);
-  }, [effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize]);
+    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, 15);
+  }, [effectiveVideo?.skillName, effectiveVideo?.title]);
 
   const { data: assessments } = useQuery({
     queryKey: ["assessments"],
@@ -498,104 +431,127 @@ export default function VideoDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Tab 2: Interactive Skill Quiz (No more 'Coming Soon'!) */}
+        {/* Tab 2: Unified Interactive Skill Quiz */}
         {activeTab === "quiz" && (
           <View style={styles.tabContent}>
             <Card style={styles.quizWrapperCard}>
               {/* Quiz Header */}
               <View style={styles.quizHeaderRow}>
-                <View>
+                <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text style={styles.quizHeadline}>
-                    {effectiveVideo.skillName} Diagnostic Quiz
+                    {effectiveVideo.skillName} Masterclass Certification Quiz
                   </Text>
                   <Text style={styles.quizSubHeadline}>
-                    Attempt #{quizAttempts} • Calibrated with Attempt-Damped Proficiency Recalibration
+                    Attempt #{quizAttempts} • Single Unified Quiz • Minimum 60% required to pass
                   </Text>
                 </View>
                 <Badge
-                  label={quizSubmitted ? `${quizScore}/${quizQuestions.length} Score` : `Q ${currentQuestionIndex + 1}/${quizQuestions.length}`}
-                  variant={quizSubmitted ? (quizScore >= 4 ? "success" : "warning") : "primary"}
+                  label={
+                    quizSubmitted
+                      ? `${quizScore}/${quizQuestions.length} (${Math.round((quizScore / quizQuestions.length) * 100)}%)`
+                      : `Q ${currentQuestionIndex + 1}/${quizQuestions.length}`
+                  }
+                  variant={
+                    quizSubmitted
+                      ? quizScore >= Math.ceil(quizQuestions.length * 0.6)
+                        ? "success"
+                        : "error"
+                      : "primary"
+                  }
                 />
               </View>
 
-              {/* Challenge Depth Selector */}
-              <View style={styles.poolSelectorCard}>
-                <Text style={styles.poolSelectorTitle}>🎯 Quiz Questions Pool:</Text>
-                <View style={styles.poolPillsRow}>
-                  <TouchableOpacity
-                    style={[styles.poolPill, selectedPoolSize === 15 && styles.poolPillActive]}
-                    onPress={() => { setSelectedPoolSize(15); setCurrentQuestionIndex(0); }}
-                  >
-                    <Text style={[styles.poolPillText, selectedPoolSize === 15 && styles.poolPillTextActive]}>
-                      ⚡ 15 Questions
+              {/* Unified Single Quiz Info & Progress Banner */}
+              <View style={styles.unifiedQuizBanner}>
+                <View style={styles.unifiedBannerTop}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={styles.unifiedBannerTitle}>
+                      🎯 Masterclass Certification Exam
                     </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.poolPill, selectedPoolSize === 30 && styles.poolPillActive]}
-                    onPress={() => { setSelectedPoolSize(30); setCurrentQuestionIndex(0); }}
-                  >
-                    <Text style={[styles.poolPillText, selectedPoolSize === 30 && styles.poolPillTextActive]}>
-                      🏆 30 Questions (Deep Exam)
+                    <Text style={styles.unifiedBannerDesc}>
+                      Answer all {quizQuestions.length} questions and score ≥60% (at least {Math.ceil(quizQuestions.length * 0.6)}/{quizQuestions.length} correct) to unlock and claim your verified Polygon blockchain certificate.
                     </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.poolPill, selectedPoolSize >= 40 && styles.poolPillActive]}
-                    onPress={() => { setSelectedPoolSize(50); setCurrentQuestionIndex(0); }}
-                  >
-                    <Text style={[styles.poolPillText, selectedPoolSize >= 40 && styles.poolPillTextActive]}>
-                      👑 Grand Championship (All Qs)
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* In-App Interactive Quiz Arena (Kahoot • Wayground • Quizizz - No External Sign-In) */}
-              <View style={styles.arenaLaunchBanner}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 14 }}>
-                    🎮 In-App Quiz Arena: Kahoot • Wayground • Quizizz
-                  </Text>
-                  <View style={styles.noLoginBadge}>
-                    <Text style={styles.noLoginBadgeText}>Zero Sign-in • In-App</Text>
+                  </View>
+                  <View style={styles.passingRequirementBadge}>
+                    <Text style={styles.passingRequirementBadgeText}>≥60% to Pass</Text>
                   </View>
                 </View>
-                <Text style={{ color: "#94A3B8", fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
-                  Directly launches interactive questions for this video! Play with 25s countdown timers, Kahoot shape blocks, speed streaks, and earn your certificate:
-                </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                  <TouchableOpacity
-                    style={styles.kahootBtn}
-                    onPress={() => launchArena("kahoot")}
-                  >
-                    <Text style={styles.arenaBtnText}>▲ ◆ ● ■ Play Kahoot Arena ➔</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.waygroundBtn}
-                    onPress={() => launchArena("wayground")}
-                  >
-                    <Text style={styles.arenaBtnText}>⚡ Play Wayground Speed ➔</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.quizizzBtn}
-                    onPress={() => launchArena("quizizz")}
-                  >
-                    <Text style={styles.arenaBtnText}>🎯 Play Quizizz Challenge ➔</Text>
-                  </TouchableOpacity>
+
+                {/* Progress bar across all questions */}
+                <View style={styles.progressBarTrack}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${Math.round(
+                          (Object.keys(selectedAnswers).length / Math.max(1, quizQuestions.length)) * 100
+                        )}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={styles.progressBarMetaRow}>
+                  <Text style={styles.progressBarMetaText}>
+                    Answered: {Object.keys(selectedAnswers).length} of {quizQuestions.length} questions
+                  </Text>
+                  <Text style={styles.progressBarMetaText}>
+                    {Math.round(
+                      (Object.keys(selectedAnswers).length / Math.max(1, quizQuestions.length)) * 100
+                    )}% Completed
+                  </Text>
                 </View>
               </View>
 
               {/* Submitted Results View */}
               {quizSubmitted ? (
                 <View style={styles.resultsContainer}>
-                  <View style={styles.scoreBanner}>
+                  <View
+                    style={[
+                      styles.scoreBanner,
+                      quizScore >= Math.ceil(quizQuestions.length * 0.6)
+                        ? styles.scoreBannerPassed
+                        : styles.scoreBannerFailed,
+                    ]}
+                  >
+                    <View style={styles.resultStatusBadge}>
+                      <Text
+                        style={[
+                          styles.resultStatusBadgeText,
+                          {
+                            color:
+                              quizScore >= Math.ceil(quizQuestions.length * 0.6)
+                                ? "#10B981"
+                                : "#EF4444",
+                          },
+                        ]}
+                      >
+                        {quizScore >= Math.ceil(quizQuestions.length * 0.6)
+                          ? "✓ PASSED (≥60% THRESHOLD MET)"
+                          : "✗ RETAKE REQUIRED (<60% SCORE)"}
+                      </Text>
+                    </View>
+
                     <Text style={styles.scoreBigText}>
                       {Math.round((quizScore / quizQuestions.length) * 100)}%
                     </Text>
                     <Text style={styles.scoreSubText}>
                       You answered {quizScore} out of {quizQuestions.length} questions correctly.
+                      {quizScore >= Math.ceil(quizQuestions.length * 0.6)
+                        ? " Congratulations! Your official certificate is unlocked."
+                        : ` Passing mark is 60% (at least ${Math.ceil(quizQuestions.length * 0.6)} correct answers).`}
                     </Text>
+
+                    {quizScore >= Math.ceil(quizQuestions.length * 0.6) && (
+                      <TouchableOpacity
+                        style={styles.claimCertBtn}
+                        onPress={() => setShowCertModal(true)}
+                      >
+                        <Text style={styles.claimCertBtnText}>
+                          🎓 View & Claim Official Certificate ➔
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
                     <View style={styles.dampedPill}>
                       <Text style={styles.dampedPillText}>
                         📈 +{((quizScore / quizQuestions.length) * (5.0 / Math.sqrt(Math.max(1, quizAttempts)))).toFixed(1)}% Skill Proficiency Added
@@ -643,20 +599,30 @@ export default function VideoDetailScreen() {
 
                   <View style={styles.resultsActionRow}>
                     <Button
-                      title="🔄 Retry Quiz"
+                      title="🔄 Retake Quiz"
                       onPress={handleResetQuiz}
                       variant="outline"
                       size="md"
                       style={{ flex: 1 }}
                     />
-                    {relatedAssessment && (
+                    {quizScore >= Math.ceil(quizQuestions.length * 0.6) ? (
                       <Button
-                        title="Take Formal Assessment →"
-                        onPress={() => router.push(`/assessment/${relatedAssessment.id}`)}
+                        title="🎓 View Certificate"
+                        onPress={() => setShowCertModal(true)}
                         variant="primary"
                         size="md"
                         style={{ flex: 1 }}
                       />
+                    ) : (
+                      relatedAssessment && (
+                        <Button
+                          title="Take Formal Assessment →"
+                          onPress={() => router.push(`/assessment/${relatedAssessment.id}`)}
+                          variant="primary"
+                          size="md"
+                          style={{ flex: 1 }}
+                        />
+                      )
                     )}
                   </View>
                 </View>
@@ -720,11 +686,11 @@ export default function VideoDetailScreen() {
                         onPress={() => setCurrentQuestionIndex((prev) => prev + 1)}
                         style={styles.navBtnNext}
                       >
-                        <Text style={styles.navBtnNextText}>Next →</Text>
+                        <Text style={styles.navBtnNextText}>Next Question →</Text>
                       </TouchableOpacity>
                     ) : (
                       <Button
-                        title="Submit Quiz & Calibrate Score"
+                        title="Submit Quiz & Unlock Certificate"
                         onPress={handleSubmitQuiz}
                         variant="primary"
                         size="sm"
@@ -766,18 +732,6 @@ export default function VideoDetailScreen() {
             )}
           </View>
         )}
-        {/* In-App Interactive Quiz Arena (Kahoot • Wayground • Quizizz) */}
-        <InteractiveQuizArenaModal
-          visible={arenaModalVisible}
-          onClose={() => setArenaModalVisible(false)}
-          platform={arenaPlatform}
-          videoTitle={effectiveVideo.title}
-          skillName={effectiveVideo.skillName || "Computer Science"}
-          questions={quizQuestions}
-          studentName={profile?.fullName || "SmartEvolve Scholar"}
-          onComplete={handleArenaComplete}
-          onViewCertificate={() => setShowCertModal(true)}
-        />
 
         {/* Autonomous Great Learning Style Course Certificate Modal */}
         <CertificateModal
@@ -1325,99 +1279,95 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
   },
-  arenaLaunchBanner: {
-    backgroundColor: "rgba(70, 23, 143, 0.25)",
-    borderColor: "rgba(168, 85, 247, 0.4)",
+  unifiedQuizBanner: {
+    backgroundColor: "rgba(30, 41, 59, 0.7)",
+    borderColor: "rgba(99, 102, 241, 0.35)",
     borderWidth: 1.5,
     borderRadius: 14,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
-  arenaCalloutCard: {
-    backgroundColor: "#131B2E",
-    borderColor: "rgba(99, 102, 241, 0.35)",
-    borderWidth: 1.5,
-    borderRadius: 14,
-    padding: spacing.md,
-    marginTop: spacing.md,
+  unifiedBannerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.sm,
   },
-  noLoginBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
+  unifiedBannerTitle: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  unifiedBannerDesc: {
+    color: "#94A3B8",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  passingRequirementBadge: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
     borderColor: "#10B981",
     borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: radius.full,
   },
-  noLoginBadgeText: {
+  passingRequirementBadgeText: {
     color: "#10B981",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "800",
   },
-  kahootBtn: {
-    backgroundColor: "#46178F",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
+  progressBarTrack: {
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginVertical: 8,
   },
-  waygroundBtn: {
-    backgroundColor: "#0066CC",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#6366F1",
+    borderRadius: 3,
   },
-  quizizzBtn: {
-    backgroundColor: "#8854C0",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  arenaBtnText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  poolSelectorCard: {
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.25)",
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  poolSelectorTitle: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  poolPillsRow: {
+  progressBarMetaRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  poolPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  poolPillActive: {
-    backgroundColor: "rgba(99, 102, 241, 0.25)",
-    borderColor: "#6366F1",
-  },
-  poolPillText: {
-    color: colors.textSecondary,
-    fontSize: 12,
+  progressBarMetaText: {
+    color: colors.textMuted,
+    fontSize: 11,
     fontWeight: "600",
   },
-  poolPillTextActive: {
+  scoreBannerPassed: {
+    borderColor: "rgba(16, 185, 129, 0.4)",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+  },
+  scoreBannerFailed: {
+    borderColor: "rgba(239, 68, 68, 0.4)",
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+  },
+  resultStatusBadge: {
+    alignSelf: "center",
+    marginBottom: spacing.xs,
+  },
+  resultStatusBadgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  claimCertBtn: {
+    backgroundColor: "#10B981",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: radius.sm,
+    alignItems: "center",
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  claimCertBtnText: {
     color: "#FFFFFF",
+    fontSize: 13,
     fontWeight: "800",
   },
 });
