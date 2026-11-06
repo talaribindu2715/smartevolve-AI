@@ -47,12 +47,15 @@ export default function VideoDetailScreen() {
     setSelectedAnswers({});
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizPoints(0);
+    setQuizStreak(0);
+    setMaxQuizStreak(0);
     setLocalCompleted(false);
     setShowCertModal(false);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [id]);
 
-  // In-line Skill Quiz State
+  // In-line Skill Quiz State with Merged Kahoot & Wayground Gamification
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -60,6 +63,10 @@ export default function VideoDetailScreen() {
   const [quizAttempts, setQuizAttempts] = useState(1);
   const [showCertModal, setShowCertModal] = useState(false);
   const [localCompleted, setLocalCompleted] = useState(false);
+  const [quizPoints, setQuizPoints] = useState(0);
+  const [quizStreak, setQuizStreak] = useState(0);
+  const [maxQuizStreak, setMaxQuizStreak] = useState(0);
+  const [quizStyleMode, setQuizStyleMode] = useState<"kahoot" | "wayground">("kahoot");
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -252,7 +259,20 @@ export default function VideoDetailScreen() {
 
   const handleSelectOption = (qId: number, optionIdx: number) => {
     if (quizSubmitted) return;
+    const isFirstAttempt = selectedAnswers[qId] === undefined;
     setSelectedAnswers((prev) => ({ ...prev, [qId]: optionIdx }));
+
+    const currentQ = quizQuestions[currentQuestionIndex];
+    if (isFirstAttempt && currentQ) {
+      if (optionIdx === currentQ.correctIndex) {
+        const nextStreak = quizStreak + 1;
+        setQuizStreak(nextStreak);
+        if (nextStreak > maxQuizStreak) setMaxQuizStreak(nextStreak);
+        setQuizPoints((prev) => prev + 500 + nextStreak * 100);
+      } else {
+        setQuizStreak(0);
+      }
+    }
   };
 
   const handleSubmitQuiz = () => {
@@ -336,6 +356,9 @@ export default function VideoDetailScreen() {
     setQuizSubmitted(false);
     setCurrentQuestionIndex(0);
     setQuizAttempts((prev) => prev + 1);
+    setQuizPoints(0);
+    setQuizStreak(0);
+    setMaxQuizStreak(0);
   };
 
   const relatedAssessment = (assessments || []).find(
@@ -552,6 +575,28 @@ export default function VideoDetailScreen() {
                       </TouchableOpacity>
                     )}
 
+                    {/* Arena Gamified Stats Podium */}
+                    <View style={styles.hudStatsPodium}>
+                      <View style={styles.podiumCol}>
+                        <Text style={styles.podiumVal}>{quizPoints.toLocaleString()}</Text>
+                        <Text style={styles.podiumLabel}>TOTAL POINTS</Text>
+                      </View>
+                      <View style={styles.podiumDivider} />
+                      <View style={styles.podiumCol}>
+                        <Text style={[styles.podiumVal, { color: quizScore >= Math.ceil(quizQuestions.length * 0.6) ? "#10B981" : "#EF4444" }]}>
+                          {quizScore}/{quizQuestions.length}
+                        </Text>
+                        <Text style={styles.podiumLabel}>ACCURACY ({Math.round((quizScore / quizQuestions.length) * 100)}%)</Text>
+                      </View>
+                      <View style={styles.podiumDivider} />
+                      <View style={styles.podiumCol}>
+                        <Text style={[styles.podiumVal, { color: "#F59E0B" }]}>
+                          {maxQuizStreak}x
+                        </Text>
+                        <Text style={styles.podiumLabel}>MAX STREAK</Text>
+                      </View>
+                    </View>
+
                     <View style={styles.dampedPill}>
                       <Text style={styles.dampedPillText}>
                         📈 +{((quizScore / quizQuestions.length) * (5.0 / Math.sqrt(Math.max(1, quizAttempts)))).toFixed(1)}% Skill Proficiency Added
@@ -627,8 +672,45 @@ export default function VideoDetailScreen() {
                   </View>
                 </View>
               ) : (
-                /* Active Question View */
+                /* Active Question View (Merged Kahoot & Wayground Interactive Gameplay) */
                 <View style={styles.activeQuestionContainer}>
+                  {/* Gamified HUD Strip (Points, Streak & Style Switcher) */}
+                  <View style={styles.hudRow}>
+                    <View style={styles.hudPointsBox}>
+                      <Text style={styles.hudPointsLabel}>ARENA POINTS</Text>
+                      <Text style={styles.hudPointsVal}>{quizPoints.toLocaleString()}</Text>
+                    </View>
+
+                    {quizStreak > 0 ? (
+                      <View style={styles.hudStreakBox}>
+                        <Text style={styles.hudStreakText}>🔥 {quizStreak}x Streak!</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.hudPassingBox}>
+                        <Text style={styles.hudPassingText}>🎯 Score ≥60% to Pass</Text>
+                      </View>
+                    )}
+
+                    <View style={styles.hudModeToggle}>
+                      <TouchableOpacity
+                        style={[styles.hudModeBtn, quizStyleMode === "kahoot" && styles.hudModeBtnActive]}
+                        onPress={() => setQuizStyleMode("kahoot")}
+                      >
+                        <Text style={[styles.hudModeBtnText, quizStyleMode === "kahoot" && styles.hudModeBtnTextActive]}>
+                          ▲ Kahoot
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.hudModeBtn, quizStyleMode === "wayground" && styles.hudModeBtnActive]}
+                        onPress={() => setQuizStyleMode("wayground")}
+                      >
+                        <Text style={[styles.hudModeBtnText, quizStyleMode === "wayground" && styles.hudModeBtnTextActive]}>
+                          ⚡ Wayground
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
                   {/* Progress Indicator Dots */}
                   <View style={styles.dotsRow}>
                     {quizQuestions.map((q, i) => (
@@ -644,30 +726,101 @@ export default function VideoDetailScreen() {
                     ))}
                   </View>
 
-                  <Text style={styles.questionText}>
-                    {currentQuestionIndex + 1}. {currentQuestion.question}
-                  </Text>
+                  {/* Question Card Box */}
+                  <View style={styles.arenaQuestionCard}>
+                    <Text style={styles.arenaQuestionNumber}>
+                      QUESTION {currentQuestionIndex + 1} OF {quizQuestions.length} • {effectiveVideo.skillName}
+                    </Text>
+                    <Text style={styles.arenaQuestionText}>
+                      {currentQuestion.question}
+                    </Text>
+                  </View>
 
-                  {/* Options List */}
-                  <View style={styles.optionsList}>
+                  {/* Kahoot & Wayground Interactive 4-Color Answer Tiles */}
+                  <View style={[styles.tileGrid, isDesktop && styles.tileGridDesktop]}>
                     {currentQuestion.options.map((opt, optIdx) => {
                       const isSelected = selectedAnswers[currentQuestion.id] === optIdx;
+                      const isAnswered = selectedAnswers[currentQuestion.id] !== undefined;
+                      const isCorrect = optIdx === currentQuestion.correctIndex;
+
+                      const shapes = quizStyleMode === "kahoot"
+                        ? ["▲", "◆", "●", "■"]
+                        : ["⚡", "🚀", "🎯", "🔥"];
+                      const tileColors = quizStyleMode === "kahoot"
+                        ? ["#E21B3C", "#1368CE", "#D97706", "#16A34A"]
+                        : ["#0284C7", "#0D9488", "#E11D48", "#16A34A"];
+                      const tileBg = tileColors[optIdx % tileColors.length];
+
+                      let borderStyle: any = {};
+                      let tileOpacity = 1;
+
+                      if (isAnswered) {
+                        if (isCorrect) {
+                          borderStyle = { borderColor: "#10B981", borderWidth: 3.5, transform: [{ scale: 1.02 }] };
+                        } else if (isSelected) {
+                          borderStyle = { borderColor: "#EF4444", borderWidth: 3.5 };
+                        } else {
+                          tileOpacity = 0.45;
+                        }
+                      }
+
                       return (
                         <TouchableOpacity
                           key={optIdx}
-                          style={[styles.optionItem, isSelected && styles.optionItemSelected]}
+                          activeOpacity={0.85}
+                          style={[
+                            styles.answerTile,
+                            isDesktop && styles.answerTileDesktop,
+                            { backgroundColor: tileBg, opacity: tileOpacity },
+                            borderStyle,
+                          ]}
                           onPress={() => handleSelectOption(currentQuestion.id, optIdx)}
                         >
-                          <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                            {isSelected && <View style={styles.radioInner} />}
+                          <View style={styles.tileShapeBadge}>
+                            <Text style={styles.tileShapeText}>{shapes[optIdx]}</Text>
                           </View>
-                          <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
-                            {opt}
-                          </Text>
+                          <Text style={styles.tileText}>{opt}</Text>
+                          {isAnswered && isCorrect && (
+                            <View style={styles.tileStatusBadgeCorrect}>
+                              <Text style={styles.tileStatusText}>✓ Correct</Text>
+                            </View>
+                          )}
+                          {isAnswered && isSelected && !isCorrect && (
+                            <View style={styles.tileStatusBadgeWrong}>
+                              <Text style={styles.tileStatusText}>✗ Selected</Text>
+                            </View>
+                          )}
                         </TouchableOpacity>
                       );
                     })}
                   </View>
+
+                  {/* Instant Feedback Takeaway Card */}
+                  {selectedAnswers[currentQuestion.id] !== undefined && (
+                    <View
+                      style={[
+                        styles.feedbackCard,
+                        selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex
+                          ? styles.feedbackCorrect
+                          : styles.feedbackWrong,
+                      ]}
+                    >
+                      <View style={styles.feedbackHeaderRow}>
+                        <Text style={styles.feedbackTitle}>
+                          {selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex
+                            ? `🎉 AWESOME! CORRECT ANSWER (+${500 + quizStreak * 100} PTS)`
+                            : "❌ NOT QUITE"}
+                        </Text>
+                        {quizStreak > 1 && selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex && (
+                          <Text style={styles.feedbackStreak}>🔥 {quizStreak}x Streak Active!</Text>
+                        )}
+                      </View>
+
+                      <Text style={styles.feedbackExplanation}>
+                        💡 <Text style={{ fontWeight: "700" }}>Key Concept:</Text> {currentQuestion.explanation}
+                      </Text>
+                    </View>
+                  )}
 
                   {/* Question Navigation */}
                   <View style={styles.questionNavRow}>
@@ -690,7 +843,7 @@ export default function VideoDetailScreen() {
                       </TouchableOpacity>
                     ) : (
                       <Button
-                        title="Submit Quiz & Unlock Certificate"
+                        title="Submit Quiz & Unlock Certificate 🏆"
                         onPress={handleSubmitQuiz}
                         variant="primary"
                         size="sm"
@@ -1369,5 +1522,251 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "800",
+  },
+  // Merged Kahoot & Wayground Arena Styles
+  hudRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(15, 23, 42, 0.7)",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 6,
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  hudPointsBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  hudPointsLabel: {
+    color: "#94A3B8",
+    fontSize: 8,
+    fontWeight: "800",
+  },
+  hudPointsVal: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  hudStreakBox: {
+    backgroundColor: "rgba(245, 158, 11, 0.2)",
+    borderColor: "#F59E0B",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  hudStreakText: {
+    color: "#F59E0B",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  hudPassingBox: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  hudPassingText: {
+    color: "#10B981",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  hudModeToggle: {
+    flexDirection: "row",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    borderRadius: 8,
+    padding: 2,
+    gap: 3,
+  },
+  hudModeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  hudModeBtnActive: {
+    backgroundColor: "#6366F1",
+  },
+  hudModeBtnText: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  hudModeBtnTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
+  arenaQuestionCard: {
+    backgroundColor: "#131B2E",
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderWidth: 1.5,
+    borderRadius: 14,
+    padding: spacing.md,
+    marginVertical: 6,
+    minHeight: 85,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  arenaQuestionNumber: {
+    color: "#818CF8",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  arenaQuestionText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  tileGrid: {
+    gap: 8,
+    marginVertical: 8,
+  },
+  tileGridDesktop: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  answerTile: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    minHeight: 50,
+    justifyContent: "center",
+    position: "relative",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  answerTileDesktop: {
+    width: "48.8%",
+  },
+  tileShapeBadge: {
+    position: "absolute",
+    top: 12,
+    left: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tileShapeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  tileText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+    paddingLeft: 30,
+    paddingRight: 60,
+    lineHeight: 18,
+  },
+  tileStatusBadgeCorrect: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#10B981",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tileStatusBadgeWrong: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tileStatusText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  feedbackCard: {
+    padding: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginVertical: 8,
+  },
+  feedbackCorrect: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    borderColor: "#10B981",
+  },
+  feedbackWrong: {
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderColor: "#EF4444",
+  },
+  feedbackHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  feedbackTitle: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  feedbackStreak: {
+    color: "#F59E0B",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  feedbackExplanation: {
+    color: "#E2E8F0",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  hudStatsPodium: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginVertical: 10,
+    width: "100%",
+  },
+  podiumCol: {
+    alignItems: "center",
+    flex: 1,
+  },
+  podiumVal: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  podiumLabel: {
+    color: "#94A3B8",
+    fontSize: 9,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  podiumDivider: {
+    width: 1,
+    height: 26,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
 });
