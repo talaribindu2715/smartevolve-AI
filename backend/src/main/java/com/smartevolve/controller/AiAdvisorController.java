@@ -58,6 +58,12 @@ public class AiAdvisorController {
             @RequestBody AiAdvisorDto.MentorChatRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
         UUID studentId = principal != null ? principal.getId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
-        return ResponseEntity.ok(geminiAiService.chatWithMentor(studentId, request.getMessage(), request.getCurrentCareerContext()));
+        return ResponseEntity.ok(geminiAiService.chatWithMentor(
+                studentId,
+                request.getMessage(),
+                request.getCurrentCareerContext(),
+                request.getCustomApiKey(),
+                request.getProvider()
+        ));
     }
 }

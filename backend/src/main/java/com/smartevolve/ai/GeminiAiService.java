@@ -22,6 +22,15 @@ import java.util.stream.Collectors;
 @Service
 public class GeminiAiService {
 
+    @Value("${anthropic.api-key:}")
+    private String anthropicApiKey;
+
+    @Value("${anthropic.model:claude-3-5-haiku-20241022}")
+    private String anthropicModel;
+
+    @Value("${anthropic.base-url:https://api.anthropic.com/v1/messages}")
+    private String anthropicBaseUrl;
+
     @Value("${gemini.api-key:}")
     private String geminiApiKey;
 
@@ -68,10 +77,43 @@ public class GeminiAiService {
     }
 
     /**
-     * Executes prompt across Gemini, OpenAI, or falls back to intelligent heuristics.
+     * Executes prompt across Anthropic Claude, Google Gemini, OpenAI, or falls back to intelligent heuristics.
      */
     private AiResult executeAiPrompt(String prompt) {
-        // 1. Prioritize Google Gemini if API key configured
+        return executeAiPrompt(prompt, null, null);
+    }
+
+    private AiResult executeAiPrompt(String prompt, String customKey, String customProvider) {
+        // 1. Explicit Custom Key Provided from Client (e.g. In-App Key Config)
+        if (customKey != null && !customKey.isBlank()) {
+            String trimmedKey = customKey.trim();
+            if ("ANTHROPIC".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-ant-")) {
+                String res = callAnthropicApiWithKey(prompt, trimmedKey, null);
+                if (res != null && !res.isBlank()) {
+                    return new AiResult(res, "ANTHROPIC");
+                }
+            } else if ("GEMINI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("AIza")) {
+                String res = callGeminiApiWithKey(prompt, trimmedKey, null);
+                if (res != null && !res.isBlank()) {
+                    return new AiResult(res, "GEMINI");
+                }
+            } else if ("OPENAI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-")) {
+                String res = callOpenAiApiWithKey(prompt, trimmedKey, null);
+                if (res != null && !res.isBlank()) {
+                    return new AiResult(res, "OPENAI");
+                }
+            }
+        }
+
+        // 2. Server-Side Anthropic Claude (Prioritized for Reliability & Reasoning)
+        if (anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey)) {
+            String res = callAnthropicApi(prompt);
+            if (res != null && !res.isBlank()) {
+                return new AiResult(res, "ANTHROPIC");
+            }
+        }
+
+        // 3. Server-Side Google Gemini
         if (geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey)) {
             String res = callGeminiApi(prompt);
             if (res != null && !res.isBlank()) {
@@ -79,7 +121,7 @@ public class GeminiAiService {
             }
         }
 
-        // 2. Prioritize OpenAI if API key configured
+        // 4. Server-Side OpenAI
         if (openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey)) {
             String res = callOpenAiApi(prompt);
             if (res != null && !res.isBlank()) {
@@ -91,7 +133,7 @@ public class GeminiAiService {
     }
 
     /**
-     * Executes deep cognitive skill analysis using Gemini, OpenAI, or intelligent heuristic fallback.
+     * Executes deep cognitive skill analysis using Anthropic Claude, Gemini, OpenAI, or intelligent heuristic fallback.
      */
     public AiAdvisorDto.SkillAnalysisResponse analyzeStudentSkills(UUID studentId) {
         List<StudentSkill> skills = studentSkillRepository.findByStudentId(studentId);
@@ -141,7 +183,7 @@ public class GeminiAiService {
         );
 
         return AiAdvisorDto.SkillAnalysisResponse.builder()
-                .studentHeadline("Adaptive Engineering Scholar")
+                .studentHeadline(String.format("Adaptive Learner targeting %s", targetCareer))
                 .targetCareer(targetCareer)
                 .topStrengths(strengths)
                 .criticalGrowthAreas(growthAreas)
@@ -153,46 +195,41 @@ public class GeminiAiService {
     }
 
     /**
-     * Generates rich career guidance and resume advice using Gemini or OpenAI API.
+     * Generates career readiness assessment and milestone roadmap advice.
      */
     public AiAdvisorDto.CareerGuidanceResponse generateCareerGuidance(UUID studentId, UUID careerId) {
-        Career career = careerRepository.findById(careerId)
-                .orElseThrow(() -> new IllegalArgumentException("Career not found"));
-
+        Career career = careerRepository.findById(careerId).orElseThrow(() -> new IllegalArgumentException("Career pathway not found: " + careerId));
         List<StudentSkill> skills = studentSkillRepository.findByStudentId(studentId);
 
         String prompt = String.format(
-                "As an enterprise technical recruiter and career mentor, provide guidance for a student targeting: %s (%s category).\n" +
-                "Student currently has logged proficiencies in: %s.\n\n" +
-                "Please output:\n" +
-                "- Readiness assessment\n" +
-                "- 3 high-impact portfolio projects they should build to prove competency\n" +
-                "- 3 crucial technical interview questions and preparation tips for this role\n" +
-                "- An estimated study timeline in weeks to achieve job-ready proficiency",
-                career.getName(), career.getCategory(),
-                skills.stream().map(s -> s.getSkill().getName() + " (" + s.getProficiency() + "%)").collect(Collectors.joining(", "))
+                "A student in SmartEvolve AI is targeting the career '%s' (%s).\n" +
+                "They currently have %d recorded skill proficiencies.\n" +
+                "Provide:\n" +
+                "1. A realistic career readiness assessment (2-3 sentences).\n" +
+                "2. Three high-impact portfolio project ideas that stand out to technical recruiters.\n" +
+                "3. Key technical interview preparation topics.",
+                career.getName(), career.getDescription(), skills.size()
         );
 
         AiResult aiResult = executeAiPrompt(prompt);
         boolean isAiPowered = !"HEURISTIC".equals(aiResult.provider);
 
+        List<String> milestones = Arrays.asList(
+                String.format("Master Core Fundamentals for %s", career.getName()),
+                "Pass Intermediate DAG Roadmap Stage Assessments",
+                "Deploy production-grade capstone project and mint on-chain credential"
+        );
+
         List<String> projectIdeas = Arrays.asList(
-                "Build a Real-Time Analytics Pipeline with Automated ETL",
-                "Deploy an End-to-End Microservice Application with CI/CD & Docker",
-                "Construct a Tamper-Evident Verification Service with Smart Contracts"
+                String.format("Production %s Platform with Real-Time Observability", career.getName()),
+                "Distributed Event-Driven Architecture with WebSockets and Redis",
+                "Verifiable Credential Registry anchored on Polygon Smart Contracts"
         );
 
         List<String> interviewTips = Arrays.asList(
-                "Practice explaining DAG topological sorting and Kahn's algorithm for dependency management.",
-                "Review SQL query optimization: indexes, partition strategies, and window functions.",
-                "Be ready to articulate system trade-offs: latency vs throughput in high-concurrency architectures."
-        );
-
-        List<String> milestones = Arrays.asList(
-                "Week 1-3: Core Foundational Mastery & Interactive Quizzes",
-                "Week 4-6: Intermediate Module Completion & Video Masterclass Deep Dives",
-                "Week 7-9: Capstone Portfolio Development & Blockchain Certification",
-                "Week 10+: Mock Interviews & Technical Assessment Drills"
+                "Practice Data Structures & Algorithm patterns (Two Pointers, Sliding Window, Graph Traversals)",
+                "Prepare System Design scenarios: horizontal scaling, caching strategies, and database indexing",
+                "Be ready to explain production debugging tradeoffs using the STAR framework"
         );
 
         return AiAdvisorDto.CareerGuidanceResponse.builder()
@@ -212,6 +249,15 @@ public class GeminiAiService {
      * Interactive AI Career Mentor chat dialog.
      */
     public AiAdvisorDto.MentorChatResponse chatWithMentor(UUID studentId, String userMessage, String careerContext) {
+        return chatWithMentor(studentId, userMessage, careerContext, null, null);
+    }
+
+    public AiAdvisorDto.MentorChatResponse chatWithMentor(
+            UUID studentId,
+            String userMessage,
+            String careerContext,
+            String customKey,
+            String customProvider) {
         String prompt = String.format(
                 "You are SmartEvolve AI's intelligent Career Mentor. A student asks: \"%s\"\n" +
                 "Context: Target Career = %s.\n" +
@@ -219,7 +265,7 @@ public class GeminiAiService {
                 userMessage, (careerContext != null ? careerContext : "Software Engineering")
         );
 
-        AiResult aiResult = executeAiPrompt(prompt);
+        AiResult aiResult = executeAiPrompt(prompt, customKey, customProvider);
         boolean isAiPowered = !"HEURISTIC".equals(aiResult.provider);
 
         String reply = isAiPowered ? aiResult.text : generateIntelligentFallback(userMessage, careerContext);
@@ -300,60 +346,157 @@ public class GeminiAiService {
     }
 
     /**
-     * Diagnostic health check for Google Gemini API integration.
+     * Diagnostic health check for Anthropic Claude, Google Gemini, and OpenAI API integrations.
      */
     public Map<String, Object> checkGeminiHealth() {
         Map<String, Object> res = new LinkedHashMap<>();
         try {
-            boolean hasKey = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
-            res.put("provider", "GOOGLE_GEMINI");
-            res.put("model", geminiModel != null ? geminiModel : "gemini-1.5-flash");
-            res.put("apiKeyConfigured", hasKey);
+            boolean hasAnthropic = anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey);
+            boolean hasGemini = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
+            boolean hasOpenAi = openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey);
 
-            if (!hasKey) {
-                res.put("status", "NOT_CONFIGURED");
-                res.put("working", false);
-                res.put("message", "GEMINI_API_KEY is not configured on the server. Set GEMINI_API_KEY in Render dashboard or paste it directly in the app AI Mentor.");
-                return res;
+            // 1. Check Anthropic Claude
+            if (hasAnthropic) {
+                res.put("provider", "ANTHROPIC");
+                res.put("model", anthropicModel != null ? anthropicModel : "claude-3-5-haiku-20241022");
+                res.put("apiKeyConfigured", true);
+
+                long start = System.currentTimeMillis();
+                String testPrompt = "Say 'SmartEvolve Claude AI is online and operational!' in exactly 7 words.";
+                String apiResponse = callAnthropicApi(testPrompt);
+                long latencyMs = System.currentTimeMillis() - start;
+
+                if (apiResponse != null && !apiResponse.isBlank()) {
+                    res.put("status", "ONLINE");
+                    res.put("working", true);
+                    res.put("latencyMs", latencyMs);
+                    res.put("geminiResponse", apiResponse.trim());
+                    res.put("testResponse", apiResponse.trim());
+                    res.put("message", "Anthropic Claude AI API is connected and responding in real-time!");
+                    return res;
+                }
             }
 
-            long start = System.currentTimeMillis();
-            String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
-            String apiResponse = callGeminiApi(testPrompt);
-            long latencyMs = System.currentTimeMillis() - start;
+            // 2. Check Google Gemini
+            if (hasGemini) {
+                res.put("provider", "GOOGLE_GEMINI");
+                res.put("model", geminiModel != null ? geminiModel : "gemini-1.5-flash");
+                res.put("apiKeyConfigured", true);
 
-            if (apiResponse != null && !apiResponse.isBlank()) {
-                res.put("status", "ONLINE");
-                res.put("working", true);
-                res.put("latencyMs", latencyMs);
-                res.put("geminiResponse", apiResponse.trim());
-                res.put("message", "Google Gemini AI API is connected and responding in real-time!");
-            } else {
-                res.put("status", "ERROR");
-                res.put("working", false);
-                res.put("latencyMs", latencyMs);
-                res.put("message", "Gemini API call returned empty. Verify GEMINI_API_KEY in Render dashboard.");
+                long start = System.currentTimeMillis();
+                String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
+                String apiResponse = callGeminiApi(testPrompt);
+                long latencyMs = System.currentTimeMillis() - start;
+
+                if (apiResponse != null && !apiResponse.isBlank()) {
+                    res.put("status", "ONLINE");
+                    res.put("working", true);
+                    res.put("latencyMs", latencyMs);
+                    res.put("geminiResponse", apiResponse.trim());
+                    res.put("testResponse", apiResponse.trim());
+                    res.put("message", "Google Gemini AI API is connected and responding in real-time!");
+                    return res;
+                }
             }
+
+            // 3. Check OpenAI
+            if (hasOpenAi) {
+                res.put("provider", "OPENAI");
+                res.put("model", openAiModel != null ? openAiModel : "gpt-4o-mini");
+                res.put("apiKeyConfigured", true);
+
+                long start = System.currentTimeMillis();
+                String testPrompt = "Say 'SmartEvolve OpenAI is online and operational!' in exactly 7 words.";
+                String apiResponse = callOpenAiApi(testPrompt);
+                long latencyMs = System.currentTimeMillis() - start;
+
+                if (apiResponse != null && !apiResponse.isBlank()) {
+                    res.put("status", "ONLINE");
+                    res.put("working", true);
+                    res.put("latencyMs", latencyMs);
+                    res.put("testResponse", apiResponse.trim());
+                    res.put("message", "OpenAI API is connected and responding in real-time!");
+                    return res;
+                }
+            }
+
+            res.put("provider", "NONE");
+            res.put("status", "NOT_CONFIGURED");
+            res.put("working", false);
+            res.put("message", "No cloud AI API key configured on server. Set ANTHROPIC_API_KEY or GEMINI_API_KEY in Render dashboard or paste directly in the app AI Mentor.");
         } catch (Exception ex) {
-            log.error("Gemini health check error: ", ex);
+            log.error("AI health check error: ", ex);
             res.put("status", "ERROR");
             res.put("working", false);
-            res.put("message", "Gemini service notice: " + ex.getMessage());
+            res.put("message", "AI service notice: " + ex.getMessage());
         }
         return res;
     }
 
     /**
-     * Direct HTTP call to Google Gemini REST API.
+     * Direct HTTP call to Anthropic Claude REST API.
      */
-    private String callGeminiApi(String prompt) {
-        if (geminiApiKey == null || geminiApiKey.isBlank() || "demo-key".equalsIgnoreCase(geminiApiKey)) {
+    public String callAnthropicApi(String prompt) {
+        return callAnthropicApiWithKey(prompt, anthropicApiKey, anthropicModel);
+    }
+
+    public String callAnthropicApiWithKey(String prompt, String apiKey, String model) {
+        if (apiKey == null || apiKey.isBlank() || "demo-key".equalsIgnoreCase(apiKey)) {
             return null;
         }
 
         try {
-            String cleanKey = geminiApiKey.trim().replaceAll("^[\"']|[\"']$", "");
-            String cleanModel = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-1.5-flash";
+            String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "");
+            String cleanModel = (model != null && !model.isBlank()) ? model.trim() : (anthropicModel != null && !anthropicModel.isBlank() ? anthropicModel.trim() : "claude-3-5-haiku-20241022");
+            String url = (anthropicBaseUrl != null && !anthropicBaseUrl.isBlank()) ? anthropicBaseUrl.trim() : "https://api.anthropic.com/v1/messages";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", cleanKey);
+            headers.set("anthropic-version", "2023-06-01");
+
+            Map<String, Object> message = Map.of("role", "user", "content", prompt);
+            Map<String, Object> requestBody = Map.of(
+                    "model", cleanModel,
+                    "max_tokens", 1024,
+                    "messages", List.of(message)
+            );
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode contentArray = root.path("content");
+                if (contentArray.isArray() && contentArray.size() > 0) {
+                    JsonNode firstBlock = contentArray.get(0);
+                    if ("text".equals(firstBlock.path("type").asText())) {
+                        return firstBlock.path("text").asText();
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Anthropic Claude API invocation note: {}", ex.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Direct HTTP call to Google Gemini REST API.
+     */
+    public String callGeminiApi(String prompt) {
+        return callGeminiApiWithKey(prompt, geminiApiKey, geminiModel);
+    }
+
+    public String callGeminiApiWithKey(String prompt, String apiKey, String model) {
+        if (apiKey == null || apiKey.isBlank() || "demo-key".equalsIgnoreCase(apiKey)) {
+            return null;
+        }
+
+        try {
+            String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "");
+            String cleanModel = (model != null && !model.isBlank()) ? model.trim() : "gemini-1.5-flash";
             String cleanBase = (geminiBaseUrl != null && !geminiBaseUrl.isBlank()) ? geminiBaseUrl.trim() : "https://generativelanguage.googleapis.com/v1beta/models";
             String url = cleanBase + "/" + cleanModel + ":generateContent?key=" + cleanKey;
 
@@ -385,21 +528,27 @@ public class GeminiAiService {
     /**
      * Direct HTTP call to OpenAI Chat Completions REST API.
      */
-    private String callOpenAiApi(String prompt) {
-        if (openAiApiKey == null || openAiApiKey.isBlank() || "demo-key".equalsIgnoreCase(openAiApiKey)) {
+    public String callOpenAiApi(String prompt) {
+        return callOpenAiApiWithKey(prompt, openAiApiKey, openAiModel);
+    }
+
+    public String callOpenAiApiWithKey(String prompt, String apiKey, String model) {
+        if (apiKey == null || apiKey.isBlank() || "demo-key".equalsIgnoreCase(apiKey)) {
             return null;
         }
 
         try {
-            String url = openAiBaseUrl + "/chat/completions";
+            String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "");
+            String cleanModel = (model != null && !model.isBlank()) ? model.trim() : "gpt-4o-mini";
+            String url = (openAiBaseUrl != null && !openAiBaseUrl.isBlank()) ? openAiBaseUrl.trim() + "/chat/completions" : "https://api.openai.com/v1/chat/completions";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(openAiApiKey.trim());
+            headers.setBearerAuth(cleanKey);
 
             Map<String, Object> message = Map.of("role", "user", "content", prompt);
             Map<String, Object> requestBody = Map.of(
-                    "model", openAiModel,
+                    "model", cleanModel,
                     "messages", List.of(message),
                     "temperature", 0.7,
                     "max_tokens", 800

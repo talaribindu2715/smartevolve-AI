@@ -60,6 +60,8 @@ public class AiAdvisorDto {
     public static class MentorChatRequest {
         private String message;
         private String currentCareerContext;
+        private String customApiKey;
+        private String provider;
     }
 
     @Data

@@ -254,7 +254,7 @@ export default function DashboardScreen() {
               <View style={styles.aiDot} />
               <Text style={styles.aiTagText}>
                 {aiHealth?.status === "ONLINE" || aiHealth?.working
-                  ? "GOOGLE GEMINI 1.5 FLASH: ACTIVE"
+                  ? `${aiHealth?.provider === "ANTHROPIC" ? "ANTHROPIC CLAUDE 3.5" : "GOOGLE GEMINI 1.5"}: ACTIVE`
                   : "SMARTEVOLVE COGNITIVE AI: READY"}
               </Text>
             </View>
@@ -272,7 +272,7 @@ export default function DashboardScreen() {
               onPress={() => setAiMentorVisible(true)}
               activeOpacity={0.85}
             >
-              <Text style={styles.aiPrimaryBtnText}>✨ Ask Gemini AI Mentor</Text>
+              <Text style={styles.aiPrimaryBtnText}>✨ Ask AI Career Mentor</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

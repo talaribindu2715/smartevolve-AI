@@ -222,10 +222,15 @@ export const api = {
   getAiCareerGuidance: (careerId: string) =>
     apiFetch<any>(`/api/ai/career-guidance/${careerId}`),
 
-  askAiMentor: (message: string, currentCareerContext?: string) =>
+  askAiMentor: (
+    message: string,
+    currentCareerContext?: string,
+    customApiKey?: string,
+    provider?: string
+  ) =>
     apiFetch<any>("/api/ai/chat", {
       method: "POST",
-      body: JSON.stringify({ message, currentCareerContext }),
+      body: JSON.stringify({ message, currentCareerContext, customApiKey, provider }),
     }),
 
   // Machine Learning Career Path Prediction & Simulation

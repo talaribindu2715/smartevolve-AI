@@ -57,6 +57,12 @@ supabase:
     secret: ${SUPABASE_JWT_SECRET:super-secret-jwt-token-with-minimum-256-bits-length-for-hmac-sha}
     issuer: ${SUPABASE_JWT_ISSUER:https://your-project.supabase.co/auth/v1}
 
+# Anthropic Claude AI API Configuration
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${ANTHROPIC_MODEL:claude-3-5-haiku-20241022}
+  base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com/v1/messages}
+
 # Google Gemini AI API Configuration
 gemini:
   api-key: ${GEMINI_API_KEY:}
