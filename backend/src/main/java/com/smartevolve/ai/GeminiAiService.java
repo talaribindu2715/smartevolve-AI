@@ -22,6 +22,15 @@ import java.util.stream.Collectors;
 @Service
 public class GeminiAiService {
 
+    @Value("${groq.api-key:}")
+    private String groqApiKey;
+
+    @Value("${groq.model:llama-3.3-70b-versatile}")
+    private String groqModel;
+
+    @Value("${groq.base-url:https://api.groq.com/openai/v1/chat/completions}")
+    private String groqBaseUrl;
+
     @Value("${anthropic.api-key:}")
     private String anthropicApiKey;
 
@@ -110,7 +119,16 @@ public class GeminiAiService {
             }
         }
 
-        // 2. Server-Side Anthropic Claude (Prioritized for Reliability & Reasoning)
+        // 2. Server-Side Groq Cloud (Free tier Llama 3.3, ultra-fast 1000 tokens/sec)
+        String effectiveGroqKey = (groqApiKey != null && !groqApiKey.isBlank()) ? groqApiKey : System.getenv("GROQ_API_KEY");
+        if (effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGroqKey)) {
+            String res = callGroqApiWithKey(prompt, effectiveGroqKey, (groqModel != null && !groqModel.isBlank()) ? groqModel : "llama-3.3-70b-versatile");
+            if (res != null && !res.isBlank()) {
+                return new AiResult(res, "GROQ");
+            }
+        }
+
+        // 3. Server-Side Anthropic Claude (Prioritized for Reliability & Reasoning)
         if (anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey)) {
             String res = callAnthropicApi(prompt);
             if (res != null && !res.isBlank()) {
@@ -356,11 +374,35 @@ public class GeminiAiService {
     public Map<String, Object> checkGeminiHealth() {
         Map<String, Object> res = new LinkedHashMap<>();
         try {
+            String effectiveGroqKey = (groqApiKey != null && !groqApiKey.isBlank()) ? groqApiKey : System.getenv("GROQ_API_KEY");
+            boolean hasGroq = effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGroqKey);
             boolean hasAnthropic = anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey);
             boolean hasGemini = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
             boolean hasOpenAi = openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey);
 
-            // 1. Check Anthropic Claude
+            // 1. Check Groq Cloud (Ultra-Fast Free Tier Llama 3.3)
+            if (hasGroq) {
+                res.put("provider", "GROQ");
+                res.put("model", groqModel != null ? groqModel : "llama-3.3-70b-versatile");
+                res.put("apiKeyConfigured", true);
+
+                long start = System.currentTimeMillis();
+                String testPrompt = "Say 'SmartEvolve Groq AI is online and operational!' in exactly 7 words.";
+                String apiResponse = callGroqApiWithKey(testPrompt, effectiveGroqKey, groqModel);
+                long latencyMs = System.currentTimeMillis() - start;
+
+                if (apiResponse != null && !apiResponse.isBlank()) {
+                    res.put("status", "ONLINE");
+                    res.put("working", true);
+                    res.put("latencyMs", latencyMs);
+                    res.put("geminiResponse", apiResponse.trim());
+                    res.put("testResponse", apiResponse.trim());
+                    res.put("message", "Groq Cloud Llama 3.3 AI is connected and responding in real-time!");
+                    return res;
+                }
+            }
+
+            // 2. Check Anthropic Claude
             if (hasAnthropic) {
                 res.put("provider", "ANTHROPIC");
                 res.put("model", anthropicModel != null ? anthropicModel : "claude-3-5-haiku-20241022");
@@ -533,6 +575,11 @@ public class GeminiAiService {
     /**
      * Direct HTTP call to Groq Cloud REST API (100% Free Ultra-Fast Llama 3.3).
      */
+    public String callGroqApi(String prompt) {
+        String effectiveGroqKey = (groqApiKey != null && !groqApiKey.isBlank()) ? groqApiKey : System.getenv("GROQ_API_KEY");
+        return callGroqApiWithKey(prompt, effectiveGroqKey, groqModel);
+    }
+
     public String callGroqApiWithKey(String prompt, String apiKey, String model) {
         if (apiKey == null || apiKey.isBlank() || "demo-key".equalsIgnoreCase(apiKey)) {
             return null;
