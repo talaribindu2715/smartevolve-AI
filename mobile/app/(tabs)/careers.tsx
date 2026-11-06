@@ -214,7 +214,7 @@ export default function CareersScreen() {
 
   // Calculate live dynamic compatibility boost from earned certificates
   const getDynamicCareerMatch = (career: Career) => {
-    const base = career.compatibilityScore || 70;
+    const base = career.compatibilityScore || 0;
     const certs = storedEarnedCerts || [];
     if (certs.length === 0) return { score: base, boost: 0, matchedCount: 0 };
 

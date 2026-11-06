@@ -464,9 +464,6 @@ export default function VideoDetailScreen() {
                   <Text style={styles.quizHeadline}>
                     {effectiveVideo.skillName} Masterclass Certification Quiz
                   </Text>
-                  <Text style={styles.quizSubHeadline}>
-                    Attempt #{quizAttempts} • Single Unified Quiz • Minimum 60% required to pass
-                  </Text>
                 </View>
                 <Badge
                   label={
@@ -482,47 +479,6 @@ export default function VideoDetailScreen() {
                       : "primary"
                   }
                 />
-              </View>
-
-              {/* Unified Single Quiz Info & Progress Banner */}
-              <View style={styles.unifiedQuizBanner}>
-                <View style={styles.unifiedBannerTop}>
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={styles.unifiedBannerTitle}>
-                      🎯 Masterclass Certification Exam
-                    </Text>
-                    <Text style={styles.unifiedBannerDesc}>
-                      Answer all {quizQuestions.length} questions and score ≥60% (at least {Math.ceil(quizQuestions.length * 0.6)}/{quizQuestions.length} correct) to unlock and claim your verified Polygon blockchain certificate.
-                    </Text>
-                  </View>
-                  <View style={styles.passingRequirementBadge}>
-                    <Text style={styles.passingRequirementBadgeText}>≥60% to Pass</Text>
-                  </View>
-                </View>
-
-                {/* Progress bar across all questions */}
-                <View style={styles.progressBarTrack}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${Math.round(
-                          (Object.keys(selectedAnswers).length / Math.max(1, quizQuestions.length)) * 100
-                        )}%`,
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.progressBarMetaRow}>
-                  <Text style={styles.progressBarMetaText}>
-                    Answered: {Object.keys(selectedAnswers).length} of {quizQuestions.length} questions
-                  </Text>
-                  <Text style={styles.progressBarMetaText}>
-                    {Math.round(
-                      (Object.keys(selectedAnswers).length / Math.max(1, quizQuestions.length)) * 100
-                    )}% Completed
-                  </Text>
-                </View>
               </View>
 
               {/* Submitted Results View */}
@@ -1431,66 +1387,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     marginTop: 4,
-  },
-  unifiedQuizBanner: {
-    backgroundColor: "rgba(30, 41, 59, 0.7)",
-    borderColor: "rgba(99, 102, 241, 0.35)",
-    borderWidth: 1.5,
-    borderRadius: 14,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  unifiedBannerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  unifiedBannerTitle: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  unifiedBannerDesc: {
-    color: "#94A3B8",
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  passingRequirementBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    borderColor: "#10B981",
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-  },
-  passingRequirementBadgeText: {
-    color: "#10B981",
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  progressBarTrack: {
-    height: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 3,
-    overflow: "hidden",
-    marginVertical: 8,
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#6366F1",
-    borderRadius: 3,
-  },
-  progressBarMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  progressBarMetaText: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: "600",
   },
   scoreBannerPassed: {
     borderColor: "rgba(16, 185, 129, 0.4)",

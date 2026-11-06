@@ -16,7 +16,6 @@ import { api } from "../../src/api/client";
 import { Card } from "../../src/components/Card";
 import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
-import { ProficiencyBar } from "../../src/components/ProficiencyBar";
 import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { colors, radius, spacing } from "../../src/theme/colors";
@@ -481,13 +480,6 @@ export default function LearnScreen() {
     queryFn: () => getStoredEarnedCertificates(),
   });
 
-  // Query career detail to display required skills & skill gap breakdown on roadmap screen
-  const { data: careerDetail } = useQuery({
-    queryKey: ["careerDetail", roadmap?.careerId],
-    queryFn: () => api.getCareerDetail(roadmap!.careerId),
-    enabled: !!roadmap?.careerId,
-  });
-
   // Query assessments list to link milestone steps to quizzes
   const { data: assessments } = useQuery({
     queryKey: ["assessments"],
@@ -719,51 +711,6 @@ export default function LearnScreen() {
             <CardSkeleton />
             <CardSkeleton />
           </View>
-        )}
-
-        {/* Target Career Competencies & Skill Gap Analysis Card */}
-        {careerDetail && careerDetail.skillGaps && careerDetail.skillGaps.length > 0 && (
-          <Card style={styles.careerGapCard}>
-            <View style={styles.gapHeaderRow}>
-              <View>
-                <Text style={styles.gapCardTag}>ROLE COMPETENCIES & GAPS</Text>
-                <Text style={styles.gapCardTitle}>{careerDetail.name} Skill Matrix</Text>
-              </View>
-              <Badge
-                label={`${(careerDetail.compatibilityScore ?? 0).toFixed(0)}% Ready`}
-                variant={(careerDetail.compatibilityScore ?? 0) >= 70 ? "success" : "warning"}
-              />
-            </View>
-
-            <Text style={styles.gapCardSub}>
-              Current proficiency vs required industry benchmark. Completing roadmap milestones closes these gaps:
-            </Text>
-
-            <View style={{ marginTop: spacing.sm }}>
-              {careerDetail.skillGaps.slice(0, 4).map((gap) => (
-                <View key={gap.skillId} style={styles.gapItemRow}>
-                  <View style={styles.gapItemTop}>
-                    <Text style={styles.gapSkillName}>{gap.skillName}</Text>
-                    <Badge
-                      label={gap.priority}
-                      variant={
-                        gap.priority === "MASTERED"
-                          ? "success"
-                          : gap.priority === "CRITICAL"
-                          ? "error"
-                          : "warning"
-                      }
-                    />
-                  </View>
-                  <ProficiencyBar
-                    label=""
-                    value={gap.currentProficiency}
-                    targetValue={gap.requiredProficiency}
-                  />
-                </View>
-              ))}
-            </View>
-          </Card>
         )}
 
         {/* Daily & Weekly Learning Sprint Checklist */}
@@ -1122,50 +1069,6 @@ const styles = StyleSheet.create({
   trackChipTextActive: {
     color: colors.textPrimary,
     fontWeight: "700",
-  },
-  careerGapCard: {
-    padding: spacing.md,
-    backgroundColor: "rgba(99, 102, 241, 0.08)",
-    borderColor: "rgba(99, 102, 241, 0.3)",
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  gapHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  gapCardTag: {
-    color: colors.accent,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  gapCardTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "800",
-    marginTop: 2,
-  },
-  gapCardSub: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  gapItemRow: {
-    marginBottom: 10,
-  },
-  gapItemTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  gapSkillName: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "600",
   },
   dailyTaskCard: {
     padding: spacing.md,
