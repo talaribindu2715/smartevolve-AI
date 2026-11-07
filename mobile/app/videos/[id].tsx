@@ -411,9 +411,6 @@ export default function VideoDetailScreen() {
 
           <View style={styles.channelRow}>
             <Text style={styles.channelName}>{effectiveVideo.channelTitle || "SmartEvolve Educator"}</Text>
-            {effectiveVideo.viewCount ? (
-              <Text style={styles.viewCount}>• {effectiveVideo.viewCount.toLocaleString()} views</Text>
-            ) : null}
             <Badge label={effectiveVideo.skillName || "Masterclass"} variant="info" />
           </View>
         </View>

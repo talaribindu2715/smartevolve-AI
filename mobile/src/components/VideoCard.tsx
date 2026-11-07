@@ -74,9 +74,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
                 {video.skillName}
               </Text>
             )}
-            {video.viewCount && (
-              <Text style={styles.viewsText}>• {video.viewCount}</Text>
-            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -140,9 +137,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           <Text style={styles.channelName} numberOfLines={1}>
             {video.channelTitle}
           </Text>
-          {video.viewCount && (
-            <Text style={styles.viewsText}>• {video.viewCount}</Text>
-          )}
         </View>
 
         {video.skillName && (
