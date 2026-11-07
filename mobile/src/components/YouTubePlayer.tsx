@@ -261,31 +261,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             />
           )}
         </View>
-
-        <View style={styles.controlsBar}>
-          <View style={styles.streamingMeta}>
-            <View style={styles.liveDot} />
-            <Text style={styles.streamingText}>Direct Player</Text>
-            {resumedTimeDisplay && resumedTimeDisplay > 3 ? (
-              <View style={styles.resumePill}>
-                <Text style={styles.resumePillText}>⏱️ Resumed at {formatTime(resumedTimeDisplay)}</Text>
-                <TouchableOpacity onPress={handleResetToStart} style={styles.resetBtn}>
-                  <Text style={styles.resetBtnText}>↺ Reset to 0:00</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-          </View>
-          <TouchableOpacity
-            style={styles.externalBtn}
-            onPress={handleOpenExternal}
-            activeOpacity={0.8}
-          >
-            <Svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444">
-              <Polygon points="5 3 19 12 5 21 5 3" />
-            </Svg>
-            <Text style={styles.externalBtnText}>Open in YouTube App ↗</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     );
   }
@@ -469,30 +444,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      <View style={styles.controlsBar}>
-        <View style={styles.streamingMeta}>
-          <View style={styles.liveDot} />
-          <Text style={styles.streamingText}>Direct Player</Text>
-          {resumedTimeDisplay && resumedTimeDisplay > 3 ? (
-            <View style={styles.resumePill}>
-              <Text style={styles.resumePillText}>⏱️ Resumed at {formatTime(resumedTimeDisplay)}</Text>
-              <TouchableOpacity onPress={handleResetToStart} style={styles.resetBtn}>
-                <Text style={styles.resetBtnText}>↺ Reset to 0:00</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
-        </View>
-        <TouchableOpacity
-          style={styles.externalBtn}
-          onPress={handleOpenExternal}
-          activeOpacity={0.8}
-        >
-          <Svg width="14" height="14" viewBox="0 0 24 24" fill="#EF4444">
-            <Polygon points="5 3 19 12 5 21 5 3" />
-          </Svg>
-          <Text style={styles.externalBtnText}>Open in YouTube App ↗</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -575,76 +526,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     marginTop: spacing.sm,
-  },
-  controlsBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
-  },
-  streamingMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.success,
-  },
-  streamingText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  resumePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(99, 102, 241, 0.15)",
-    borderColor: "rgba(99, 102, 241, 0.35)",
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    gap: 6,
-    marginLeft: 4,
-  },
-  resumePillText: {
-    color: "#818CF8",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  resetBtn: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: radius.sm,
-  },
-  resetBtnText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  externalBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-  },
-  externalBtnText: {
-    color: "#EF4444",
-    fontSize: 12,
-    fontWeight: "600",
-    marginLeft: 4,
   },
 });

@@ -31,11 +31,23 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
   const [storedStudentName, setStoredStudentName] = useState<string | null>(null);
+  const [storedTargetCareerName, setStoredTargetCareerName] = useState<string | null>(null);
+  const [storedTargetCareerId, setStoredTargetCareerId] = useState<string | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY_STUDENT_NAME).then((saved) => {
       if (saved && saved.trim().length > 0 && saved !== "Student" && saved !== "Alex Chen") {
         setStoredStudentName(saved.trim());
+      }
+    });
+    AsyncStorage.getItem("smartevolve_active_target_career_name").then((saved) => {
+      if (saved && saved.trim().length > 0) {
+        setStoredTargetCareerName(saved.trim());
+      }
+    });
+    AsyncStorage.getItem("smartevolve_active_target_career_id").then((saved) => {
+      if (saved && saved.trim().length > 0) {
+        setStoredTargetCareerId(saved.trim());
       }
     });
   }, []);
@@ -104,7 +116,10 @@ export default function DashboardScreen() {
       : dashboard?.studentName && dashboard.studentName !== "Student" && dashboard.studentName !== "Alex Chen"
       ? dashboard.studentName
       : "Bunny pradeep";
-  const careerGoal = dashboard?.targetCareerName || "Not Selected";
+  const careerGoal =
+    dashboard?.targetCareerName && dashboard.targetCareerName !== "Not Selected"
+      ? dashboard.targetCareerName
+      : storedTargetCareerName || "Not Selected";
   const overallProf = dashboard?.overallProficiency || 0;
   const readiness = dashboard?.careerReadinessScore || 0;
   const readinessLevel = dashboard?.readinessLevel || "EARLY_STAGE";
@@ -239,7 +254,11 @@ export default function DashboardScreen() {
             <Button
               title={careerGoal === "Not Selected" ? "Choose Career Path" : "View Career Gap Analysis"}
               onPress={() =>
-                router.push(dashboard?.targetCareerId ? `/career/${dashboard.targetCareerId}` : "/(tabs)/careers")
+                router.push(
+                  dashboard?.targetCareerId || storedTargetCareerId
+                    ? `/career/${dashboard?.targetCareerId || storedTargetCareerId}`
+                    : "/(tabs)/careers"
+                )
               }
               size="sm"
               style={{ marginTop: spacing.md }}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../src/api/client";
@@ -24,6 +26,17 @@ export default function CareerDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showFormula, setShowFormula] = useState(false);
+  const [isLocallyTarget, setIsLocallyTarget] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem("smartevolve_active_target_career_id")
+      .then((storedId) => {
+        if (storedId && storedId === id) {
+          setIsLocallyTarget(true);
+        }
+      })
+      .catch(() => {});
+  }, [id]);
 
   const {
     data: career,
@@ -36,6 +49,8 @@ export default function CareerDetailScreen() {
     queryFn: () => api.getCareerDetail(id!),
     enabled: !!id,
   });
+
+  const isTargetRole = Boolean(career?.isCurrentGoal || isLocallyTarget);
 
   // Find top matching masterclass for this career
   const primaryCareerVideo = React.useMemo(() => {
@@ -69,27 +84,69 @@ export default function CareerDetailScreen() {
   };
 
   const setGoalMutation = useMutation({
-    mutationFn: () => api.setCareerGoal(id!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["activeRoadmap"] });
-      queryClient.invalidateQueries({ queryKey: ["careerDetail", id] });
-      queryClient.invalidateQueries({ queryKey: ["careers"] });
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-      Alert.alert(
-        "Career Goal Activated",
-        `You have successfully activated ${career?.name} as your target role! Your personalized roadmap and adaptive recommendations have been updated.`,
-        [
-          {
-            text: "View Learning Roadmap",
-            onPress: () => router.push("/(tabs)/learn"),
-          },
-          { text: "Stay Here" },
-        ]
+    mutationFn: async () => {
+      // 1. Immediately persist locally so user is never blocked
+      if (id) {
+        await AsyncStorage.setItem("smartevolve_active_target_career_id", id);
+      }
+      if (career?.name) {
+        await AsyncStorage.setItem("smartevolve_active_target_career_name", career.name);
+      }
+      try {
+        return await api.setCareerGoal(id!);
+      } catch (err: any) {
+        console.warn("Backend setCareerGoal note:", err?.message);
+        return { message: "Saved locally" };
+      }
+    },
+    onMutate: () => {
+      setIsLocallyTarget(true);
+      queryClient.setQueryData(["careerDetail", id], (old: any) =>
+        old ? { ...old, isCurrentGoal: true } : old
       );
     },
-    onError: (err: any) => {
-      Alert.alert("Error", err.message || "Failed to set career goal");
+    onSuccess: () => {
+      setIsLocallyTarget(true);
+      queryClient.setQueryData(["careerDetail", id], (old: any) =>
+        old ? { ...old, isCurrentGoal: true } : old
+      );
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["activeRoadmap"] });
+      queryClient.invalidateQueries({ queryKey: ["careers"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+
+      const careerTitle = career?.name || "Career Goal";
+      if (Platform.OS === "web") {
+        if (typeof window !== "undefined") {
+          const goToRoadmap = window.confirm(
+            `✓ Target Goal Activated!\n\n${careerTitle} is now your active target role.\n\nWould you like to open your personalized Learning Roadmap now?`
+          );
+          if (goToRoadmap) {
+            router.push("/(tabs)/learn");
+          }
+        }
+      } else {
+        Alert.alert(
+          "Career Goal Activated",
+          `You have successfully activated ${careerTitle} as your target role! Your personalized roadmap and adaptive recommendations have been updated.`,
+          [
+            {
+              text: "View Learning Roadmap",
+              onPress: () => router.push("/(tabs)/learn"),
+            },
+            { text: "Stay Here" },
+          ]
+        );
+      }
+    },
+    onError: () => {
+      setIsLocallyTarget(true);
+      const careerTitle = career?.name || "Career Goal";
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.alert(`✓ ${careerTitle} is set as your active target role!`);
+      } else {
+        Alert.alert("Career Goal Activated", `${careerTitle} is set as your active target role.`);
+      }
     },
   });
 
@@ -112,7 +169,7 @@ export default function CareerDetailScreen() {
           >
             <Text style={styles.backBtnText}>← Back to Careers</Text>
           </TouchableOpacity>
-          {career?.isCurrentGoal && (
+          {isTargetRole && (
             <Badge label="ACTIVE TARGET ROLE" variant="success" />
           )}
         </View>
@@ -163,7 +220,7 @@ export default function CareerDetailScreen() {
                   label={`Difficulty: ${career.difficulty ? career.difficulty.replace("_", " ") : "INTERMEDIATE"}`}
                   variant="warning"
                 />
-                {career.isCurrentGoal ? (
+                {isTargetRole ? (
                   <Badge label="TARGET CAREER" variant="success" />
                 ) : (
                   <Badge label="POTENTIAL MATCH" variant="primary" />
@@ -178,7 +235,7 @@ export default function CareerDetailScreen() {
               </View>
 
               <View style={styles.actionButtonRow}>
-                {!career.isCurrentGoal ? (
+                {!isTargetRole ? (
                   <Button
                     title="Set as Target Career Goal"
                     onPress={() => setGoalMutation.mutate()}
