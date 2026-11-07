@@ -82,9 +82,28 @@ export default function VideoDetailScreen() {
   const fallbackVideo = getMasterVideoById(id || "");
   const effectiveVideo = video || fallbackVideo;
 
+  const [selectedPoolSize, setSelectedPoolSize] = useState<number>(30);
+
   const quizQuestions = React.useMemo(() => {
-    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, 15);
-  }, [effectiveVideo?.skillName, effectiveVideo?.title]);
+    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize);
+  }, [effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize]);
+
+  const totalQuestions = quizQuestions.length;
+  const part1End = Math.max(1, Math.floor(totalQuestions / 3));
+  const part2End = Math.max(part1End + 1, Math.floor((2 * totalQuestions) / 3));
+
+  const isPart1 = currentQuestionIndex < part1End;
+  const isPart2 = currentQuestionIndex >= part1End && currentQuestionIndex < part2End;
+  const isPart3 = currentQuestionIndex >= part2End;
+
+  const kahootScore = quizQuestions.slice(0, part1End).filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
+  const kahootTotal = part1End;
+
+  const waygroundScore = quizQuestions.slice(part1End, part2End).filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
+  const waygroundTotal = part2End - part1End;
+
+  const examScore = quizQuestions.slice(part2End).filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
+  const examTotal = totalQuestions - part2End;
 
   const { data: assessments } = useQuery({
     queryKey: ["assessments"],
@@ -472,53 +491,84 @@ export default function VideoDetailScreen() {
                 />
               </View>
 
+              {/* Question Pool Length Selector */}
+              <View style={styles.poolSelectorRow}>
+                <Text style={styles.poolSelectorLabel}>Total Questions:</Text>
+                {[
+                  { count: 15, label: "15 Qs" },
+                  { count: 30, label: "30 Qs (Recommended)" },
+                  { count: 45, label: "45 Qs (Deep Exam)" },
+                ].map((pool) => (
+                  <TouchableOpacity
+                    key={pool.count}
+                    style={[
+                      styles.poolPill,
+                      selectedPoolSize === pool.count && styles.poolPillActive,
+                    ]}
+                    onPress={() => {
+                      setSelectedPoolSize(pool.count);
+                      handleResetQuiz();
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.poolPillText,
+                        selectedPoolSize === pool.count && styles.poolPillTextActive,
+                      ]}
+                    >
+                      {pool.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               {/* 3-in-1 Merged Quiz Parts Selector & Jump Bar */}
               <View style={styles.mergedPartsBar}>
                 <TouchableOpacity
                   onPress={() => setCurrentQuestionIndex(0)}
                   style={[
                     styles.mergedPartTab,
-                    currentQuestionIndex < 5 && styles.mergedPartTabActiveKahoot,
+                    isPart1 && styles.mergedPartTabActiveKahoot,
                   ]}
                   activeOpacity={0.8}
                 >
                   <Text style={[
                     styles.mergedPartTabText,
-                    currentQuestionIndex < 5 && styles.mergedPartTabTextActive,
+                    isPart1 && styles.mergedPartTabTextActive,
                   ]}>
-                    ▲ Part 1: Kahoot (1-5)
+                    ▲ Part 1: Kahoot (1-{part1End})
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => setCurrentQuestionIndex(5)}
+                  onPress={() => setCurrentQuestionIndex(part1End)}
                   style={[
                     styles.mergedPartTab,
-                    currentQuestionIndex >= 5 && currentQuestionIndex < 10 && styles.mergedPartTabActiveWayground,
+                    isPart2 && styles.mergedPartTabActiveWayground,
                   ]}
                   activeOpacity={0.8}
                 >
                   <Text style={[
                     styles.mergedPartTabText,
-                    currentQuestionIndex >= 5 && currentQuestionIndex < 10 && styles.mergedPartTabTextActive,
+                    isPart2 && styles.mergedPartTabTextActive,
                   ]}>
-                    ⚡ Part 2: Wayground (6-10)
+                    ⚡ Part 2: Wayground ({part1End + 1}-{part2End})
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => setCurrentQuestionIndex(10)}
+                  onPress={() => setCurrentQuestionIndex(part2End)}
                   style={[
                     styles.mergedPartTab,
-                    currentQuestionIndex >= 10 && styles.mergedPartTabActiveTest,
+                    isPart3 && styles.mergedPartTabActiveTest,
                   ]}
                   activeOpacity={0.8}
                 >
                   <Text style={[
                     styles.mergedPartTabText,
-                    currentQuestionIndex >= 10 && styles.mergedPartTabTextActive,
+                    isPart3 && styles.mergedPartTabTextActive,
                   ]}>
-                    🎯 Part 3: Cert Exam (11-15)
+                    🎯 Part 3: Cert Exam ({part2End + 1}-{totalQuestions})
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -581,21 +631,21 @@ export default function VideoDetailScreen() {
                       <View style={styles.mergedBreakdownRow}>
                         <View style={styles.mergedBreakdownCol}>
                           <Text style={[styles.mergedBreakdownVal, { color: "#C084FC" }]}>
-                            {quizQuestions.slice(0, 5).filter((q) => selectedAnswers[q.id] === q.correctIndex).length}/5
+                            {kahootScore}/{kahootTotal}
                           </Text>
                           <Text style={styles.mergedBreakdownLabel}>▲ KAHOOT PART</Text>
                         </View>
                         <View style={styles.podiumDivider} />
                         <View style={styles.mergedBreakdownCol}>
                           <Text style={[styles.mergedBreakdownVal, { color: "#38BDF8" }]}>
-                            {quizQuestions.slice(5, 10).filter((q) => selectedAnswers[q.id] === q.correctIndex).length}/5
+                            {waygroundScore}/{waygroundTotal}
                           </Text>
                           <Text style={styles.mergedBreakdownLabel}>⚡ WAYGROUND PART</Text>
                         </View>
                         <View style={styles.podiumDivider} />
                         <View style={styles.mergedBreakdownCol}>
                           <Text style={[styles.mergedBreakdownVal, { color: "#34D399" }]}>
-                            {quizQuestions.slice(10, 15).filter((q) => selectedAnswers[q.id] === q.correctIndex).length}/5
+                            {examScore}/{examTotal}
                           </Text>
                           <Text style={styles.mergedBreakdownLabel}>🎯 CERT EXAM PART</Text>
                         </View>
@@ -653,10 +703,10 @@ export default function VideoDetailScreen() {
                             <Text style={styles.reviewQuestionNum}>Question {idx + 1}</Text>
                             <View style={[
                               styles.miniPartBadge,
-                              idx < 5 ? styles.miniPartKahoot : idx < 10 ? styles.miniPartWayground : styles.miniPartExam
+                              idx < part1End ? styles.miniPartKahoot : idx < part2End ? styles.miniPartWayground : styles.miniPartExam
                             ]}>
                               <Text style={styles.miniPartBadgeText}>
-                                {idx < 5 ? "▲ Kahoot" : idx < 10 ? "⚡ Wayground" : "🎯 Cert Exam"}
+                                {idx < part1End ? "▲ Kahoot" : idx < part2End ? "⚡ Wayground" : "🎯 Cert Exam"}
                               </Text>
                             </View>
                           </View>
@@ -750,17 +800,17 @@ export default function VideoDetailScreen() {
                       <View
                         style={[
                           styles.partBadgePill,
-                          currentQuestionIndex < 5
+                          isPart1
                             ? styles.partBadgeKahoot
-                            : currentQuestionIndex < 10
+                            : isPart2
                             ? styles.partBadgeWayground
                             : styles.partBadgeExam,
                         ]}
                       >
                         <Text style={styles.partBadgeText}>
-                          {currentQuestionIndex < 5
+                          {isPart1
                             ? "▲ PART 1: KAHOOT QUIZ"
-                            : currentQuestionIndex < 10
+                            : isPart2
                             ? "⚡ PART 2: WAYGROUND SPEED QUIZ"
                             : "🎯 PART 3: CERTIFICATION EXAM"}
                         </Text>
@@ -774,59 +824,64 @@ export default function VideoDetailScreen() {
                     </Text>
                   </View>
 
-                  {/* Comfortable Single Quiz Options (A, B, C, D) */}
-                  <View style={styles.quizOptionsContainer}>
+                  {/* Vibrant Colored Option Tiles (Kahoot & Wayground Style) */}
+                  <View style={[styles.tileGrid, isDesktop && styles.tileGridDesktop]}>
                     {currentQuestion.options.map((opt, optIdx) => {
                       const isSelected = selectedAnswers[currentQuestion.id] === optIdx;
                       const isAnswered = selectedAnswers[currentQuestion.id] !== undefined;
                       const isCorrect = optIdx === currentQuestion.correctIndex;
-                      const letters = ["A", "B", "C", "D"];
+
+                      const shapes = isPart1
+                        ? ["▲", "◆", "●", "■"]
+                        : isPart2
+                        ? ["⚡", "🚀", "🎯", "🔥"]
+                        : ["▲", "◆", "●", "■"];
+
+                      const tileColors = isPart1
+                        ? ["#E21B3C", "#1368CE", "#D97706", "#16A34A"]
+                        : isPart2
+                        ? ["#0284C7", "#0D9488", "#E11D48", "#16A34A"]
+                        : ["#E21B3C", "#1368CE", "#D97706", "#16A34A"];
+
+                      const tileBg = tileColors[optIdx % tileColors.length];
+
+                      let borderStyle: any = {};
+                      let tileOpacity = 1;
+
+                      if (isAnswered) {
+                        if (isCorrect) {
+                          borderStyle = { borderColor: "#10B981", borderWidth: 3.5, transform: [{ scale: 1.02 }] };
+                        } else if (isSelected) {
+                          borderStyle = { borderColor: "#EF4444", borderWidth: 3.5 };
+                        } else {
+                          tileOpacity = 0.45;
+                        }
+                      }
 
                       return (
                         <TouchableOpacity
                           key={optIdx}
-                          activeOpacity={0.8}
+                          activeOpacity={0.85}
                           style={[
-                            styles.quizOptionCard,
-                            isAnswered && isCorrect && styles.quizOptionCorrect,
-                            isAnswered && isSelected && !isCorrect && styles.quizOptionWrong,
-                            isAnswered && !isSelected && !isCorrect && styles.quizOptionMuted,
+                            styles.answerTile,
+                            isDesktop && styles.answerTileDesktop,
+                            { backgroundColor: tileBg, opacity: tileOpacity },
+                            borderStyle,
                           ]}
                           onPress={() => handleSelectOption(currentQuestion.id, optIdx)}
                         >
-                          <View
-                            style={[
-                              styles.quizOptionLetterBox,
-                              isAnswered && isCorrect && styles.quizOptionLetterBoxCorrect,
-                              isAnswered && isSelected && !isCorrect && styles.quizOptionLetterBoxWrong,
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.quizOptionLetterText,
-                                isAnswered && isCorrect && styles.quizOptionLetterTextCorrect,
-                                isAnswered && isSelected && !isCorrect && styles.quizOptionLetterTextWrong,
-                              ]}
-                            >
-                              {letters[optIdx] || (optIdx + 1)}
-                            </Text>
+                          <View style={styles.tileShapeBadge}>
+                            <Text style={styles.tileShapeText}>{shapes[optIdx]}</Text>
                           </View>
-                          <Text
-                            style={[
-                              styles.quizOptionText,
-                              isAnswered && isCorrect && styles.quizOptionTextCorrect,
-                            ]}
-                          >
-                            {opt}
-                          </Text>
+                          <Text style={styles.tileText}>{opt}</Text>
                           {isAnswered && isCorrect && (
-                            <View style={styles.quizOptionBadgeCorrect}>
-                              <Text style={styles.quizOptionBadgeText}>✓ Correct</Text>
+                            <View style={styles.tileStatusBadgeCorrect}>
+                              <Text style={styles.tileStatusText}>✓ Correct</Text>
                             </View>
                           )}
                           {isAnswered && isSelected && !isCorrect && (
-                            <View style={styles.quizOptionBadgeWrong}>
-                              <Text style={styles.quizOptionBadgeText}>✗ Selected</Text>
+                            <View style={styles.tileStatusBadgeWrong}>
+                              <Text style={styles.tileStatusText}>✗ Selected</Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -1258,6 +1313,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     marginTop: 2,
+  },
+  poolSelectorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginVertical: 6,
+    flexWrap: "wrap",
+  },
+  poolSelectorLabel: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "800",
+    marginRight: 2,
+  },
+  poolPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
+  poolPillActive: {
+    backgroundColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "#6366F1",
+  },
+  poolPillText: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  poolPillTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "800",
   },
   mergedPartsBar: {
     flexDirection: "row",
@@ -1707,88 +1796,76 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  quizOptionsContainer: {
-    gap: 10,
-    marginVertical: 10,
+  tileGrid: {
+    gap: 8,
+    marginVertical: 8,
   },
-  quizOptionCard: {
+  tileGridDesktop: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(30, 41, 59, 0.65)",
-    borderWidth: 1.5,
-    borderColor: "rgba(99, 102, 241, 0.25)",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    minHeight: 52,
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
   },
-  quizOptionCorrect: {
-    backgroundColor: "rgba(16, 185, 129, 0.18)",
-    borderColor: "#10B981",
+  answerTile: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    minHeight: 50,
+    justifyContent: "center",
+    position: "relative",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  quizOptionWrong: {
-    backgroundColor: "rgba(239, 68, 68, 0.18)",
-    borderColor: "#EF4444",
+  answerTileDesktop: {
+    width: "48.8%",
   },
-  quizOptionMuted: {
-    opacity: 0.45,
-  },
-  quizOptionLetterBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: "rgba(99, 102, 241, 0.25)",
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.4)",
+  tileShapeBadge: {
+    position: "absolute",
+    top: 12,
+    left: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
-  quizOptionLetterBoxCorrect: {
-    backgroundColor: "#10B981",
-    borderColor: "#10B981",
-  },
-  quizOptionLetterBoxWrong: {
-    backgroundColor: "#EF4444",
-    borderColor: "#EF4444",
-  },
-  quizOptionLetterText: {
-    color: "#C7D2FE",
-    fontSize: 13,
+  tileShapeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
     fontWeight: "900",
   },
-  quizOptionLetterTextCorrect: {
+  tileText: {
     color: "#FFFFFF",
-  },
-  quizOptionLetterTextWrong: {
-    color: "#FFFFFF",
-  },
-  quizOptionText: {
-    flex: 1,
-    color: "#F1F5F9",
-    fontSize: 14,
-    fontWeight: "600",
-    lineHeight: 20,
-  },
-  quizOptionTextCorrect: {
-    color: "#FFFFFF",
+    fontSize: 13,
     fontWeight: "700",
+    paddingLeft: 30,
+    paddingRight: 60,
+    lineHeight: 18,
   },
-  quizOptionBadgeCorrect: {
+  tileStatusBadgeCorrect: {
+    position: "absolute",
+    top: 10,
+    right: 10,
     backgroundColor: "#10B981",
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
-    marginLeft: 8,
   },
-  quizOptionBadgeWrong: {
+  tileStatusBadgeWrong: {
+    position: "absolute",
+    top: 10,
+    right: 10,
     backgroundColor: "#EF4444",
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
-    marginLeft: 8,
   },
-  quizOptionBadgeText: {
+  tileStatusText: {
     color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "800",
