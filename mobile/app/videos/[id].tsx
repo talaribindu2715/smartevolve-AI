@@ -66,7 +66,6 @@ export default function VideoDetailScreen() {
   const [quizPoints, setQuizPoints] = useState(0);
   const [quizStreak, setQuizStreak] = useState(0);
   const [maxQuizStreak, setMaxQuizStreak] = useState(0);
-  const [quizStyleMode, setQuizStyleMode] = useState<"kahoot" | "wayground">("kahoot");
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -401,18 +400,10 @@ export default function VideoDetailScreen() {
                   {isCompleted ? "🎓 Certificate Ready" : "✓ Mark Completed"}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={toggleSaveForLater}>
-                <Text style={styles.saveBtnText}>{isSaved ? "★ In Watchlist" : "☆ Save for Later"}</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
           <Text style={styles.videoTitle}>{effectiveVideo.title}</Text>
-
-          <View style={styles.channelRow}>
-            <Text style={styles.channelName}>{effectiveVideo.channelTitle || "SmartEvolve Educator"}</Text>
-            <Badge label={effectiveVideo.skillName || "Masterclass"} variant="info" />
-          </View>
         </View>
 
         {/* Certificate Display: Hidden completely until user completes both video watching and quiz */}
@@ -627,41 +618,21 @@ export default function VideoDetailScreen() {
               ) : (
                 /* Active Question View (Merged Kahoot & Wayground Interactive Gameplay) */
                 <View style={styles.activeQuestionContainer}>
-                  {/* Gamified HUD Strip (Points, Streak & Style Switcher) */}
-                  <View style={styles.hudRow}>
-                    <View style={styles.hudPointsBox}>
-                      <Text style={styles.hudPointsLabel}>ARENA POINTS</Text>
-                      <Text style={styles.hudPointsVal}>{quizPoints.toLocaleString()}</Text>
+                  {/* Clean Quiz Status Header: Question tracker & passing threshold */}
+                  <View style={styles.singleQuizStatusRow}>
+                    <View style={styles.singleQuizTracker}>
+                      <Text style={styles.singleQuizTrackerText}>
+                        Question {currentQuestionIndex + 1} of {quizQuestions.length}
+                      </Text>
                     </View>
-
-                    {quizStreak > 0 ? (
-                      <View style={styles.hudStreakBox}>
-                        <Text style={styles.hudStreakText}>🔥 {quizStreak}x Streak!</Text>
-                      </View>
-                    ) : (
-                      <View style={styles.hudPassingBox}>
-                        <Text style={styles.hudPassingText}>🎯 Score ≥60% to Pass</Text>
+                    <View style={styles.singleQuizPassingBadge}>
+                      <Text style={styles.singleQuizPassingText}>🎯 Score ≥60% to Pass</Text>
+                    </View>
+                    {quizStreak > 1 && (
+                      <View style={styles.singleQuizStreakBadge}>
+                        <Text style={styles.singleQuizStreakText}>🔥 {quizStreak}x Streak</Text>
                       </View>
                     )}
-
-                    <View style={styles.hudModeToggle}>
-                      <TouchableOpacity
-                        style={[styles.hudModeBtn, quizStyleMode === "kahoot" && styles.hudModeBtnActive]}
-                        onPress={() => setQuizStyleMode("kahoot")}
-                      >
-                        <Text style={[styles.hudModeBtnText, quizStyleMode === "kahoot" && styles.hudModeBtnTextActive]}>
-                          ▲ Kahoot
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.hudModeBtn, quizStyleMode === "wayground" && styles.hudModeBtnActive]}
-                        onPress={() => setQuizStyleMode("wayground")}
-                      >
-                        <Text style={[styles.hudModeBtnText, quizStyleMode === "wayground" && styles.hudModeBtnTextActive]}>
-                          ⚡ Wayground
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
                   </View>
 
                   {/* Progress Indicator Dots */}
@@ -682,65 +653,66 @@ export default function VideoDetailScreen() {
                   {/* Question Card Box */}
                   <View style={styles.arenaQuestionCard}>
                     <Text style={styles.arenaQuestionNumber}>
-                      QUESTION {currentQuestionIndex + 1} OF {quizQuestions.length} • {effectiveVideo.skillName}
+                      {effectiveVideo.skillName ? `${effectiveVideo.skillName.toUpperCase()} • ` : ""}QUESTION {currentQuestionIndex + 1}
                     </Text>
                     <Text style={styles.arenaQuestionText}>
                       {currentQuestion.question}
                     </Text>
                   </View>
 
-                  {/* Kahoot & Wayground Interactive 4-Color Answer Tiles */}
-                  <View style={[styles.tileGrid, isDesktop && styles.tileGridDesktop]}>
+                  {/* Comfortable Single Quiz Options (A, B, C, D) */}
+                  <View style={styles.quizOptionsContainer}>
                     {currentQuestion.options.map((opt, optIdx) => {
                       const isSelected = selectedAnswers[currentQuestion.id] === optIdx;
                       const isAnswered = selectedAnswers[currentQuestion.id] !== undefined;
                       const isCorrect = optIdx === currentQuestion.correctIndex;
-
-                      const shapes = quizStyleMode === "kahoot"
-                        ? ["▲", "◆", "●", "■"]
-                        : ["⚡", "🚀", "🎯", "🔥"];
-                      const tileColors = quizStyleMode === "kahoot"
-                        ? ["#E21B3C", "#1368CE", "#D97706", "#16A34A"]
-                        : ["#0284C7", "#0D9488", "#E11D48", "#16A34A"];
-                      const tileBg = tileColors[optIdx % tileColors.length];
-
-                      let borderStyle: any = {};
-                      let tileOpacity = 1;
-
-                      if (isAnswered) {
-                        if (isCorrect) {
-                          borderStyle = { borderColor: "#10B981", borderWidth: 3.5, transform: [{ scale: 1.02 }] };
-                        } else if (isSelected) {
-                          borderStyle = { borderColor: "#EF4444", borderWidth: 3.5 };
-                        } else {
-                          tileOpacity = 0.45;
-                        }
-                      }
+                      const letters = ["A", "B", "C", "D"];
 
                       return (
                         <TouchableOpacity
                           key={optIdx}
-                          activeOpacity={0.85}
+                          activeOpacity={0.8}
                           style={[
-                            styles.answerTile,
-                            isDesktop && styles.answerTileDesktop,
-                            { backgroundColor: tileBg, opacity: tileOpacity },
-                            borderStyle,
+                            styles.quizOptionCard,
+                            isAnswered && isCorrect && styles.quizOptionCorrect,
+                            isAnswered && isSelected && !isCorrect && styles.quizOptionWrong,
+                            isAnswered && !isSelected && !isCorrect && styles.quizOptionMuted,
                           ]}
                           onPress={() => handleSelectOption(currentQuestion.id, optIdx)}
                         >
-                          <View style={styles.tileShapeBadge}>
-                            <Text style={styles.tileShapeText}>{shapes[optIdx]}</Text>
+                          <View
+                            style={[
+                              styles.quizOptionLetterBox,
+                              isAnswered && isCorrect && styles.quizOptionLetterBoxCorrect,
+                              isAnswered && isSelected && !isCorrect && styles.quizOptionLetterBoxWrong,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.quizOptionLetterText,
+                                isAnswered && isCorrect && styles.quizOptionLetterTextCorrect,
+                                isAnswered && isSelected && !isCorrect && styles.quizOptionLetterTextWrong,
+                              ]}
+                            >
+                              {letters[optIdx] || (optIdx + 1)}
+                            </Text>
                           </View>
-                          <Text style={styles.tileText}>{opt}</Text>
+                          <Text
+                            style={[
+                              styles.quizOptionText,
+                              isAnswered && isCorrect && styles.quizOptionTextCorrect,
+                            ]}
+                          >
+                            {opt}
+                          </Text>
                           {isAnswered && isCorrect && (
-                            <View style={styles.tileStatusBadgeCorrect}>
-                              <Text style={styles.tileStatusText}>✓ Correct</Text>
+                            <View style={styles.quizOptionBadgeCorrect}>
+                              <Text style={styles.quizOptionBadgeText}>✓ Correct</Text>
                             </View>
                           )}
                           {isAnswered && isSelected && !isCorrect && (
-                            <View style={styles.tileStatusBadgeWrong}>
-                              <Text style={styles.tileStatusText}>✗ Selected</Text>
+                            <View style={styles.quizOptionBadgeWrong}>
+                              <Text style={styles.quizOptionBadgeText}>✗ Selected</Text>
                             </View>
                           )}
                         </TouchableOpacity>
@@ -761,12 +733,9 @@ export default function VideoDetailScreen() {
                       <View style={styles.feedbackHeaderRow}>
                         <Text style={styles.feedbackTitle}>
                           {selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex
-                            ? `🎉 AWESOME! CORRECT ANSWER (+${500 + quizStreak * 100} PTS)`
-                            : "❌ NOT QUITE"}
+                            ? "✓ Correct Answer!"
+                            : "✗ Incorrect"}
                         </Text>
-                        {quizStreak > 1 && selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex && (
-                          <Text style={styles.feedbackStreak}>🔥 {quizStreak}x Streak Active!</Text>
-                        )}
                       </View>
 
                       <Text style={styles.feedbackExplanation}>
@@ -1416,85 +1385,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
   },
-  // Merged Kahoot & Wayground Arena Styles
-  hudRow: {
+  // Comfortable Single Unified Quiz Styles
+  singleQuizStatusRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(15, 23, 42, 0.7)",
+    backgroundColor: "rgba(15, 23, 42, 0.65)",
     borderWidth: 1,
     borderColor: "rgba(99, 102, 241, 0.25)",
     borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 6,
-    flexWrap: "wrap",
-    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    gap: 8,
   },
-  hudPointsBox: {
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  singleQuizTracker: {
+    flexDirection: "row",
     alignItems: "center",
   },
-  hudPointsLabel: {
-    color: "#94A3B8",
-    fontSize: 8,
+  singleQuizTrackerText: {
+    color: "#FFFFFF",
+    fontSize: 12,
     fontWeight: "800",
   },
-  hudPointsVal: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "900",
+  singleQuizPassingBadge: {
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  hudStreakBox: {
+  singleQuizPassingText: {
+    color: "#10B981",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  singleQuizStreakBadge: {
     backgroundColor: "rgba(245, 158, 11, 0.2)",
     borderColor: "#F59E0B",
     borderWidth: 1,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  hudStreakText: {
+  singleQuizStreakText: {
     color: "#F59E0B",
     fontSize: 11,
     fontWeight: "900",
-  },
-  hudPassingBox: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  hudPassingText: {
-    color: "#10B981",
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  hudModeToggle: {
-    flexDirection: "row",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    borderRadius: 8,
-    padding: 2,
-    gap: 3,
-  },
-  hudModeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  hudModeBtnActive: {
-    backgroundColor: "#6366F1",
-  },
-  hudModeBtnText: {
-    color: "#94A3B8",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  hudModeBtnTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "800",
   },
   arenaQuestionCard: {
     backgroundColor: "#131B2E",
@@ -1522,76 +1460,88 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  tileGrid: {
-    gap: 8,
-    marginVertical: 8,
-  },
-  tileGridDesktop: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  quizOptionsContainer: {
     gap: 10,
+    marginVertical: 10,
   },
-  answerTile: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    minHeight: 50,
-    justifyContent: "center",
-    position: "relative",
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
+  quizOptionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(30, 41, 59, 0.65)",
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
   },
-  answerTileDesktop: {
-    width: "48.8%",
+  quizOptionCorrect: {
+    backgroundColor: "rgba(16, 185, 129, 0.18)",
+    borderColor: "#10B981",
   },
-  tileShapeBadge: {
-    position: "absolute",
-    top: 12,
-    left: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+  quizOptionWrong: {
+    backgroundColor: "rgba(239, 68, 68, 0.18)",
+    borderColor: "#EF4444",
+  },
+  quizOptionMuted: {
+    opacity: 0.45,
+  },
+  quizOptionLetterBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "rgba(99, 102, 241, 0.25)",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.4)",
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
   },
-  tileShapeText: {
-    color: "#FFFFFF",
-    fontSize: 12,
+  quizOptionLetterBoxCorrect: {
+    backgroundColor: "#10B981",
+    borderColor: "#10B981",
+  },
+  quizOptionLetterBoxWrong: {
+    backgroundColor: "#EF4444",
+    borderColor: "#EF4444",
+  },
+  quizOptionLetterText: {
+    color: "#C7D2FE",
+    fontSize: 13,
     fontWeight: "900",
   },
-  tileText: {
+  quizOptionLetterTextCorrect: {
     color: "#FFFFFF",
-    fontSize: 13,
+  },
+  quizOptionLetterTextWrong: {
+    color: "#FFFFFF",
+  },
+  quizOptionText: {
+    flex: 1,
+    color: "#F1F5F9",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  quizOptionTextCorrect: {
+    color: "#FFFFFF",
     fontWeight: "700",
-    paddingLeft: 30,
-    paddingRight: 60,
-    lineHeight: 18,
   },
-  tileStatusBadgeCorrect: {
-    position: "absolute",
-    top: 10,
-    right: 10,
+  quizOptionBadgeCorrect: {
     backgroundColor: "#10B981",
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    marginLeft: 8,
   },
-  tileStatusBadgeWrong: {
-    position: "absolute",
-    top: 10,
-    right: 10,
+  quizOptionBadgeWrong: {
     backgroundColor: "#EF4444",
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    marginLeft: 8,
   },
-  tileStatusText: {
+  quizOptionBadgeText: {
     color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "800",
