@@ -533,73 +533,17 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTag}>SMARTEVOLVE COGNITIVE ADVISOR</Text>
-              <Text style={styles.headerTitle}>
-                {selectedProvider === "gemini"
-                  ? "Google Gemini 1.5 AI Mentor"
-                  : selectedProvider === "groq"
-                  ? "Groq Llama 3.3 AI Mentor"
-                  : "Anthropic Claude 3.5 Mentor"}
-              </Text>
+              <Text style={styles.headerTitle}>SmartEvolve AI Mentor</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeBtnText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* AI Connection Status Banner */}
-          <View
-            style={[
-              styles.healthBanner,
-              isAiLive ? styles.healthOnline : styles.healthPending,
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.healthTitle,
-                  {
-                    color: isAiLive
-                      ? selectedProvider === "anthropic"
-                        ? "#C084FC"
-                        : selectedProvider === "groq"
-                        ? "#F59E0B"
-                        : colors.success
-                      : "#60A5FA",
-                  },
-                ]}
-              >
-                {selectedProvider === "gemini" && (activeKey || aiHealth?.provider === "GOOGLE_GEMINI")
-                  ? "🔵 Google Gemini 1.5: Active & Operational"
-                  : selectedProvider === "groq" && activeKey
-                  ? "⚡ Groq Llama 3.3: Active & Operational"
-                  : selectedProvider === "anthropic" && (activeKey || aiHealth?.provider === "ANTHROPIC")
-                  ? "🟣 Anthropic Claude 3.5: Active & Operational"
-                  : isServerAiOnline
-                  ? `🟢 ${aiHealth?.provider || "Cloud AI"}: Active & Operational`
-                  : "⚡ SmartEvolve Cognitive AI: Active & Operational"}
-              </Text>
-              <Text style={styles.healthSub}>
-                {activeKey
-                  ? `Personal ${selectedProvider.toUpperCase()} key connected on device.`
-                  : (aiHealth?.message || "Trained on Full-Stack, AI & Web3 architectures. Instant dynamic guidance.")}
-              </Text>
-              <Text style={styles.healthLatency}>
-                Engine: {selectedProvider === "gemini" ? "Gemini 1.5 Flash" : selectedProvider === "groq" ? "Llama 3.3 70B" : "Claude 3.5 Haiku"} • Latency: {aiHealth?.latencyMs || 38}ms
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <TouchableOpacity
-                style={[
-                  styles.refreshHealthBtn,
-                  { backgroundColor: showKeyConfig ? colors.primary : "rgba(255,255,255,0.08)" },
-                ]}
                 onPress={() => setShowKeyConfig(!showKeyConfig)}
+                style={styles.keyToggleBtn}
               >
-                <Text style={styles.refreshHealthBtnText}>⚙️ Setup Key</Text>
+                <Text style={styles.keyToggleBtnText}>⚙️</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.refreshHealthBtn} onPress={() => refetchHealth()}>
-                <Text style={styles.refreshHealthBtnText}>🔄 Server</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <Text style={styles.closeBtnText}>✕</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -755,51 +699,29 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
 
           {/* Chat Messages */}
           <ScrollView style={styles.chatScroll} contentContainerStyle={styles.chatContent}>
-            {chatLog.length === 0 ? (
-              <View style={styles.emptyChat}>
-                <Text style={styles.emptyChatEmoji}>
-                  {selectedProvider === "anthropic"
-                    ? "🟣🧠"
-                    : selectedProvider === "groq"
-                    ? "⚡🧠"
-                    : "🔵✨"}
-                </Text>
-                <Text style={styles.emptyChatTitle}>
-                  {selectedProvider === "gemini"
-                    ? "Ask Google Gemini AI Anything"
-                    : selectedProvider === "groq"
-                    ? "Ask Groq Llama 3.3 Anything"
-                    : "Ask Anthropic Claude Anything"}
-                </Text>
-                <Text style={styles.emptyChatSub}>
-                  Ask technical questions, get advice on required skills, career roadmaps, or interview prep.
-                </Text>
+            {chatLog.map((msg, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.msgBubble,
+                  msg.sender === "user" ? styles.userBubble : styles.geminiBubble,
+                ]}
+              >
+                {msg.sender === "mentor" && (
+                  <Text
+                    style={[
+                      styles.geminiBadge,
+                      msg.providerLabel?.includes("Anthropic") && { color: "#C084FC" },
+                      msg.providerLabel?.includes("Groq") && { color: "#F59E0B" },
+                      msg.providerLabel?.includes("Gemini") && { color: "#60A5FA" },
+                    ]}
+                  >
+                    {msg.providerLabel || "💡 SmartEvolve Adaptive AI"}
+                  </Text>
+                )}
+                <Text style={styles.msgText}>{msg.text}</Text>
               </View>
-            ) : (
-              chatLog.map((msg, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.msgBubble,
-                    msg.sender === "user" ? styles.userBubble : styles.geminiBubble,
-                  ]}
-                >
-                  {msg.sender === "mentor" && (
-                    <Text
-                      style={[
-                        styles.geminiBadge,
-                        msg.providerLabel?.includes("Anthropic") && { color: "#C084FC" },
-                        msg.providerLabel?.includes("Groq") && { color: "#F59E0B" },
-                        msg.providerLabel?.includes("Gemini") && { color: "#60A5FA" },
-                      ]}
-                    >
-                      {msg.providerLabel || "💡 SmartEvolve Adaptive AI"}
-                    </Text>
-                  )}
-                  <Text style={styles.msgText}>{msg.text}</Text>
-                </View>
-              ))
-            )}
+            ))}
             {isAsking && (
               <View style={[styles.msgBubble, styles.geminiBubble, { flexDirection: "row", gap: 8, alignItems: "center" }]}>
                 <ActivityIndicator
@@ -813,11 +735,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                   }
                 />
                 <Text style={styles.msgText}>
-                  {selectedProvider === "gemini"
-                    ? "Gemini AI is analyzing..."
-                    : selectedProvider === "groq"
-                    ? "Groq Llama 3.3 is thinking..."
-                    : "Claude 3.5 is analyzing..."}
+                  AI Mentor is analyzing...
                 </Text>
               </View>
             )}
@@ -827,17 +745,13 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
-              placeholder={
-                selectedProvider === "gemini"
-                  ? "Ask Gemini AI (e.g. How to master Spring Boot?)..."
-                  : selectedProvider === "groq"
-                  ? "Ask Groq AI (e.g. How to master Spring Boot?)..."
-                  : "Ask Claude 3.5 (e.g. How to master Spring Boot?)..."
-              }
+              placeholder="Ask AI Mentor anything (e.g. How to master Spring Boot?)..."
               placeholderTextColor={colors.textMuted}
               value={question}
               onChangeText={setQuestion}
               onSubmitEditing={() => handleSendQuestion()}
+              returnKeyType="send"
+              editable={!isAsking}
             />
             <Button
               title="Send ➔"
@@ -904,6 +818,17 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "700",
+  },
+  keyToggleBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  keyToggleBtnText: {
+    fontSize: 16,
   },
   keyConfigCard: {
     backgroundColor: "rgba(99, 102, 241, 0.09)",
@@ -1028,47 +953,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 16,
   },
-  healthBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
-  },
-  healthOnline: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
-  },
-  healthPending: {
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-  },
-  healthTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  healthSub: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  healthLatency: {
-    color: colors.textMuted,
-    fontSize: 10,
-    marginTop: 2,
-    fontFamily: "monospace",
-  },
-  refreshHealthBtn: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.sm,
-  },
-  refreshHealthBtnText: {
-    color: colors.textPrimary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
   quickPromptsWrap: {
     padding: spacing.xs,
     paddingHorizontal: spacing.md,
@@ -1104,28 +988,6 @@ const styles = StyleSheet.create({
   chatContent: {
     padding: spacing.md,
     gap: spacing.sm,
-  },
-  emptyChat: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xl,
-  },
-  emptyChatEmoji: {
-    fontSize: 36,
-    marginBottom: spacing.xs,
-  },
-  emptyChatTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  emptyChatSub: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textAlign: "center",
-    maxWidth: 340,
-    marginTop: 4,
-    lineHeight: 18,
   },
   msgBubble: {
     padding: spacing.md,
