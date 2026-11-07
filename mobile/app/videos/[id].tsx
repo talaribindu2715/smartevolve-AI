@@ -327,7 +327,7 @@ export default function VideoDetailScreen() {
       timeTakenSeconds: 120,
       attemptNumber: quizAttempts,
       difficulty: effectiveVideo.difficulty || "INTERMEDIATE",
-      platform: "SMARTEVOLVE",
+      platform: "MERGED_3IN1_ARENA",
     }).then(() => {
       setDbPersisted(true);
     }).catch((err) => {
@@ -428,7 +428,7 @@ export default function VideoDetailScreen() {
             onPress={() => setActiveTab("quiz")}
           >
             <Text style={[styles.tabBtnText, activeTab === "quiz" && styles.tabBtnTextActive]}>
-              Skill Quiz ({quizQuestions.length} Questions)
+              Merged 3-in-1 Quiz ({quizQuestions.length} Qs)
             </Text>
           </TouchableOpacity>
 
@@ -450,7 +450,10 @@ export default function VideoDetailScreen() {
               <View style={styles.quizHeaderRow}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text style={styles.quizHeadline}>
-                    {effectiveVideo.skillName} Masterclass Certification Quiz
+                    {effectiveVideo.skillName} Unified Masterclass Quiz
+                  </Text>
+                  <Text style={styles.quizMergedSubHeadline}>
+                    Merged 3-in-1 Quiz: Kahoot • Wayground • Certification Exam
                   </Text>
                 </View>
                 <Badge
@@ -467,6 +470,57 @@ export default function VideoDetailScreen() {
                       : "primary"
                   }
                 />
+              </View>
+
+              {/* 3-in-1 Merged Quiz Parts Selector & Jump Bar */}
+              <View style={styles.mergedPartsBar}>
+                <TouchableOpacity
+                  onPress={() => setCurrentQuestionIndex(0)}
+                  style={[
+                    styles.mergedPartTab,
+                    currentQuestionIndex < 5 && styles.mergedPartTabActiveKahoot,
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.mergedPartTabText,
+                    currentQuestionIndex < 5 && styles.mergedPartTabTextActive,
+                  ]}>
+                    ▲ Part 1: Kahoot (1-5)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setCurrentQuestionIndex(5)}
+                  style={[
+                    styles.mergedPartTab,
+                    currentQuestionIndex >= 5 && currentQuestionIndex < 10 && styles.mergedPartTabActiveWayground,
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.mergedPartTabText,
+                    currentQuestionIndex >= 5 && currentQuestionIndex < 10 && styles.mergedPartTabTextActive,
+                  ]}>
+                    ⚡ Part 2: Wayground (6-10)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setCurrentQuestionIndex(10)}
+                  style={[
+                    styles.mergedPartTab,
+                    currentQuestionIndex >= 10 && styles.mergedPartTabActiveTest,
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.mergedPartTabText,
+                    currentQuestionIndex >= 10 && styles.mergedPartTabTextActive,
+                  ]}>
+                    🎯 Part 3: Cert Exam (11-15)
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {/* Submitted Results View */}
@@ -519,6 +573,35 @@ export default function VideoDetailScreen() {
                       </TouchableOpacity>
                     )}
 
+                    {/* Merged 3-in-1 Parts Breakdown */}
+                    <View style={styles.mergedBreakdownCard}>
+                      <Text style={styles.mergedBreakdownTitle}>
+                        MERGED QUIZ SECTION BREAKDOWN
+                      </Text>
+                      <View style={styles.mergedBreakdownRow}>
+                        <View style={styles.mergedBreakdownCol}>
+                          <Text style={[styles.mergedBreakdownVal, { color: "#C084FC" }]}>
+                            {quizQuestions.slice(0, 5).filter((q) => selectedAnswers[q.id] === q.correctIndex).length}/5
+                          </Text>
+                          <Text style={styles.mergedBreakdownLabel}>▲ KAHOOT PART</Text>
+                        </View>
+                        <View style={styles.podiumDivider} />
+                        <View style={styles.mergedBreakdownCol}>
+                          <Text style={[styles.mergedBreakdownVal, { color: "#38BDF8" }]}>
+                            {quizQuestions.slice(5, 10).filter((q) => selectedAnswers[q.id] === q.correctIndex).length}/5
+                          </Text>
+                          <Text style={styles.mergedBreakdownLabel}>⚡ WAYGROUND PART</Text>
+                        </View>
+                        <View style={styles.podiumDivider} />
+                        <View style={styles.mergedBreakdownCol}>
+                          <Text style={[styles.mergedBreakdownVal, { color: "#34D399" }]}>
+                            {quizQuestions.slice(10, 15).filter((q) => selectedAnswers[q.id] === q.correctIndex).length}/5
+                          </Text>
+                          <Text style={styles.mergedBreakdownLabel}>🎯 CERT EXAM PART</Text>
+                        </View>
+                      </View>
+                    </View>
+
                     {/* Arena Gamified Stats Podium */}
                     <View style={styles.hudStatsPodium}>
                       <View style={styles.podiumCol}>
@@ -555,6 +638,7 @@ export default function VideoDetailScreen() {
                         Attempt #{quizAttempts} recorded with {quizScore}/{quizQuestions.length} ({Math.round((quizScore / quizQuestions.length) * 100)}%)
                       </Text>
                     </View>
+                    
                   </View>
 
                   {/* Review Questions */}
@@ -565,7 +649,17 @@ export default function VideoDetailScreen() {
                     return (
                       <View key={q.id} style={[styles.reviewItem, isCorrect ? styles.reviewItemCorrect : styles.reviewItemWrong]}>
                         <View style={styles.reviewTopRow}>
-                          <Text style={styles.reviewQuestionNum}>Question {idx + 1}</Text>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={styles.reviewQuestionNum}>Question {idx + 1}</Text>
+                            <View style={[
+                              styles.miniPartBadge,
+                              idx < 5 ? styles.miniPartKahoot : idx < 10 ? styles.miniPartWayground : styles.miniPartExam
+                            ]}>
+                              <Text style={styles.miniPartBadgeText}>
+                                {idx < 5 ? "▲ Kahoot" : idx < 10 ? "⚡ Wayground" : "🎯 Cert Exam"}
+                              </Text>
+                            </View>
+                          </View>
                           <Text style={isCorrect ? styles.correctBadge : styles.wrongBadge}>
                             {isCorrect ? "✓ Correct" : "✗ Incorrect"}
                           </Text>
@@ -652,9 +746,29 @@ export default function VideoDetailScreen() {
 
                   {/* Question Card Box */}
                   <View style={styles.arenaQuestionCard}>
-                    <Text style={styles.arenaQuestionNumber}>
-                      {effectiveVideo.skillName ? `${effectiveVideo.skillName.toUpperCase()} • ` : ""}QUESTION {currentQuestionIndex + 1}
-                    </Text>
+                    <View style={styles.arenaQuestionHeaderRow}>
+                      <View
+                        style={[
+                          styles.partBadgePill,
+                          currentQuestionIndex < 5
+                            ? styles.partBadgeKahoot
+                            : currentQuestionIndex < 10
+                            ? styles.partBadgeWayground
+                            : styles.partBadgeExam,
+                        ]}
+                      >
+                        <Text style={styles.partBadgeText}>
+                          {currentQuestionIndex < 5
+                            ? "▲ PART 1: KAHOOT QUIZ"
+                            : currentQuestionIndex < 10
+                            ? "⚡ PART 2: WAYGROUND SPEED QUIZ"
+                            : "🎯 PART 3: CERTIFICATION EXAM"}
+                        </Text>
+                      </View>
+                      <Text style={styles.arenaQuestionNumber}>
+                        QUESTION {currentQuestionIndex + 1} OF {quizQuestions.length}
+                      </Text>
+                    </View>
                     <Text style={styles.arenaQuestionText}>
                       {currentQuestion.question}
                     </Text>
@@ -1138,6 +1252,139 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     marginTop: 2,
+  },
+  quizMergedSubHeadline: {
+    color: "#A5B4FC",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  mergedPartsBar: {
+    flexDirection: "row",
+    gap: 6,
+    marginVertical: 10,
+    width: "100%",
+  },
+  mergedPartTab: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mergedPartTabActiveKahoot: {
+    backgroundColor: "#46178F",
+    borderColor: "#C084FC",
+  },
+  mergedPartTabActiveWayground: {
+    backgroundColor: "#0066CC",
+    borderColor: "#38BDF8",
+  },
+  mergedPartTabActiveTest: {
+    backgroundColor: "#0F766E",
+    borderColor: "#34D399",
+  },
+  mergedPartTabText: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  mergedPartTabTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
+  mergedBreakdownCard: {
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    borderRadius: 12,
+    padding: 10,
+    marginVertical: 8,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  mergedBreakdownTitle: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  mergedBreakdownRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  mergedBreakdownCol: {
+    alignItems: "center",
+    flex: 1,
+  },
+  mergedBreakdownVal: {
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  mergedBreakdownLabel: {
+    color: "#94A3B8",
+    fontSize: 9,
+    fontWeight: "800",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  miniPartBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  miniPartKahoot: {
+    backgroundColor: "rgba(168, 85, 247, 0.25)",
+  },
+  miniPartWayground: {
+    backgroundColor: "rgba(56, 189, 248, 0.25)",
+  },
+  miniPartExam: {
+    backgroundColor: "rgba(52, 211, 153, 0.25)",
+  },
+  miniPartBadgeText: {
+    color: "#E2E8F0",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  arenaQuestionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 6,
+  },
+  partBadgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  partBadgeKahoot: {
+    backgroundColor: "rgba(168, 85, 247, 0.25)",
+    borderColor: "#A855F7",
+    borderWidth: 1,
+  },
+  partBadgeWayground: {
+    backgroundColor: "rgba(56, 189, 248, 0.25)",
+    borderColor: "#38BDF8",
+    borderWidth: 1,
+  },
+  partBadgeExam: {
+    backgroundColor: "rgba(52, 211, 153, 0.25)",
+    borderColor: "#34D399",
+    borderWidth: 1,
+  },
+  partBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
   },
   activeQuestionContainer: {
     gap: spacing.md,
