@@ -82,11 +82,9 @@ export default function VideoDetailScreen() {
   const fallbackVideo = getMasterVideoById(id || "");
   const effectiveVideo = video || fallbackVideo;
 
-  const [selectedPoolSize, setSelectedPoolSize] = useState<number>(30);
-
   const quizQuestions = React.useMemo(() => {
-    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize);
-  }, [effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize]);
+    return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, 200);
+  }, [effectiveVideo?.skillName, effectiveVideo?.title]);
 
   const { data: assessments } = useQuery({
     queryKey: ["assessments"],
@@ -469,40 +467,6 @@ export default function VideoDetailScreen() {
                       : "primary"
                   }
                 />
-              </View>
-
-              {/* Question Pool Length Selector */}
-              <View style={styles.poolSelectorRow}>
-                <Text style={styles.poolSelectorLabel}>Total Questions:</Text>
-                {[
-                  { count: 15, label: "15 Qs (Quick)" },
-                  { count: 30, label: "30 Qs (Standard)" },
-                  { count: 50, label: "50 Qs (Deep Exam)" },
-                  { count: 75, label: "75 Qs (Mastery)" },
-                  { count: 100, label: "100 Qs (Grand Exam)" },
-                  { count: 150, label: "150+ Full Bank" },
-                ].map((pool) => (
-                  <TouchableOpacity
-                    key={pool.count}
-                    style={[
-                      styles.poolPill,
-                      selectedPoolSize === pool.count && styles.poolPillActive,
-                    ]}
-                    onPress={() => {
-                      setSelectedPoolSize(pool.count);
-                      handleResetQuiz();
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.poolPillText,
-                        selectedPoolSize === pool.count && styles.poolPillTextActive,
-                      ]}
-                    >
-                      {pool.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
               </View>
 
               {/* Submitted Results View */}
