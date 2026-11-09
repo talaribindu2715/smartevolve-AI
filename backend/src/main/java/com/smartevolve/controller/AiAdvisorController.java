@@ -2,17 +2,18 @@ package com.smartevolve.controller;
 
 import com.smartevolve.ai.GeminiAiService;
 import com.smartevolve.dto.AiAdvisorDto;
-import com.smartevolve.security.UserPrincipal;
+import com.smartevolve.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class AiAdvisorController {
         try {
             return ResponseEntity.ok(geminiAiService.checkGeminiHealth());
         } catch (Exception ex) {
+            log.warn("getAiHealth notice: {}", ex.getMessage());
             java.util.Map<String, Object> fallback = new java.util.HashMap<>();
             fallback.put("status", "ERROR");
             fallback.put("working", false);
@@ -37,33 +39,40 @@ public class AiAdvisorController {
 
     @GetMapping("/skill-analysis")
     @Operation(summary = "Perform deep AI skill analysis", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<AiAdvisorDto.SkillAnalysisResponse> getSkillAnalysis(
-            @AuthenticationPrincipal UserPrincipal principal) {
-        UUID studentId = principal != null ? principal.getId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public ResponseEntity<AiAdvisorDto.SkillAnalysisResponse> getSkillAnalysis() {
+        UUID studentId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(geminiAiService.analyzeStudentSkills(studentId));
     }
 
     @GetMapping("/career-guidance/{careerId}")
     @Operation(summary = "Generate tailored career guidance & project recommendations", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<AiAdvisorDto.CareerGuidanceResponse> getCareerGuidance(
-            @PathVariable UUID careerId,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        UUID studentId = principal != null ? principal.getId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
+            @PathVariable UUID careerId) {
+        UUID studentId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(geminiAiService.generateCareerGuidance(studentId, careerId));
     }
 
     @PostMapping("/chat")
     @Operation(summary = "Interactive AI Career Mentor chat session", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<AiAdvisorDto.MentorChatResponse> chatWithMentor(
-            @RequestBody AiAdvisorDto.MentorChatRequest request,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        UUID studentId = principal != null ? principal.getId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
-        return ResponseEntity.ok(geminiAiService.chatWithMentor(
-                studentId,
-                request.getMessage(),
-                request.getCurrentCareerContext(),
-                request.getCustomApiKey(),
-                request.getProvider()
-        ));
+            @RequestBody(required = false) AiAdvisorDto.MentorChatRequest request) {
+        UUID studentId = SecurityUtils.getCurrentUserId();
+        String message = (request != null && request.getMessage() != null) ? request.getMessage() : "hi";
+        String context = (request != null && request.getCurrentCareerContext() != null) ? request.getCurrentCareerContext() : "Software Engineering";
+        String customKey = request != null ? request.getCustomApiKey() : null;
+        String provider = request != null ? request.getProvider() : null;
+
+        try {
+            return ResponseEntity.ok(geminiAiService.chatWithMentor(
+                    studentId,
+                    message,
+                    context,
+                    customKey,
+                    provider
+            ));
+        } catch (Exception ex) {
+            log.error("AI mentor chat error (falling back gracefully): ", ex);
+            return ResponseEntity.ok(geminiAiService.chatWithMentorFallback(studentId, message, context));
+        }
     }
 }

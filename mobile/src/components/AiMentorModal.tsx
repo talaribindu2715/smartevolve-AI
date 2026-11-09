@@ -36,7 +36,33 @@ function getIntelligentMentorResponse(userText: string, backendReply?: string): 
 
   const query = userText.toLowerCase().trim();
 
-  // 1. Greetings & Casual Hello
+  // 1. Hot topics / World Trends / News / Tech Evolution
+  if (
+    query.includes("topic") ||
+    query.includes("hot topic") ||
+    query.includes("world") ||
+    query.includes("trend") ||
+    query.includes("news") ||
+    query.includes("latest")
+  ) {
+    return `I'd love to discuss today's hot topics in tech! Right now, some of the biggest movements shaping the industry include:
+
+1. 🤖 Autonomous AI Agents & Real-Time Reasoning:
+• Shifting beyond standard text chatbots to autonomous multi-agent pipelines that build, test, and deploy applications.
+
+2. ⚡ Ultra-Fast Edge & Open-Source LLM Inference:
+• Massive adoption of Groq LPUs, Llama 3.3, and DeepSeek running locally and on the edge at 1,000+ tokens/second.
+
+3. 🚀 Modern Cloud-Native & Reactive Frameworks:
+• Spring Boot 3 with GraalVM native binaries for sub-second startup times, and React 19 server actions for zero-bundle-size backend integration.
+
+4. ⛓️ Decentralized Identity & Verifiable Credentials:
+• On-chain cryptographic proofs that verify software engineering proficiency without relying on paper degrees.
+
+Which of these areas are you most curious about? We can dive into practical implications, career impacts, or how you can build hands-on projects with them!`;
+  }
+
+  // 2. Greetings & Casual Hello (Handles "Hi", "Hiii", "Hello", "Hey", plus leading conversational intros)
   if (
     query === "hi" ||
     query === "hii" ||
@@ -46,8 +72,11 @@ function getIntelligentMentorResponse(userText: string, backendReply?: string): 
     query === "heyy" ||
     query === "hola" ||
     query.startsWith("hi ") ||
+    query.startsWith("hii ") ||
+    query.startsWith("hiii ") ||
     query.startsWith("hello ") ||
     query.startsWith("hey ") ||
+    query.startsWith("heyy ") ||
     query.includes("good morning") ||
     query.includes("good afternoon") ||
     query.includes("good evening") ||
@@ -264,23 +293,15 @@ Deploy all 3 with clean GitHub documentation and live demo URLs!`;
 • Any recruiter or institution can verify your credential QR code or transaction hash directly on block explorers without intermediaries!`;
   }
 
-  // 10. Intelligent Adaptive Default
-  return `That's a thoughtful question regarding "${userText}".
+  // 10. Intelligent Adaptive Mentor Response
+  return `I'm glad you asked! As your SmartEvolve AI Career & Technical Mentor, I'm here to unpack that with you.
 
-Here is a structured perspective from SmartEvolve AI:
+Here is how we can explore this together:
+• 🚀 Technical & Architectural Deep-Dive: We can explore how modern production systems design and solve for this.
+• 💡 Hands-On Implementation: I can guide you through real code examples and practical patterns.
+• 🎯 Career & Interview Readiness: We can connect this concept to what top tech companies look for in senior engineering candidates.
 
-1. Core Concept Breakdown:
-• Focus on foundational principles first before diving into framework-specific syntax.
-• Decompose the problem into smaller, testable sub-components.
-
-2. Practical Application:
-• Implement a small, working proof-of-concept in code to solidify the mental model.
-• Review industry patterns and best practices commonly used in production systems.
-
-3. Recommended Next Step:
-• Check your active Roadmap in the Learn tab to unlock the related skill milestone and earn competency points.
-
-Feel free to ask for specific code examples, architectural comparisons, or debugging guidance!`;
+Tell me which angle you'd like to explore first, or feel free to ask a specific coding or architectural question!`;
 }
 
 export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
@@ -328,50 +349,88 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     setIsAsking(true);
 
     try {
-      // 1. If a direct Groq key is available, call Groq directly for ultra-speed
-      if (storedProv === "GROQ" && storedApiKey && storedApiKey.startsWith("gsk_")) {
-        try {
-          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${storedApiKey.trim()}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "llama-3.3-70b-versatile",
-              messages: [
-                {
-                  role: "system",
-                  content: "You are SmartEvolve AI's intelligent Career Mentor. Provide direct, inspiring, and technically sound advice with actionable next steps.",
-                },
-                { role: "user", content: textToSend },
-              ],
-              temperature: 0.7,
-              max_tokens: 1024,
-            }),
-          });
-          if (groqRes.ok) {
-            const grData = await groqRes.json();
-            const grText = grData?.choices?.[0]?.message?.content;
-            if (grText && grText.trim().length > 0) {
-              setChatLog((prev) => [
-                ...prev,
-                {
-                  sender: "mentor",
-                  text: grText.trim(),
-                  providerLabel: "⚡ Powered by Groq Llama 3.3",
-                },
-              ]);
-              setIsAsking(false);
-              return;
+      // 1. Direct Groq API call if user has a Groq key (LPU ultra-speed)
+      if (storedApiKey && storedApiKey.startsWith("gsk_")) {
+        const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+        for (const gModel of groqModels) {
+          try {
+            const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${storedApiKey.trim()}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: gModel,
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are SmartEvolve AI's intelligent Career & Technical Mentor. Provide direct, inspiring, and technically sound advice with actionable next steps.",
+                  },
+                  { role: "user", content: textToSend },
+                ],
+                temperature: 0.7,
+                max_tokens: 1024,
+              }),
+            });
+            if (groqRes.ok) {
+              const grData = await groqRes.json();
+              const grText = grData?.choices?.[0]?.message?.content;
+              if (grText && grText.trim().length > 0) {
+                setChatLog((prev) => [
+                  ...prev,
+                  {
+                    sender: "mentor",
+                    text: grText.trim(),
+                    providerLabel: "⚡ Powered by Groq Llama 3.3",
+                  },
+                ]);
+                setIsAsking(false);
+                return;
+              }
             }
+          } catch {
+            // Try next model or fall through to backend
           }
-        } catch {
-          // Fall through to backend
         }
       }
 
-      // 2. Query backend AI Service
+      // 2. Direct Gemini API call if user has a Google Gemini key
+      if (storedApiKey && (storedApiKey.startsWith("AIzaSy") || storedApiKey.startsWith("AIza"))) {
+        const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash"];
+        for (const gModel of geminiModels) {
+          try {
+            const gemUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${storedApiKey.trim()}`;
+            const gemRes = await fetch(gemUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: textToSend }] }],
+              }),
+            });
+            if (gemRes.ok) {
+              const gData = await gemRes.json();
+              const gText = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (gText && gText.trim().length > 0) {
+                setChatLog((prev) => [
+                  ...prev,
+                  {
+                    sender: "mentor",
+                    text: gText.trim(),
+                    providerLabel: "🔵 Powered by Google Gemini",
+                  },
+                ]);
+                setIsAsking(false);
+                return;
+              }
+            }
+          } catch {
+            // Try next model or fall through to backend
+          }
+        }
+      }
+
+      // 3. Query backend AI Service (which leverages server-side keys configured on Render)
       const res = await api.askAiMentor(
         textToSend,
         undefined,
@@ -379,14 +438,21 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         storedProv
       ).catch(() => null);
 
-      const replyText = getIntelligentMentorResponse(textToSend, res?.reply);
-      const label = res?.aiProvider === "GROQ"
-        ? "⚡ Powered by Groq Llama 3.3"
-        : res?.aiProvider === "GEMINI"
-        ? "🔵 Powered by Google Gemini"
-        : res?.aiProvider === "ANTHROPIC"
-        ? "🟣 Powered by Anthropic Claude"
-        : "✨ SmartEvolve AI Mentor";
+      let replyText = "";
+      let label = "✨ SmartEvolve AI Mentor";
+
+      if (res && res.reply && res.reply.trim().length > 0) {
+        replyText = res.reply.trim();
+        label = res.aiProvider === "GROQ"
+          ? "⚡ Powered by Groq Llama 3.3"
+          : res.aiProvider === "GEMINI"
+          ? "🔵 Powered by Google Gemini"
+          : res.aiProvider === "ANTHROPIC"
+          ? "🟣 Powered by Anthropic Claude"
+          : "✨ SmartEvolve AI Mentor";
+      } else {
+        replyText = getIntelligentMentorResponse(textToSend);
+      }
 
       setChatLog((prev) => [
         ...prev,

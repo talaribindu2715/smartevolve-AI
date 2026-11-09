@@ -85,6 +85,68 @@ public class GeminiAiService {
         }
     }
 
+    private String maskKey(String key) {
+        if (key == null || key.isBlank()) return "null";
+        String clean = key.trim();
+        if (clean.length() <= 8) return clean.substring(0, Math.min(2, clean.length())) + "****";
+        return clean.substring(0, 4) + "..." + clean.substring(clean.length() - 4);
+    }
+
+    public String getEffectiveGroqKey() {
+        if (groqApiKey != null && !groqApiKey.isBlank() && !"demo-key".equalsIgnoreCase(groqApiKey)) return groqApiKey.trim();
+        String e1 = System.getenv("GROQ_API_KEY");
+        if (e1 != null && !e1.isBlank()) return e1.trim();
+        String e2 = System.getenv("GROQ_KEY");
+        if (e2 != null && !e2.isBlank()) return e2.trim();
+        for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
+            if (entry.getValue() != null && entry.getValue().trim().startsWith("gsk_")) {
+                return entry.getValue().trim();
+            }
+        }
+        return null;
+    }
+
+    public String getEffectiveGeminiKey() {
+        if (geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey)) return geminiApiKey.trim();
+        String e1 = System.getenv("GEMINI_API_KEY");
+        if (e1 != null && !e1.isBlank()) return e1.trim();
+        String e2 = System.getenv("GEMINI_KEY");
+        if (e2 != null && !e2.isBlank()) return e2.trim();
+        String e3 = System.getenv("GOOGLE_API_KEY");
+        if (e3 != null && !e3.isBlank()) return e3.trim();
+        String e4 = System.getenv("GOOGLE_GEMINI_API_KEY");
+        if (e4 != null && !e4.isBlank()) return e4.trim();
+        for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
+            if (entry.getValue() != null && entry.getValue().trim().startsWith("AIzaSy")) {
+                return entry.getValue().trim();
+            }
+        }
+        return null;
+    }
+
+    public String getEffectiveAnthropicKey() {
+        if (anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey)) return anthropicApiKey.trim();
+        String e1 = System.getenv("ANTHROPIC_API_KEY");
+        if (e1 != null && !e1.isBlank()) return e1.trim();
+        String e2 = System.getenv("CLAUDE_API_KEY");
+        if (e2 != null && !e2.isBlank()) return e2.trim();
+        for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
+            if (entry.getValue() != null && entry.getValue().trim().startsWith("sk-ant-")) {
+                return entry.getValue().trim();
+            }
+        }
+        return null;
+    }
+
+    public String getEffectiveOpenAiKey() {
+        if (openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey)) return openAiApiKey.trim();
+        String e1 = System.getenv("OPENAI_API_KEY");
+        if (e1 != null && !e1.isBlank()) return e1.trim();
+        String e2 = System.getenv("OPEN_AI_KEY");
+        if (e2 != null && !e2.isBlank()) return e2.trim();
+        return null;
+    }
+
     /**
      * Executes prompt across Anthropic Claude, Google Gemini, OpenAI, or falls back to intelligent heuristics.
      */
@@ -93,23 +155,23 @@ public class GeminiAiService {
     }
 
     private AiResult executeAiPrompt(String prompt, String customKey, String customProvider) {
-        // 1. Explicit Custom Key Provided from Client (e.g. In-App Key Config)
+        // 1. Explicit Custom Key Provided from Client
         if (customKey != null && !customKey.isBlank()) {
-            String trimmedKey = customKey.trim();
+            String trimmedKey = customKey.trim().replaceAll("^[\"']|[\"']$", "").replaceAll("^(?i)Bearer\\s+", "").trim();
             if ("GROQ".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("gsk_")) {
                 String res = callGroqApiWithKey(prompt, trimmedKey, "llama-3.3-70b-versatile");
                 if (res != null && !res.isBlank()) {
                     return new AiResult(res, "GROQ");
                 }
+            } else if ("GEMINI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("AIza")) {
+                String res = callGeminiApiWithKey(prompt, trimmedKey, "gemini-1.5-flash");
+                if (res != null && !res.isBlank()) {
+                    return new AiResult(res, "GEMINI");
+                }
             } else if ("ANTHROPIC".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-ant-")) {
                 String res = callAnthropicApiWithKey(prompt, trimmedKey, null);
                 if (res != null && !res.isBlank()) {
                     return new AiResult(res, "ANTHROPIC");
-                }
-            } else if ("GEMINI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("AIza")) {
-                String res = callGeminiApiWithKey(prompt, trimmedKey, null);
-                if (res != null && !res.isBlank()) {
-                    return new AiResult(res, "GEMINI");
                 }
             } else if ("OPENAI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-")) {
                 String res = callOpenAiApiWithKey(prompt, trimmedKey, null);
@@ -120,7 +182,7 @@ public class GeminiAiService {
         }
 
         // 2. Server-Side Groq Cloud (Free tier Llama 3.3, ultra-fast 1000 tokens/sec)
-        String effectiveGroqKey = (groqApiKey != null && !groqApiKey.isBlank()) ? groqApiKey : System.getenv("GROQ_API_KEY");
+        String effectiveGroqKey = getEffectiveGroqKey();
         if (effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGroqKey)) {
             String res = callGroqApiWithKey(prompt, effectiveGroqKey, (groqModel != null && !groqModel.isBlank()) ? groqModel : "llama-3.3-70b-versatile");
             if (res != null && !res.isBlank()) {
@@ -128,25 +190,28 @@ public class GeminiAiService {
             }
         }
 
-        // 3. Server-Side Anthropic Claude (Prioritized for Reliability & Reasoning)
-        if (anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey)) {
-            String res = callAnthropicApi(prompt);
-            if (res != null && !res.isBlank()) {
-                return new AiResult(res, "ANTHROPIC");
-            }
-        }
-
         // 3. Server-Side Google Gemini
-        if (geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey)) {
-            String res = callGeminiApi(prompt);
+        String effectiveGeminiKey = getEffectiveGeminiKey();
+        if (effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGeminiKey)) {
+            String res = callGeminiApiWithKey(prompt, effectiveGeminiKey, (geminiModel != null && !geminiModel.isBlank()) ? geminiModel : "gemini-1.5-flash");
             if (res != null && !res.isBlank()) {
                 return new AiResult(res, "GEMINI");
             }
         }
 
-        // 4. Server-Side OpenAI
-        if (openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey)) {
-            String res = callOpenAiApi(prompt);
+        // 4. Server-Side Anthropic Claude
+        String effectiveAnthropicKey = getEffectiveAnthropicKey();
+        if (effectiveAnthropicKey != null && !effectiveAnthropicKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveAnthropicKey)) {
+            String res = callAnthropicApiWithKey(prompt, effectiveAnthropicKey, anthropicModel);
+            if (res != null && !res.isBlank()) {
+                return new AiResult(res, "ANTHROPIC");
+            }
+        }
+
+        // 5. Server-Side OpenAI
+        String effectiveOpenAiKey = getEffectiveOpenAiKey();
+        if (effectiveOpenAiKey != null && !effectiveOpenAiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveOpenAiKey)) {
+            String res = callOpenAiApiWithKey(prompt, effectiveOpenAiKey, openAiModel);
             if (res != null && !res.isBlank()) {
                 return new AiResult(res, "OPENAI");
             }
@@ -308,25 +373,78 @@ public class GeminiAiService {
     }
 
     /**
+     * Resilient fallback dialog when cloud AI providers are unavailable or encountering temporary rate limits.
+     */
+    public AiAdvisorDto.MentorChatResponse chatWithMentorFallback(UUID studentId, String userMessage, String careerContext) {
+        String reply = generateIntelligentFallback(userMessage, careerContext);
+        List<String> followUps = Arrays.asList(
+                "What specific projects should I build for my portfolio?",
+                "How do I prepare for technical interviews in this field?",
+                "Which skill gap should I prioritize this week?"
+        );
+        return AiAdvisorDto.MentorChatResponse.builder()
+                .reply(reply)
+                .followUpQuestions(followUps)
+                .isGeminiPowered(false)
+                .aiProvider("HEURISTIC")
+                .build();
+    }
+
+    /**
      * Topic-aware intelligent cognitive fallback when cloud AI providers are unconfigured or offline.
      */
     private String generateIntelligentFallback(String userMessage, String careerContext) {
         String msg = (userMessage != null ? userMessage.toLowerCase().trim() : "");
         String career = (careerContext != null ? careerContext : "Full Stack Software Engineering");
 
+        // 1. Hot topics / World Trends / News / Tech Evolution
+        if (msg.contains("topic") || msg.contains("hot topic") || msg.contains("world") ||
+            msg.contains("trend") || msg.contains("news") || msg.contains("latest")) {
+            return "I'd love to discuss today's hot topics in tech! Right now, some of the biggest movements shaping the industry include:\n\n" +
+                    "1. 🤖 Autonomous AI Agents & Real-Time Reasoning:\n" +
+                    "   • Shifting beyond standard text chatbots to autonomous multi-agent pipelines that build, test, and deploy applications.\n\n" +
+                    "2. ⚡ Ultra-Fast Edge & Open-Source LLM Inference:\n" +
+                    "   • Massive adoption of Groq LPUs, Llama 3.3, and DeepSeek running locally and on the edge at 1,000+ tokens/second.\n\n" +
+                    "3. 🚀 Modern Cloud-Native & Reactive Frameworks:\n" +
+                    "   • Spring Boot 3 with GraalVM native binaries for sub-second startup times, and React 19 server actions for zero-bundle-size backend integration.\n\n" +
+                    "4. ⛓️ Decentralized Identity & Verifiable Credentials:\n" +
+                    "   • On-chain cryptographic proofs that verify software engineering proficiency without relying on paper degrees.\n\n" +
+                    "Which of these areas are you most curious about? We can dive into practical implications, career impacts, or how you can build hands-on projects with them!";
+        }
+
+        // 2. Greetings & Warm Hellos (Handles "Hiii", "Hello", "Hey", plus leading conversational intros)
         if (msg.equals("hi") || msg.equals("hii") || msg.equals("hiii") || msg.equals("hello") ||
-            msg.equals("hey") || msg.equals("heyy") || msg.startsWith("hi ") || msg.startsWith("hello ") ||
-            msg.startsWith("hey ") || msg.contains("good morning") || msg.contains("good evening") || msg.contains("how are you")) {
+            msg.equals("hey") || msg.equals("heyy") || msg.startsWith("hi ") || msg.startsWith("hii ") ||
+            msg.startsWith("hiii ") || msg.startsWith("hello ") || msg.startsWith("hey ") ||
+            msg.contains("good morning") || msg.contains("good afternoon") || msg.contains("good evening") ||
+            msg.equals("sup") || msg.contains("how are you")) {
             return "Hello! 👋 Great to connect with you! I'm your SmartEvolve AI Career & Technical Mentor.\n\n" +
                     "I'm here to help you accelerate your tech career, master complex concepts, and build production projects in " + career + ".\n\n" +
                     "Feel free to ask me anything about:\n" +
-                    "• Full-Stack & Backend (Spring Boot, Node.js, React)\n" +
+                    "• Full-Stack & Backend (Spring Boot, Node.js, React, APIs)\n" +
                     "• AI / ML & Python Data Engineering\n" +
                     "• Core Data Structures, Algorithms & Interview Prep\n" +
                     "• Portfolio Projects & Verified Blockchain Credentials\n\n" +
                     "What would you like to explore today?";
         }
 
+        // 3. Spring Boot / Java / REST APIs
+        if (msg.contains("spring") || msg.contains("java") || msg.contains("jpa") ||
+            msg.contains("hibernate") || msg.contains("rest api")) {
+            return "Spring Boot & Enterprise Java Architecture Blueprint:\n\n" +
+                    "1. Core Architecture Pattern:\n" +
+                    "   • Maintain strict Layered Architecture: @RestController (HTTP/JSON) ➔ @Service (Business logic & @Transactional) ➔ @Repository (Spring Data JPA) ➔ @Entity.\n" +
+                    "   • Always use constructor injection for immutability and seamless Mockito unit testing.\n\n" +
+                    "2. Database Persistence & Performance:\n" +
+                    "   • Use Spring Data JPA queries with custom DTO projections to prevent N+1 query overhead.\n" +
+                    "   • Implement Flyway database migrations for reliable version-controlled schema evolution.\n\n" +
+                    "3. Production Readiness:\n" +
+                    "   • Configure Spring Boot Actuator for health checks and Prometheus metric scrapers.\n" +
+                    "   • Use @ControllerAdvice for centralized global RFC 7807 error responses.\n\n" +
+                    "Check out the Spring Boot masterclass videos in the Learn tab to take your certification quiz!";
+        }
+
+        // 4. Full Stack / Web Development Roadmap
         if (msg.contains("full stack") || msg.contains("web dev") || msg.contains("frontend") || msg.contains("backend") || msg.contains("carer") || msg.contains("career")) {
             return "Starting a career in Full Stack Development is a high-growth pathway! Here is your structured mastery roadmap in SmartEvolve AI:\n\n" +
                     "1. Frontend Engineering (Weeks 1-3):\n" +
@@ -372,26 +490,38 @@ public class GeminiAiService {
                     "3. Modern LLM & RAG Systems: Retrieval-Augmented Generation (RAG) using LangChain/LlamaIndex, Vector Databases (Pinecone/pgvector), and prompt orchestration.\n\n" +
                     "Navigate to the Learn tab and switch your Career Track to 'AI / Machine Learning Engineer' to activate targeted modules!";
         } else {
-            return "Regarding \"" + userMessage + "\":\n\n" +
-                    "In " + career + ", practical application yields the highest learning retention. Here is your immediate action plan:\n\n" +
-                    "1. Review Core Modules: Open your active roadmap in the Learn tab to tackle the highest-weighted skill gaps.\n" +
-                    "2. Hands-on Code Practice: Implement practical examples for each concept before moving to the next phase.\n" +
-                    "3. Validate Knowledge: Take the end-of-module assessment quiz to recalibrate your cognitive proficiency score.\n\n" +
-                    "Ask me anything specific about algorithms, system architecture, database design, or blockchain verification!";
+            return "I'm glad you brought that up! As your SmartEvolve AI Career & Technical Mentor, I'm here to unpack that with you.\n\n" +
+                    "Here is how we can explore this together:\n" +
+                    "• 🚀 Technical & Architectural Deep-Dive: We can explore how modern production systems design and solve for this.\n" +
+                    "• 💡 Hands-On Implementation: I can guide you through real code examples and practical patterns.\n" +
+                    "• 🎯 Career & Interview Readiness: We can connect this concept to what top tech companies look for in senior engineering candidates.\n\n" +
+                    "Tell me which angle you'd like to explore first, or feel free to ask a specific coding or architectural question!";
         }
     }
 
     /**
-     * Diagnostic health check for Anthropic Claude, Google Gemini, and OpenAI API integrations.
+     * Diagnostic health check for Groq Cloud, Anthropic Claude, Google Gemini, and OpenAI API integrations.
      */
     public Map<String, Object> checkGeminiHealth() {
         Map<String, Object> res = new LinkedHashMap<>();
         try {
-            String effectiveGroqKey = (groqApiKey != null && !groqApiKey.isBlank()) ? groqApiKey : System.getenv("GROQ_API_KEY");
+            String effectiveGroqKey = getEffectiveGroqKey();
+            String effectiveGeminiKey = getEffectiveGeminiKey();
+            String effectiveAnthropicKey = getEffectiveAnthropicKey();
+            String effectiveOpenAiKey = getEffectiveOpenAiKey();
+
             boolean hasGroq = effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGroqKey);
-            boolean hasAnthropic = anthropicApiKey != null && !anthropicApiKey.isBlank() && !"demo-key".equalsIgnoreCase(anthropicApiKey);
-            boolean hasGemini = geminiApiKey != null && !geminiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(geminiApiKey);
-            boolean hasOpenAi = openAiApiKey != null && !openAiApiKey.isBlank() && !"demo-key".equalsIgnoreCase(openAiApiKey);
+            boolean hasGemini = effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGeminiKey);
+            boolean hasAnthropic = effectiveAnthropicKey != null && !effectiveAnthropicKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveAnthropicKey);
+            boolean hasOpenAi = effectiveOpenAiKey != null && !effectiveOpenAiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveOpenAiKey);
+
+            // Record detected key presence
+            Map<String, Object> keysDetected = new LinkedHashMap<>();
+            keysDetected.put("groq", hasGroq ? maskKey(effectiveGroqKey) : "none");
+            keysDetected.put("gemini", hasGemini ? maskKey(effectiveGeminiKey) : "none");
+            keysDetected.put("anthropic", hasAnthropic ? maskKey(effectiveAnthropicKey) : "none");
+            keysDetected.put("openai", hasOpenAi ? maskKey(effectiveOpenAiKey) : "none");
+            res.put("keysDetected", keysDetected);
 
             // 1. Check Groq Cloud (Ultra-Fast Free Tier Llama 3.3)
             if (hasGroq) {
@@ -408,31 +538,8 @@ public class GeminiAiService {
                     res.put("status", "ONLINE");
                     res.put("working", true);
                     res.put("latencyMs", latencyMs);
-                    res.put("geminiResponse", apiResponse.trim());
                     res.put("testResponse", apiResponse.trim());
-                    res.put("message", "Groq Cloud Llama 3.3 AI is connected and responding in real-time!");
-                    return res;
-                }
-            }
-
-            // 2. Check Anthropic Claude
-            if (hasAnthropic) {
-                res.put("provider", "ANTHROPIC");
-                res.put("model", anthropicModel != null ? anthropicModel : "claude-3-5-haiku-20241022");
-                res.put("apiKeyConfigured", true);
-
-                long start = System.currentTimeMillis();
-                String testPrompt = "Say 'SmartEvolve Claude AI is online and operational!' in exactly 7 words.";
-                String apiResponse = callAnthropicApi(testPrompt);
-                long latencyMs = System.currentTimeMillis() - start;
-
-                if (apiResponse != null && !apiResponse.isBlank()) {
-                    res.put("status", "ONLINE");
-                    res.put("working", true);
-                    res.put("latencyMs", latencyMs);
-                    res.put("geminiResponse", apiResponse.trim());
-                    res.put("testResponse", apiResponse.trim());
-                    res.put("message", "Anthropic Claude AI API is connected and responding in real-time!");
+                    res.put("message", "Groq Cloud AI is connected and responding in real-time!");
                     return res;
                 }
             }
@@ -445,21 +552,41 @@ public class GeminiAiService {
 
                 long start = System.currentTimeMillis();
                 String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
-                String apiResponse = callGeminiApi(testPrompt);
+                String apiResponse = callGeminiApiWithKey(testPrompt, effectiveGeminiKey, geminiModel);
                 long latencyMs = System.currentTimeMillis() - start;
 
                 if (apiResponse != null && !apiResponse.isBlank()) {
                     res.put("status", "ONLINE");
                     res.put("working", true);
                     res.put("latencyMs", latencyMs);
-                    res.put("geminiResponse", apiResponse.trim());
                     res.put("testResponse", apiResponse.trim());
                     res.put("message", "Google Gemini AI API is connected and responding in real-time!");
                     return res;
                 }
             }
 
-            // 3. Check OpenAI
+            // 3. Check Anthropic Claude
+            if (hasAnthropic) {
+                res.put("provider", "ANTHROPIC");
+                res.put("model", anthropicModel != null ? anthropicModel : "claude-3-5-haiku-20241022");
+                res.put("apiKeyConfigured", true);
+
+                long start = System.currentTimeMillis();
+                String testPrompt = "Say 'SmartEvolve Claude AI is online and operational!' in exactly 7 words.";
+                String apiResponse = callAnthropicApiWithKey(testPrompt, effectiveAnthropicKey, anthropicModel);
+                long latencyMs = System.currentTimeMillis() - start;
+
+                if (apiResponse != null && !apiResponse.isBlank()) {
+                    res.put("status", "ONLINE");
+                    res.put("working", true);
+                    res.put("latencyMs", latencyMs);
+                    res.put("testResponse", apiResponse.trim());
+                    res.put("message", "Anthropic Claude AI API is connected and responding in real-time!");
+                    return res;
+                }
+            }
+
+            // 4. Check OpenAI
             if (hasOpenAi) {
                 res.put("provider", "OPENAI");
                 res.put("model", openAiModel != null ? openAiModel : "gpt-4o-mini");
@@ -467,7 +594,7 @@ public class GeminiAiService {
 
                 long start = System.currentTimeMillis();
                 String testPrompt = "Say 'SmartEvolve OpenAI is online and operational!' in exactly 7 words.";
-                String apiResponse = callOpenAiApi(testPrompt);
+                String apiResponse = callOpenAiApiWithKey(testPrompt, effectiveOpenAiKey, openAiModel);
                 long latencyMs = System.currentTimeMillis() - start;
 
                 if (apiResponse != null && !apiResponse.isBlank()) {
@@ -483,7 +610,7 @@ public class GeminiAiService {
             res.put("provider", "NONE");
             res.put("status", "NOT_CONFIGURED");
             res.put("working", false);
-            res.put("message", "No cloud AI API key configured on server. Set ANTHROPIC_API_KEY or GEMINI_API_KEY in Render dashboard or paste directly in the app AI Mentor.");
+            res.put("message", "No cloud AI API key responded successfully. Set GROQ_API_KEY, GEMINI_API_KEY, or ANTHROPIC_API_KEY in Render environment.");
         } catch (Exception ex) {
             log.error("AI health check error: ", ex);
             res.put("status", "ERROR");
@@ -554,32 +681,44 @@ public class GeminiAiService {
             return null;
         }
 
-        try {
-            String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "");
-            String cleanModel = (model != null && !model.isBlank()) ? model.trim() : "gemini-1.5-flash";
-            String cleanBase = (geminiBaseUrl != null && !geminiBaseUrl.isBlank()) ? geminiBaseUrl.trim() : "https://generativelanguage.googleapis.com/v1beta/models";
-            String url = cleanBase + "/" + cleanModel + ":generateContent?key=" + cleanKey;
+        String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "").replaceAll("^(?i)Bearer\\s+", "").trim();
+        List<String> modelsToTry = new ArrayList<>();
+        if (model != null && !model.isBlank()) {
+            modelsToTry.add(model.trim());
+        }
+        if (!modelsToTry.contains("gemini-1.5-flash")) modelsToTry.add("gemini-1.5-flash");
+        if (!modelsToTry.contains("gemini-2.0-flash")) modelsToTry.add("gemini-2.0-flash");
+        if (!modelsToTry.contains("gemini-1.5-pro")) modelsToTry.add("gemini-1.5-pro");
 
-            Map<String, Object> part = Map.of("text", prompt);
-            Map<String, Object> content = Map.of("parts", List.of(part));
-            Map<String, Object> requestBody = Map.of("contents", List.of(content));
+        String cleanBase = (geminiBaseUrl != null && !geminiBaseUrl.isBlank()) ? geminiBaseUrl.trim() : "https://generativelanguage.googleapis.com/v1beta/models";
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        for (String m : modelsToTry) {
+            try {
+                String url = cleanBase + "/" + m + ":generateContent?key=" + cleanKey;
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+                Map<String, Object> part = Map.of("text", prompt);
+                Map<String, Object> content = Map.of("parts", List.of(part));
+                Map<String, Object> requestBody = Map.of("contents", List.of(content));
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                JsonNode root = objectMapper.readTree(response.getBody());
-                JsonNode candidates = root.path("candidates");
-                if (candidates.isArray() && candidates.size() > 0) {
-                    JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
-                    return textNode.asText();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    JsonNode root = objectMapper.readTree(response.getBody());
+                    JsonNode candidates = root.path("candidates");
+                    if (candidates.isArray() && candidates.size() > 0) {
+                        JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
+                        if (!textNode.isMissingNode() && !textNode.asText().isBlank()) {
+                            return textNode.asText();
+                        }
+                    }
                 }
+            } catch (Exception ex) {
+                log.warn("Gemini model {} attempt notice: {}", m, ex.getMessage());
             }
-        } catch (Exception ex) {
-            log.warn("Gemini API invocation encountered an issue (falling back gracefully): {}", ex.getMessage());
         }
 
         return null;
@@ -589,7 +728,7 @@ public class GeminiAiService {
      * Direct HTTP call to Groq Cloud REST API (100% Free Ultra-Fast Llama 3.3).
      */
     public String callGroqApi(String prompt) {
-        String effectiveGroqKey = (groqApiKey != null && !groqApiKey.isBlank()) ? groqApiKey : System.getenv("GROQ_API_KEY");
+        String effectiveGroqKey = getEffectiveGroqKey();
         return callGroqApiWithKey(prompt, effectiveGroqKey, groqModel);
     }
 
@@ -598,36 +737,46 @@ public class GeminiAiService {
             return null;
         }
 
-        try {
-            String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "");
-            String cleanModel = (model != null && !model.isBlank()) ? model.trim() : "llama-3.3-70b-versatile";
-            String url = "https://api.groq.com/openai/v1/chat/completions";
+        String cleanKey = apiKey.trim().replaceAll("^[\"']|[\"']$", "").replaceAll("^(?i)Bearer\\s+", "").trim();
+        List<String> modelsToTry = new ArrayList<>();
+        if (model != null && !model.isBlank()) {
+            modelsToTry.add(model.trim());
+        }
+        if (!modelsToTry.contains("llama-3.3-70b-versatile")) modelsToTry.add("llama-3.3-70b-versatile");
+        if (!modelsToTry.contains("llama-3.1-8b-instant")) modelsToTry.add("llama-3.1-8b-instant");
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(cleanKey);
+        String url = "https://api.groq.com/openai/v1/chat/completions";
 
-            Map<String, Object> message = Map.of("role", "user", "content", prompt);
-            Map<String, Object> requestBody = Map.of(
-                    "model", cleanModel,
-                    "messages", List.of(message),
-                    "temperature", 0.7,
-                    "max_tokens", 1024
-            );
+        for (String m : modelsToTry) {
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(cleanKey);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+                Map<String, Object> message = Map.of("role", "user", "content", prompt);
+                Map<String, Object> requestBody = Map.of(
+                        "model", m,
+                        "messages", List.of(message),
+                        "temperature", 0.7,
+                        "max_tokens", 1024
+                );
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                JsonNode root = objectMapper.readTree(response.getBody());
-                JsonNode choices = root.path("choices");
-                if (choices.isArray() && choices.size() > 0) {
-                    JsonNode contentNode = choices.get(0).path("message").path("content");
-                    return contentNode.asText();
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    JsonNode root = objectMapper.readTree(response.getBody());
+                    JsonNode choices = root.path("choices");
+                    if (choices.isArray() && choices.size() > 0) {
+                        JsonNode contentNode = choices.get(0).path("message").path("content");
+                        if (!contentNode.isMissingNode() && !contentNode.asText().isBlank()) {
+                            return contentNode.asText();
+                        }
+                    }
                 }
+            } catch (Exception ex) {
+                log.warn("Groq model {} attempt notice: {}", m, ex.getMessage());
             }
-        } catch (Exception ex) {
-            log.warn("Groq API invocation note: {}", ex.getMessage());
         }
 
         return null;
