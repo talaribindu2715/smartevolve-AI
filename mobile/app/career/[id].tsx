@@ -27,11 +27,12 @@ export default function CareerDetailScreen() {
   const queryClient = useQueryClient();
   const [showFormula, setShowFormula] = useState(false);
   const [isLocallyTarget, setIsLocallyTarget] = useState(false);
+  const [justActivated, setJustActivated] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem("smartevolve_active_target_career_id")
       .then((storedId) => {
-        if (storedId && storedId === id) {
+        if (storedId && (storedId === id || storedId.toLowerCase() === id?.toLowerCase())) {
           setIsLocallyTarget(true);
         }
       })
@@ -50,7 +51,22 @@ export default function CareerDetailScreen() {
     enabled: !!id,
   });
 
-  const isTargetRole = Boolean(career?.isCurrentGoal || isLocallyTarget);
+  const isTargetRole = Boolean(career?.isCurrentGoal || isLocallyTarget || justActivated);
+
+  const handleSetTargetGoal = async () => {
+    setIsLocallyTarget(true);
+    setJustActivated(true);
+    if (id) {
+      await AsyncStorage.setItem("smartevolve_active_target_career_id", id).catch(() => {});
+    }
+    if (career?.name) {
+      await AsyncStorage.setItem("smartevolve_active_target_career_name", career.name).catch(() => {});
+    }
+    queryClient.setQueryData(["careerDetail", id], (old: any) =>
+      old ? { ...old, isCurrentGoal: true } : old
+    );
+    setGoalMutation.mutate();
+  };
 
   // Find top matching masterclass for this career
   const primaryCareerVideo = React.useMemo(() => {
@@ -107,6 +123,7 @@ export default function CareerDetailScreen() {
     },
     onSuccess: () => {
       setIsLocallyTarget(true);
+      setJustActivated(true);
       queryClient.setQueryData(["careerDetail", id], (old: any) =>
         old ? { ...old, isCurrentGoal: true } : old
       );
@@ -116,16 +133,7 @@ export default function CareerDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
 
       const careerTitle = career?.name || "Career Goal";
-      if (Platform.OS === "web") {
-        if (typeof window !== "undefined") {
-          const goToRoadmap = window.confirm(
-            `✓ Target Goal Activated!\n\n${careerTitle} is now your active target role.\n\nWould you like to open your personalized Learning Roadmap now?`
-          );
-          if (goToRoadmap) {
-            router.push("/(tabs)/learn");
-          }
-        }
-      } else {
+      if (Platform.OS !== "web") {
         Alert.alert(
           "Career Goal Activated",
           `You have successfully activated ${careerTitle} as your target role! Your personalized roadmap and adaptive recommendations have been updated.`,
@@ -141,12 +149,7 @@ export default function CareerDetailScreen() {
     },
     onError: () => {
       setIsLocallyTarget(true);
-      const careerTitle = career?.name || "Career Goal";
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        window.alert(`✓ ${careerTitle} is set as your active target role!`);
-      } else {
-        Alert.alert("Career Goal Activated", `${careerTitle} is set as your active target role.`);
-      }
+      setJustActivated(true);
     },
   });
 
@@ -234,11 +237,22 @@ export default function CareerDetailScreen() {
                 </Text>
               </View>
 
+              {isTargetRole && (
+                <View style={styles.targetActiveCallout}>
+                  <Text style={styles.targetActiveCalloutTitle}>
+                    🎯 Target Career Goal Active
+                  </Text>
+                  <Text style={styles.targetActiveCalloutSub}>
+                    {career.name} is set as your target role. Your personalized roadmap is ready.
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.actionButtonRow}>
                 {!isTargetRole ? (
                   <Button
                     title="Set as Target Career Goal"
-                    onPress={() => setGoalMutation.mutate()}
+                    onPress={handleSetTargetGoal}
                     loading={setGoalMutation.isPending}
                     size="md"
                     style={{ flex: 1 }}
@@ -375,10 +389,10 @@ export default function CareerDetailScreen() {
             {/* Bottom Actions */}
             <View style={styles.bottomNavActions}>
               <Button
-                title={career.isCurrentGoal ? "Open Personalized Roadmap" : "Set Target Role & Open Roadmap"}
+                title={isTargetRole ? "Open Personalized Roadmap →" : "Set Target Role & Open Roadmap"}
                 onPress={() => {
-                  if (!career.isCurrentGoal) {
-                    setGoalMutation.mutate();
+                  if (!isTargetRole) {
+                    handleSetTargetGoal();
                   } else {
                     router.push("/(tabs)/learn");
                   }
@@ -488,6 +502,24 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 12,
     fontWeight: "700",
+  },
+  targetActiveCallout: {
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    borderColor: "#10B981",
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  targetActiveCalloutTitle: {
+    color: "#10B981",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  targetActiveCalloutSub: {
+    color: "#94A3B8",
+    fontSize: 11,
+    marginTop: 2,
   },
   actionButtonRow: {
     flexDirection: "row",

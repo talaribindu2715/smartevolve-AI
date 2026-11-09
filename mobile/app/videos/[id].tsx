@@ -88,23 +88,6 @@ export default function VideoDetailScreen() {
     return getQuestionsForVideo(effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize);
   }, [effectiveVideo?.skillName, effectiveVideo?.title, selectedPoolSize]);
 
-  const totalQuestions = quizQuestions.length;
-  const part1End = Math.max(1, Math.floor(totalQuestions / 3));
-  const part2End = Math.max(part1End + 1, Math.floor((2 * totalQuestions) / 3));
-
-  const isPart1 = currentQuestionIndex < part1End;
-  const isPart2 = currentQuestionIndex >= part1End && currentQuestionIndex < part2End;
-  const isPart3 = currentQuestionIndex >= part2End;
-
-  const kahootScore = quizQuestions.slice(0, part1End).filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
-  const kahootTotal = part1End;
-
-  const waygroundScore = quizQuestions.slice(part1End, part2End).filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
-  const waygroundTotal = part2End - part1End;
-
-  const examScore = quizQuestions.slice(part2End).filter((q) => selectedAnswers[q.id] === q.correctIndex).length;
-  const examTotal = totalQuestions - part2End;
-
   const { data: assessments } = useQuery({
     queryKey: ["assessments"],
     queryFn: () => api.getAssessments(),
@@ -447,7 +430,7 @@ export default function VideoDetailScreen() {
             onPress={() => setActiveTab("quiz")}
           >
             <Text style={[styles.tabBtnText, activeTab === "quiz" && styles.tabBtnTextActive]}>
-              Merged 3-in-1 Quiz ({quizQuestions.length} Qs)
+              Masterclass Quiz ({quizQuestions.length} Qs)
             </Text>
           </TouchableOpacity>
 
@@ -469,10 +452,7 @@ export default function VideoDetailScreen() {
               <View style={styles.quizHeaderRow}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text style={styles.quizHeadline}>
-                    {effectiveVideo.skillName} Unified Masterclass Quiz
-                  </Text>
-                  <Text style={styles.quizMergedSubHeadline}>
-                    Merged 3-in-1 Quiz: Kahoot • Wayground • Certification Exam
+                    {effectiveVideo.skillName} Masterclass Certification Quiz
                   </Text>
                 </View>
                 <Badge
@@ -495,9 +475,9 @@ export default function VideoDetailScreen() {
               <View style={styles.poolSelectorRow}>
                 <Text style={styles.poolSelectorLabel}>Total Questions:</Text>
                 {[
-                  { count: 15, label: "15 Qs" },
-                  { count: 30, label: "30 Qs (Recommended)" },
-                  { count: 45, label: "45 Qs (Deep Exam)" },
+                  { count: 15, label: "15 Questions" },
+                  { count: 30, label: "30 Questions" },
+                  { count: 45, label: "45 Questions" },
                 ].map((pool) => (
                   <TouchableOpacity
                     key={pool.count}
@@ -520,57 +500,6 @@ export default function VideoDetailScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
-
-              {/* 3-in-1 Merged Quiz Parts Selector & Jump Bar */}
-              <View style={styles.mergedPartsBar}>
-                <TouchableOpacity
-                  onPress={() => setCurrentQuestionIndex(0)}
-                  style={[
-                    styles.mergedPartTab,
-                    isPart1 && styles.mergedPartTabActiveKahoot,
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[
-                    styles.mergedPartTabText,
-                    isPart1 && styles.mergedPartTabTextActive,
-                  ]}>
-                    ▲ Part 1: Kahoot (1-{part1End})
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setCurrentQuestionIndex(part1End)}
-                  style={[
-                    styles.mergedPartTab,
-                    isPart2 && styles.mergedPartTabActiveWayground,
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[
-                    styles.mergedPartTabText,
-                    isPart2 && styles.mergedPartTabTextActive,
-                  ]}>
-                    ⚡ Part 2: Wayground ({part1End + 1}-{part2End})
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setCurrentQuestionIndex(part2End)}
-                  style={[
-                    styles.mergedPartTab,
-                    isPart3 && styles.mergedPartTabActiveTest,
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[
-                    styles.mergedPartTabText,
-                    isPart3 && styles.mergedPartTabTextActive,
-                  ]}>
-                    🎯 Part 3: Cert Exam ({part2End + 1}-{totalQuestions})
-                  </Text>
-                </TouchableOpacity>
               </View>
 
               {/* Submitted Results View */}
@@ -623,35 +552,6 @@ export default function VideoDetailScreen() {
                       </TouchableOpacity>
                     )}
 
-                    {/* Merged 3-in-1 Parts Breakdown */}
-                    <View style={styles.mergedBreakdownCard}>
-                      <Text style={styles.mergedBreakdownTitle}>
-                        MERGED QUIZ SECTION BREAKDOWN
-                      </Text>
-                      <View style={styles.mergedBreakdownRow}>
-                        <View style={styles.mergedBreakdownCol}>
-                          <Text style={[styles.mergedBreakdownVal, { color: "#C084FC" }]}>
-                            {kahootScore}/{kahootTotal}
-                          </Text>
-                          <Text style={styles.mergedBreakdownLabel}>▲ KAHOOT PART</Text>
-                        </View>
-                        <View style={styles.podiumDivider} />
-                        <View style={styles.mergedBreakdownCol}>
-                          <Text style={[styles.mergedBreakdownVal, { color: "#38BDF8" }]}>
-                            {waygroundScore}/{waygroundTotal}
-                          </Text>
-                          <Text style={styles.mergedBreakdownLabel}>⚡ WAYGROUND PART</Text>
-                        </View>
-                        <View style={styles.podiumDivider} />
-                        <View style={styles.mergedBreakdownCol}>
-                          <Text style={[styles.mergedBreakdownVal, { color: "#34D399" }]}>
-                            {examScore}/{examTotal}
-                          </Text>
-                          <Text style={styles.mergedBreakdownLabel}>🎯 CERT EXAM PART</Text>
-                        </View>
-                      </View>
-                    </View>
-
                     {/* Arena Gamified Stats Podium */}
                     <View style={styles.hudStatsPodium}>
                       <View style={styles.podiumCol}>
@@ -699,17 +599,7 @@ export default function VideoDetailScreen() {
                     return (
                       <View key={q.id} style={[styles.reviewItem, isCorrect ? styles.reviewItemCorrect : styles.reviewItemWrong]}>
                         <View style={styles.reviewTopRow}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                            <Text style={styles.reviewQuestionNum}>Question {idx + 1}</Text>
-                            <View style={[
-                              styles.miniPartBadge,
-                              idx < part1End ? styles.miniPartKahoot : idx < part2End ? styles.miniPartWayground : styles.miniPartExam
-                            ]}>
-                              <Text style={styles.miniPartBadgeText}>
-                                {idx < part1End ? "▲ Kahoot" : idx < part2End ? "⚡ Wayground" : "🎯 Cert Exam"}
-                              </Text>
-                            </View>
-                          </View>
+                          <Text style={styles.reviewQuestionNum}>Question {idx + 1}</Text>
                           <Text style={isCorrect ? styles.correctBadge : styles.wrongBadge}>
                             {isCorrect ? "✓ Correct" : "✗ Incorrect"}
                           </Text>
@@ -796,29 +686,9 @@ export default function VideoDetailScreen() {
 
                   {/* Question Card Box */}
                   <View style={styles.arenaQuestionCard}>
-                    <View style={styles.arenaQuestionHeaderRow}>
-                      <View
-                        style={[
-                          styles.partBadgePill,
-                          isPart1
-                            ? styles.partBadgeKahoot
-                            : isPart2
-                            ? styles.partBadgeWayground
-                            : styles.partBadgeExam,
-                        ]}
-                      >
-                        <Text style={styles.partBadgeText}>
-                          {isPart1
-                            ? "▲ PART 1: KAHOOT QUIZ"
-                            : isPart2
-                            ? "⚡ PART 2: WAYGROUND SPEED QUIZ"
-                            : "🎯 PART 3: CERTIFICATION EXAM"}
-                        </Text>
-                      </View>
-                      <Text style={styles.arenaQuestionNumber}>
-                        QUESTION {currentQuestionIndex + 1} OF {quizQuestions.length}
-                      </Text>
-                    </View>
+                    <Text style={styles.arenaQuestionNumber}>
+                      QUESTION {currentQuestionIndex + 1} OF {quizQuestions.length}
+                    </Text>
                     <Text style={styles.arenaQuestionText}>
                       {currentQuestion.question}
                     </Text>
@@ -831,18 +701,8 @@ export default function VideoDetailScreen() {
                       const isAnswered = selectedAnswers[currentQuestion.id] !== undefined;
                       const isCorrect = optIdx === currentQuestion.correctIndex;
 
-                      const shapes = isPart1
-                        ? ["▲", "◆", "●", "■"]
-                        : isPart2
-                        ? ["⚡", "🚀", "🎯", "🔥"]
-                        : ["▲", "◆", "●", "■"];
-
-                      const tileColors = isPart1
-                        ? ["#E21B3C", "#1368CE", "#D97706", "#16A34A"]
-                        : isPart2
-                        ? ["#0284C7", "#0D9488", "#E11D48", "#16A34A"]
-                        : ["#E21B3C", "#1368CE", "#D97706", "#16A34A"];
-
+                      const shapes = ["▲", "◆", "●", "■"];
+                      const tileColors = ["#E21B3C", "#1368CE", "#D97706", "#16A34A"];
                       const tileBg = tileColors[optIdx % tileColors.length];
 
                       let borderStyle: any = {};
