@@ -314,6 +314,19 @@ public class GeminiAiService {
         String msg = (userMessage != null ? userMessage.toLowerCase().trim() : "");
         String career = (careerContext != null ? careerContext : "Full Stack Software Engineering");
 
+        if (msg.equals("hi") || msg.equals("hii") || msg.equals("hiii") || msg.equals("hello") ||
+            msg.equals("hey") || msg.equals("heyy") || msg.startsWith("hi ") || msg.startsWith("hello ") ||
+            msg.startsWith("hey ") || msg.contains("good morning") || msg.contains("good evening") || msg.contains("how are you")) {
+            return "Hello! 👋 Great to connect with you! I'm your SmartEvolve AI Career & Technical Mentor.\n\n" +
+                    "I'm here to help you accelerate your tech career, master complex concepts, and build production projects in " + career + ".\n\n" +
+                    "Feel free to ask me anything about:\n" +
+                    "• Full-Stack & Backend (Spring Boot, Node.js, React)\n" +
+                    "• AI / ML & Python Data Engineering\n" +
+                    "• Core Data Structures, Algorithms & Interview Prep\n" +
+                    "• Portfolio Projects & Verified Blockchain Credentials\n\n" +
+                    "What would you like to explore today?";
+        }
+
         if (msg.contains("full stack") || msg.contains("web dev") || msg.contains("frontend") || msg.contains("backend") || msg.contains("carer") || msg.contains("career")) {
             return "Starting a career in Full Stack Development is a high-growth pathway! Here is your structured mastery roadmap in SmartEvolve AI:\n\n" +
                     "1. Frontend Engineering (Weeks 1-3):\n" +
