@@ -428,7 +428,7 @@ export default function VideoDetailScreen() {
             onPress={() => setActiveTab("quiz")}
           >
             <Text style={[styles.tabBtnText, activeTab === "quiz" && styles.tabBtnTextActive]}>
-              Masterclass Quiz ({quizQuestions.length} Qs)
+              Masterclass Quiz ({quizQuestions.length})
             </Text>
           </TouchableOpacity>
 
@@ -453,20 +453,16 @@ export default function VideoDetailScreen() {
                     {effectiveVideo.skillName} Masterclass Certification Quiz
                   </Text>
                 </View>
-                <Badge
-                  label={
-                    quizSubmitted
-                      ? `${quizScore}/${quizQuestions.length} (${Math.round((quizScore / quizQuestions.length) * 100)}%)`
-                      : `Q ${currentQuestionIndex + 1}/${quizQuestions.length}`
-                  }
-                  variant={
-                    quizSubmitted
-                      ? quizScore >= Math.ceil(quizQuestions.length * 0.6)
+                {quizSubmitted && (
+                  <Badge
+                    label={`${quizScore}/${quizQuestions.length} (${Math.round((quizScore / quizQuestions.length) * 100)}%)`}
+                    variant={
+                      quizScore >= Math.ceil(quizQuestions.length * 0.6)
                         ? "success"
                         : "error"
-                      : "primary"
-                  }
-                />
+                    }
+                  />
+                )}
               </View>
 
               {/* Submitted Results View */}
