@@ -179,19 +179,23 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
       "smartevolve_groq_api_key",
       "smartevolve_anthropic_api_key",
     ]).then(([provItem, gemItem, groqItem, antItem]) => {
-      const storedProv = (provItem?.[1] as AiProvider) || "gemini";
       const storedGem = gemItem?.[1] || "";
       const storedGroq = groqItem?.[1] || "";
       const storedAnt = antItem?.[1] || "";
+      const storedProv = (provItem?.[1] as AiProvider) || (storedGroq ? "groq" : storedGem ? "gemini" : "groq");
 
       setGeminiKey(storedGem);
       setGroqKey(storedGroq);
       setAnthropicKey(storedAnt);
       setSelectedProvider(storedProv);
 
-      if (storedProv === "gemini") setInputKey(storedGem);
-      else if (storedProv === "groq") setInputKey(storedGroq);
+      if (storedProv === "groq") setInputKey(storedGroq);
+      else if (storedProv === "gemini") setInputKey(storedGem);
       else if (storedProv === "anthropic") setInputKey(storedAnt);
+
+      if (!storedGroq && !storedGem && !storedAnt) {
+        setShowKeyConfig(true);
+      }
     }).catch(() => {});
   }, [visible]);
 
@@ -207,10 +211,10 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
   const handleKeyInputChange = (text: string) => {
     setInputKey(text);
     const trimmed = text.trim();
-    if (trimmed.startsWith("AIza") && selectedProvider !== "gemini") {
-      setSelectedProvider("gemini");
-    } else if (trimmed.startsWith("gsk_") && selectedProvider !== "groq") {
+    if (trimmed.startsWith("gsk_") && selectedProvider !== "groq") {
       setSelectedProvider("groq");
+    } else if (trimmed.startsWith("AIza") && selectedProvider !== "gemini") {
+      setSelectedProvider("gemini");
     } else if (trimmed.startsWith("sk-ant-") && selectedProvider !== "anthropic") {
       setSelectedProvider("anthropic");
     }
@@ -224,11 +228,45 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
       return;
     }
 
+    const effectiveProv = rawKey.startsWith("gsk_")
+      ? "groq"
+      : rawKey.startsWith("AIza")
+      ? "gemini"
+      : rawKey.startsWith("sk-ant")
+      ? "anthropic"
+      : selectedProvider;
+
+    if (effectiveProv !== selectedProvider) {
+      setSelectedProvider(effectiveProv);
+    }
+
     setIsVerifyingKey(true);
-    setKeySavedStatus("Testing connection to " + selectedProvider.toUpperCase() + " API...");
+    setKeySavedStatus("Testing connection to " + effectiveProv.toUpperCase() + " API...");
 
     try {
-      if (selectedProvider === "gemini") {
+      if (effectiveProv === "groq") {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${rawKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: "Say 'Groq Llama 3.3 is active and operational!' in exactly 7 words." }],
+            max_tokens: 30,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data?.choices?.[0]?.message?.content) {
+          const reply = data.choices[0].message.content.trim();
+          setKeySavedStatus(`✓ SUCCESS! Groq Llama 3.3 verified: "${reply}"`);
+        } else {
+          const errMsg = data?.error?.message || `HTTP ${res.status}`;
+          setKeySavedStatus(`❌ Groq Error: ${errMsg}`);
+        }
+      } else if (effectiveProv === "gemini") {
         const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${rawKey}`;
         const res = await fetch(testUrl, {
           method: "POST",
@@ -246,29 +284,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
           const errMsg = data?.error?.message || `HTTP ${res.status}: ${res.statusText}`;
           setKeySavedStatus(`❌ Google Gemini Error: ${errMsg}`);
         }
-      } else if (selectedProvider === "groq") {
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${rawKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [{ role: "user", content: "Say 'Groq is online!' in 3 words." }],
-            max_tokens: 30,
-          }),
-        });
-
-        const data = await res.json();
-        if (res.ok && data?.choices?.[0]?.message?.content) {
-          const reply = data.choices[0].message.content.trim();
-          setKeySavedStatus(`✓ SUCCESS! Groq Llama 3.3 replied: "${reply}"`);
-        } else {
-          const errMsg = data?.error?.message || `HTTP ${res.status}`;
-          setKeySavedStatus(`❌ Groq Error: ${errMsg}`);
-        }
-      } else if (selectedProvider === "anthropic") {
+      } else if (effectiveProv === "anthropic") {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: {
@@ -302,36 +318,44 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
 
   const handleSaveCustomKey = async () => {
     const trimmed = inputKey.trim();
+    let prov = selectedProvider;
+    if (trimmed.startsWith("gsk_")) {
+      prov = "groq";
+      setSelectedProvider("groq");
+    } else if (trimmed.startsWith("AIza")) {
+      prov = "gemini";
+      setSelectedProvider("gemini");
+    } else if (trimmed.startsWith("sk-ant-")) {
+      prov = "anthropic";
+      setSelectedProvider("anthropic");
+    }
+
     if (!trimmed) {
-      if (selectedProvider === "gemini") {
-        await AsyncStorage.removeItem("smartevolve_gemini_api_key");
-        setGeminiKey("");
-      } else if (selectedProvider === "groq") {
-        await AsyncStorage.removeItem("smartevolve_groq_api_key");
-        setGroqKey("");
-      } else {
-        await AsyncStorage.removeItem("smartevolve_anthropic_api_key");
-        setAnthropicKey("");
-      }
+      await AsyncStorage.removeItem("smartevolve_gemini_api_key");
+      await AsyncStorage.removeItem("smartevolve_groq_api_key");
+      await AsyncStorage.removeItem("smartevolve_anthropic_api_key");
+      setGeminiKey("");
+      setGroqKey("");
+      setAnthropicKey("");
       setKeySavedStatus("Key removed. Using platform cognitive AI.");
       setTimeout(() => setKeySavedStatus(null), 3500);
       return;
     }
 
-    if (selectedProvider === "gemini") {
-      await AsyncStorage.setItem("smartevolve_gemini_api_key", trimmed);
-      setGeminiKey(trimmed);
-      setKeySavedStatus("✓ Google Gemini API Key saved securely on device!");
-    } else if (selectedProvider === "groq") {
+    if (prov === "groq") {
       await AsyncStorage.setItem("smartevolve_groq_api_key", trimmed);
       setGroqKey(trimmed);
       setKeySavedStatus("✓ Groq API Key saved securely on device!");
+    } else if (prov === "gemini") {
+      await AsyncStorage.setItem("smartevolve_gemini_api_key", trimmed);
+      setGeminiKey(trimmed);
+      setKeySavedStatus("✓ Google Gemini API Key saved securely on device!");
     } else {
       await AsyncStorage.setItem("smartevolve_anthropic_api_key", trimmed);
       setAnthropicKey(trimmed);
       setKeySavedStatus("✓ Anthropic Claude API Key saved securely on device!");
     }
-    await AsyncStorage.setItem("smartevolve_ai_provider", selectedProvider);
+    await AsyncStorage.setItem("smartevolve_ai_provider", prov);
 
     // Auto-verify key immediately
     handleTestKeyDirectly(trimmed);
@@ -347,9 +371,14 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
   });
 
   const getActiveKey = () => {
-    if (selectedProvider === "gemini") return geminiKey.trim();
-    if (selectedProvider === "groq") return groqKey.trim();
-    return anthropicKey.trim();
+    const typed = inputKey.trim();
+    if (typed.startsWith("gsk_") || typed.startsWith("AIza") || typed.startsWith("sk-ant")) {
+      return typed;
+    }
+    if (selectedProvider === "groq" && groqKey.trim()) return groqKey.trim();
+    if (selectedProvider === "gemini" && geminiKey.trim()) return geminiKey.trim();
+    if (selectedProvider === "anthropic" && anthropicKey.trim()) return anthropicKey.trim();
+    return groqKey.trim() || geminiKey.trim() || anthropicKey.trim() || typed;
   };
 
   const activeKey = getActiveKey();
@@ -364,11 +393,64 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     setChatLog((prev) => [...prev, { sender: "user", text: textToSend }]);
     setIsAsking(true);
 
-    const effectiveKey = activeKey;
+    const effectiveKey = getActiveKey();
+    const effectiveProv = effectiveKey.startsWith("gsk_")
+      ? "groq"
+      : effectiveKey.startsWith("AIza")
+      ? "gemini"
+      : effectiveKey.startsWith("sk-ant")
+      ? "anthropic"
+      : selectedProvider;
 
     try {
-      // 1. Direct Call: Google Gemini 1.5
-      if (selectedProvider === "gemini" && effectiveKey && effectiveKey.length > 15) {
+      // 1. Direct Call: Groq Llama 3.3 (Prioritized for speed & 100% free)
+      if (effectiveProv === "groq" && effectiveKey && effectiveKey.length > 10) {
+        try {
+          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${effectiveKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are SmartEvolve AI's intelligent Career Mentor. Provide direct, inspiring, and technically sound advice with actionable next steps.",
+                },
+                { role: "user", content: textToSend },
+              ],
+              temperature: 0.7,
+              max_tokens: 1024,
+            }),
+          });
+          if (groqRes.ok) {
+            const grData = await groqRes.json();
+            const grText = grData?.choices?.[0]?.message?.content;
+            if (grText && grText.trim().length > 0) {
+              setChatLog((prev) => [
+                ...prev,
+                {
+                  sender: "mentor",
+                  text: grText.trim(),
+                  providerLabel: "⚡ Powered by Groq Llama 3.3 (Ultra Fast)",
+                },
+              ]);
+              setIsAsking(false);
+              return;
+            }
+          } else {
+            const errData = await groqRes.json().catch(() => ({}));
+            console.warn("Direct Groq API notice:", groqRes.status, errData);
+          }
+        } catch (clientEx) {
+          console.warn("Direct Groq call note (routing via backend):", clientEx);
+        }
+      }
+
+      // 2. Direct Call: Google Gemini 1.5
+      if (effectiveProv === "gemini" && effectiveKey && effectiveKey.length > 15) {
         try {
           const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey}`;
           const gRes = await fetch(geminiEndpoint, {
@@ -399,45 +481,8 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         }
       }
 
-      // 2. Direct Call: Groq Llama 3.3 (Ultra-Fast & 100% Free)
-      if (selectedProvider === "groq" && effectiveKey && effectiveKey.length > 10) {
-        try {
-          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${effectiveKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "llama-3.3-70b-versatile",
-              messages: [{ role: "user", content: textToSend }],
-              temperature: 0.7,
-              max_tokens: 1024,
-            }),
-          });
-          if (groqRes.ok) {
-            const grData = await groqRes.json();
-            const grText = grData?.choices?.[0]?.message?.content;
-            if (grText && grText.trim().length > 0) {
-              setChatLog((prev) => [
-                ...prev,
-                {
-                  sender: "mentor",
-                  text: grText.trim(),
-                  providerLabel: "⚡ Powered by Groq Llama 3.3 (High Speed)",
-                },
-              ]);
-              setIsAsking(false);
-              return;
-            }
-          }
-        } catch (clientEx) {
-          console.warn("Direct Groq call note (routing via backend):", clientEx);
-        }
-      }
-
       // 3. Direct Call: Anthropic Claude
-      if (selectedProvider === "anthropic" && effectiveKey && effectiveKey.length > 15) {
+      if (effectiveProv === "anthropic" && effectiveKey && effectiveKey.length > 15) {
         try {
           const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -480,7 +525,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         textToSend,
         undefined,
         effectiveKey || undefined,
-        selectedProvider.toUpperCase()
+        effectiveProv.toUpperCase()
       );
 
       const replyText = getIntelligentMentorResponse(textToSend, res?.reply);

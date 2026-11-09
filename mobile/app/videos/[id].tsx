@@ -277,11 +277,11 @@ export default function VideoDetailScreen() {
 
   const handleSelectOption = (qId: number, optionIdx: number) => {
     if (quizSubmitted) return;
-    const isFirstAttempt = selectedAnswers[qId] === undefined;
+    if (selectedAnswers[qId] !== undefined) return; // Strict Kahoot/Wayground lock once answered
     setSelectedAnswers((prev) => ({ ...prev, [qId]: optionIdx }));
 
     const currentQ = quizQuestions[currentQuestionIndex];
-    if (isFirstAttempt && currentQ) {
+    if (currentQ) {
       if (optionIdx === currentQ.correctIndex) {
         const nextStreak = quizStreak + 1;
         setQuizStreak(nextStreak);
@@ -862,6 +862,7 @@ export default function VideoDetailScreen() {
                         <TouchableOpacity
                           key={optIdx}
                           activeOpacity={0.85}
+                          disabled={isAnswered}
                           style={[
                             styles.answerTile,
                             isDesktop && styles.answerTileDesktop,
@@ -902,14 +903,35 @@ export default function VideoDetailScreen() {
                       <View style={styles.feedbackHeaderRow}>
                         <Text style={styles.feedbackTitle}>
                           {selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex
-                            ? "✓ Correct Answer!"
-                            : "✗ Incorrect"}
+                            ? `🎉 AWESOME! CORRECT ANSWER (+${500 + quizStreak * 100} PTS)`
+                            : "❌ NOT QUITE"}
                         </Text>
+                        {quizStreak > 1 && selectedAnswers[currentQuestion.id] === currentQuestion.correctIndex && (
+                          <Text style={styles.feedbackStreak}>🔥 {quizStreak}x Streak Active!</Text>
+                        )}
                       </View>
 
                       <Text style={styles.feedbackExplanation}>
                         💡 <Text style={{ fontWeight: "700" }}>Key Concept:</Text> {currentQuestion.explanation}
                       </Text>
+
+                      {currentQuestionIndex < quizQuestions.length - 1 ? (
+                        <TouchableOpacity
+                          style={styles.arenaNextBtn}
+                          onPress={() => setCurrentQuestionIndex((prev) => prev + 1)}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.arenaNextBtnText}>Next Question ➔</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles.arenaSubmitBtn}
+                          onPress={handleSubmitQuiz}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.arenaSubmitBtnText}>Submit Quiz & Claim Certificate 🏆</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   )}
 
@@ -1935,5 +1957,31 @@ const styles = StyleSheet.create({
     width: 1,
     height: 26,
     backgroundColor: "rgba(255, 255, 255, 0.15)",
+  },
+  arenaNextBtn: {
+    backgroundColor: "#6366F1",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  arenaNextBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  arenaSubmitBtn: {
+    backgroundColor: "#10B981",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  arenaSubmitBtnText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
 });
