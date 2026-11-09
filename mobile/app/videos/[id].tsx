@@ -475,9 +475,12 @@ export default function VideoDetailScreen() {
               <View style={styles.poolSelectorRow}>
                 <Text style={styles.poolSelectorLabel}>Total Questions:</Text>
                 {[
-                  { count: 15, label: "15 Questions" },
-                  { count: 30, label: "30 Questions" },
-                  { count: 45, label: "45 Questions" },
+                  { count: 15, label: "15 Qs (Quick)" },
+                  { count: 30, label: "30 Qs (Standard)" },
+                  { count: 50, label: "50 Qs (Deep Exam)" },
+                  { count: 75, label: "75 Qs (Mastery)" },
+                  { count: 100, label: "100 Qs (Grand Exam)" },
+                  { count: 150, label: "150+ Full Bank" },
                 ].map((pool) => (
                   <TouchableOpacity
                     key={pool.count}
@@ -669,20 +672,35 @@ export default function VideoDetailScreen() {
                     )}
                   </View>
 
-                  {/* Progress Indicator Dots */}
-                  <View style={styles.dotsRow}>
-                    {quizQuestions.map((q, i) => (
-                      <TouchableOpacity
-                        key={q.id}
-                        onPress={() => setCurrentQuestionIndex(i)}
+                  {/* Progress Indicator: Dots for <=30 Qs, Sleek Bar for 50-150+ Qs */}
+                  {quizQuestions.length <= 30 ? (
+                    <View style={styles.dotsRow}>
+                      {quizQuestions.map((q, i) => (
+                        <TouchableOpacity
+                          key={q.id}
+                          onPress={() => setCurrentQuestionIndex(i)}
+                          style={[
+                            styles.dot,
+                            i === currentQuestionIndex && styles.dotActive,
+                            selectedAnswers[q.id] !== undefined && styles.dotAnswered,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <View style={styles.quizProgressBarTrack}>
+                      <View
                         style={[
-                          styles.dot,
-                          i === currentQuestionIndex && styles.dotActive,
-                          selectedAnswers[q.id] !== undefined && styles.dotAnswered,
+                          styles.quizProgressBarFill,
+                          {
+                            width: `${Math.round(
+                              ((currentQuestionIndex + 1) / quizQuestions.length) * 100
+                            )}%`,
+                          },
                         ]}
                       />
-                    ))}
-                  </View>
+                    </View>
+                  )}
 
                   {/* Question Card Box */}
                   <View style={styles.arenaQuestionCard}>
@@ -1359,6 +1377,19 @@ const styles = StyleSheet.create({
   },
   activeQuestionContainer: {
     gap: spacing.md,
+  },
+  quizProgressBarTrack: {
+    width: "100%",
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    overflow: "hidden",
+    marginVertical: 8,
+  },
+  quizProgressBarFill: {
+    height: "100%",
+    borderRadius: 3,
+    backgroundColor: "#6366F1",
   },
   dotsRow: {
     flexDirection: "row",
