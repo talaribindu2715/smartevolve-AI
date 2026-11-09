@@ -37,7 +37,8 @@ export default function VideoDetailScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  const [activeTab, setActiveTab] = useState<"quiz" | "related">("quiz");
+  const [activeTab, setActiveTab] = useState<"quiz" | "related">("related");
+  const [showQuiz, setShowQuiz] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState(false);
   const scrollRef = React.useRef<ScrollView>(null);
 
@@ -52,6 +53,8 @@ export default function VideoDetailScreen() {
     setMaxQuizStreak(0);
     setLocalCompleted(false);
     setShowCertModal(false);
+    setShowQuiz(false);
+    setActiveTab("related");
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [id]);
 
@@ -245,9 +248,15 @@ export default function VideoDetailScreen() {
     } else {
       Alert.alert(
         "Masterclass Marked as Completed! 🎯",
-        "Video progress is recorded. To unlock and claim your official SmartEvolve Academic Certificate, take the Skill Quiz below and score at least 60%!",
+        "Video progress is recorded. The Masterclass Certification Quiz is now unlocked! Would you like to take it now?",
         [
-          { text: "Take Skill Quiz", onPress: () => setActiveTab("quiz") },
+          {
+            text: "Take Skill Quiz",
+            onPress: () => {
+              setShowQuiz(true);
+              setActiveTab("quiz");
+            },
+          },
           { text: "Later", style: "cancel" },
         ]
       );
@@ -358,6 +367,8 @@ export default function VideoDetailScreen() {
     setQuizPoints(0);
     setQuizStreak(0);
     setMaxQuizStreak(0);
+    setShowQuiz(true);
+    setActiveTab("quiz");
   };
 
   const relatedAssessment = (assessments || []).find(
@@ -378,6 +389,7 @@ export default function VideoDetailScreen() {
           title={effectiveVideo.title}
           thumbnailUrl={effectiveVideo.thumbnailUrl}
           autoPlay={true}
+          onEnded={handleMarkCompleted}
         />
 
         {/* Video Header & Metadata */}
@@ -421,29 +433,67 @@ export default function VideoDetailScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {/* Segmented Tab Navigation */}
-        <View style={styles.tabsRow}>
+        {/* Activated Quiz Launch Button:
+            - Completely hidden until user completes watching the video.
+            - Once video is complete, this button activates.
+            - Clicking it reveals the full interactive quiz. */}
+        {isCompleted && !showQuiz && !quizSubmitted && (
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === "quiz" && styles.tabBtnActive]}
-            onPress={() => setActiveTab("quiz")}
+            style={styles.activateQuizHeroBtn}
+            onPress={() => {
+              setShowQuiz(true);
+              setActiveTab("quiz");
+            }}
+            activeOpacity={0.85}
           >
-            <Text style={[styles.tabBtnText, activeTab === "quiz" && styles.tabBtnTextActive]}>
-              Masterclass Quiz ({quizQuestions.length})
-            </Text>
+            <View style={styles.activateQuizBadge}>
+              <Text style={styles.activateQuizBadgeText}>✓ VIDEO COMPLETED • QUIZ UNLOCKED</Text>
+            </View>
+            <View style={styles.activateQuizHeroRow}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={styles.activateQuizHeroTitle}>
+                  🎯 Take Masterclass Certification Quiz ({quizQuestions.length} Questions)
+                </Text>
+                <Text style={styles.activateQuizHeroSubtitle}>
+                  Tap to launch quiz • Score ≥60% to earn your verified certificate
+                </Text>
+              </View>
+              <View style={styles.activateQuizHeroArrowWrap}>
+                <Text style={styles.activateQuizHeroArrow}>➔</Text>
+              </View>
+            </View>
           </TouchableOpacity>
+        )}
 
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === "related" && styles.tabBtnActive]}
-            onPress={() => setActiveTab("related")}
-          >
-            <Text style={[styles.tabBtnText, activeTab === "related" && styles.tabBtnTextActive]}>
-              Related Videos ({effectiveRelatedVideos.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Segmented Tab Navigation:
+            - Only visible once video is completed and quiz is unlocked. */}
+        {isCompleted && (
+          <View style={styles.tabsRow}>
+            <TouchableOpacity
+              style={[styles.tabBtn, activeTab === "quiz" && styles.tabBtnActive]}
+              onPress={() => {
+                setActiveTab("quiz");
+                setShowQuiz(true);
+              }}
+            >
+              <Text style={[styles.tabBtnText, activeTab === "quiz" && styles.tabBtnTextActive]}>
+                Masterclass Quiz ({quizQuestions.length})
+              </Text>
+            </TouchableOpacity>
 
-        {/* Tab 2: Unified Interactive Skill Quiz */}
-        {activeTab === "quiz" && (
+            <TouchableOpacity
+              style={[styles.tabBtn, activeTab === "related" && styles.tabBtnActive]}
+              onPress={() => setActiveTab("related")}
+            >
+              <Text style={[styles.tabBtnText, activeTab === "related" && styles.tabBtnTextActive]}>
+                Related Videos ({effectiveRelatedVideos.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Tab 2: Unified Interactive Skill Quiz - Shown only when video is completed AND user clicked the button or quiz tab */}
+        {isCompleted && activeTab === "quiz" && (showQuiz || quizSubmitted) && (
           <View style={styles.tabContent}>
             <Card style={styles.quizWrapperCard}>
               {/* Quiz Header */}
@@ -809,7 +859,7 @@ export default function VideoDetailScreen() {
         )}
 
         {/* Tab 3: Related Videos */}
-        {activeTab === "related" && (
+        {(activeTab === "related" || !isCompleted || (!showQuiz && !quizSubmitted)) && (
           <View style={styles.tabContent}>
             <View style={styles.relatedSectionHeader}>
               <Text style={styles.relatedSectionTitle}>
@@ -1834,5 +1884,66 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "900",
+  },
+  activateQuizHeroBtn: {
+    backgroundColor: "#1E1B4B",
+    borderColor: "#6366F1",
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginVertical: spacing.md,
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  activateQuizBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    borderColor: "#10B981",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    marginBottom: 8,
+  },
+  activateQuizBadgeText: {
+    color: "#10B981",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  activateQuizHeroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  activateQuizHeroTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    lineHeight: 22,
+  },
+  activateQuizHeroSubtitle: {
+    color: "#A5B4FC",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  activateQuizHeroArrowWrap: {
+    backgroundColor: "#6366F1",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 12,
+  },
+  activateQuizHeroArrow: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
   },
 });
