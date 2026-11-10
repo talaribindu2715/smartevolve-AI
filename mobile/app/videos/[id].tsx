@@ -376,7 +376,13 @@ export default function VideoDetailScreen() {
   );
 
   return (
-    <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      ref={scrollRef}
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      nestedScrollEnabled={true}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.responsiveWrapper}>
         {/* Back Link */}
         <TouchableOpacity style={styles.backBtn} onPress={handleBack}>

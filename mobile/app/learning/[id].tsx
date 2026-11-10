@@ -211,7 +211,12 @@ export default function LearningScreen() {
   const isInProgress = resource.progressStatus === "IN_PROGRESS";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      nestedScrollEnabled={true}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.responsiveWrapper}>
         {/* Back Link */}
         <TouchableOpacity style={styles.backBtn} onPress={handleBack}>
