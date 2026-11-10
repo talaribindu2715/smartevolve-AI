@@ -646,7 +646,7 @@ public class GeminiAiService {
                         "model", m,
                         "messages", List.of(message),
                         "temperature", 0.7,
-                        "max_tokens", 1024
+                        "max_tokens", 2048
                 );
 
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
