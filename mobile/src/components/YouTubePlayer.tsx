@@ -67,55 +67,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const lastSavedTimeRef = useRef<number>(0);
 
   const fallbackThumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const webViewRef = useRef<any>(null);
-  const iframeRef = useRef<any>(null);
-
-  const handleSetSpeed = (speed: number) => {
-    setPlaybackSpeed(speed);
-    if (Platform.OS === "web") {
-      try {
-        iframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({
-            event: "command",
-            func: "setPlaybackRate",
-            args: [speed],
-          }),
-          "*"
-        );
-      } catch (_) {}
-    } else if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`
-        if (window.player && window.player.setPlaybackRate) {
-          window.player.setPlaybackRate(${speed});
-        }
-        true;
-      `);
-    }
-  };
-
-  const handleSeekRelative = (delta: number) => {
-    if (Platform.OS === "web") {
-      try {
-        iframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({
-            event: "command",
-            func: "seekTo",
-            args: [(lastSavedTimeRef.current || startSeconds || 0) + delta, true],
-          }),
-          "*"
-        );
-      } catch (_) {}
-    } else if (webViewRef.current) {
-      webViewRef.current.injectJavaScript(`
-        if (window.player && window.player.getCurrentTime && window.player.seekTo) {
-          var curr = window.player.getCurrentTime();
-          window.player.seekTo(Math.max(0, curr + (${delta})), true);
-        }
-        true;
-      `);
-    }
-  };
 
   // 1. Load saved playback position from AsyncStorage
   useEffect(() => {
@@ -262,58 +213,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     });
   };
 
-  // Quick Player Controls Bar (Speed, Seek, and External)
-  const renderQuickControls = () => (
-    <View style={styles.quickBar}>
-      <View style={styles.speedRow}>
-        <Text style={styles.controlLabel}>⚡ Speed:</Text>
-        {[1, 1.25, 1.5, 1.75, 2].map((s) => (
-          <TouchableOpacity
-            key={s}
-            style={[styles.speedPill, playbackSpeed === s && styles.speedPillActive]}
-            onPress={() => handleSetSpeed(s)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.speedPillText,
-                playbackSpeed === s && styles.speedPillTextActive,
-              ]}
-            >
-              {s}x
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.seekRow}>
-        <TouchableOpacity
-          style={styles.seekBtn}
-          onPress={() => handleSeekRelative(-10)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.seekBtnText}>⏪ -10s</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.seekBtn}
-          onPress={() => handleSeekRelative(10)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.seekBtnText}>+10s ⏩</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.externalAppBtn}
-          onPress={handleOpenExternal}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.externalAppBtnText}>📺 YouTube App ↗</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   // Web Platform
   if (Platform.OS === "web") {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://www.youtube.com";
@@ -347,7 +246,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             </TouchableOpacity>
           ) : (
             <iframe
-              ref={iframeRef}
               key={`web-player-${videoId}-${playerKey}`}
               src={webEmbedUrl}
               title={title || "SmartEvolve Masterclass"}
@@ -363,7 +261,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             />
           )}
         </View>
-        {renderQuickControls()}
       </View>
     );
   }
@@ -487,7 +384,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         {NativeWebView && !hasError && isLoadedStorage ? (
           <>
             <NativeWebView
-              ref={webViewRef}
               key={`native-player-${videoId}-${playerKey}`}
               source={{
                 html: nativeHtml,
@@ -568,7 +464,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      {renderQuickControls()}
     </View>
   );
 };
@@ -651,80 +546,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     marginTop: spacing.sm,
-  },
-  quickBar: {
-    backgroundColor: "#0D1117",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  speedRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  controlLabel: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "700",
-    marginRight: 2,
-  },
-  speedPill: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  speedPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.accent,
-  },
-  speedPillText: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  speedPillTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-  },
-  seekRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  seekBtn: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  seekBtnText: {
-    color: "#CBD5E1",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  externalAppBtn: {
-    backgroundColor: "rgba(99, 102, 241, 0.18)",
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.4)",
-  },
-  externalAppBtnText: {
-    color: "#A5B4FC",
-    fontSize: 11,
-    fontWeight: "700",
   },
 });
