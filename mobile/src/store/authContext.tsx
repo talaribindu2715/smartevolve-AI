@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
+import * as Linking from "expo-linking";
+import queryString from "query-string";
 import { secureStorage } from "../services/secureStorage";
 import { supabase, isSupabaseConfigured } from "../services/supabase";
 import { Profile } from "../types";
@@ -146,8 +149,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     restoreSession();
 
     // Listen to Supabase auth state changes if configured
+    let authListener: any = null;
+    let linkSub: any = null;
+
     if (isSupabaseConfigured()) {
-      const { data: authListener } = supabase.auth.onAuthStateChange(
+      const { data } = supabase.auth.onAuthStateChange(
         async (event, session) => {
           if (event === "SIGNED_IN" && session) {
             await secureStorage.setToken(session.access_token);
@@ -172,11 +178,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       );
+      authListener = data;
 
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
+      // Listen for Native OAuth deep linking callback (smartevolve://)
+      if (Platform.OS !== "web") {
+        const handleAuthDeepLink = async (event: { url: string }) => {
+          if (!event?.url) return;
+          try {
+            const url = event.url;
+            if (url.includes("#")) {
+              const hash = url.split("#")[1];
+              const parsed = queryString.parse(hash);
+              if (parsed.access_token && parsed.refresh_token) {
+                await supabase.auth.setSession({
+                  access_token: parsed.access_token as string,
+                  refresh_token: parsed.refresh_token as string,
+                });
+              }
+            } else if (url.includes("code=")) {
+              const query = url.includes("?") ? url.split("?")[1] : url;
+              const parsed = queryString.parse(query);
+              if (parsed.code) {
+                await supabase.auth.exchangeCodeForSession(parsed.code as string);
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to process auth deep link:", e);
+          }
+        };
+
+        linkSub = Linking.addEventListener("url", handleAuthDeepLink);
+        Linking.getInitialURL().then((initialUrl) => {
+          if (initialUrl) handleAuthDeepLink({ url: initialUrl });
+        });
+      }
     }
+
+    return () => {
+      authListener?.subscription?.unsubscribe?.();
+      linkSub?.remove?.();
+    };
   }, []);
 
   const restoreSession = async () => {

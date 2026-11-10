@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "../../src/components/Button";
+import { GoogleSignInButton } from "../../src/components/GoogleSignInButton";
 import { useAuth } from "../../src/store/authContext";
 import { supabase, isSupabaseConfigured } from "../../src/services/supabase";
 import { api } from "../../src/api/client";
@@ -42,9 +43,15 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -61,6 +68,7 @@ export default function RegisterScreen() {
     control,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -418,6 +426,29 @@ export default function RegisterScreen() {
             style={{ marginTop: spacing.sm }}
           />
 
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <GoogleSignInButton
+            mode="signUp"
+            getExtraData={() => {
+              const currentValues = getValues();
+              return {
+                branch: currentValues?.branch?.trim() || "Computer Science",
+                graduation_year: currentValues?.graduationYear
+                  ? parseInt(currentValues.graduationYear, 10)
+                  : 2027,
+                institution: currentValues?.institution?.trim() || "Engineering College",
+                education_level: currentValues?.educationLevel || "Undergraduate B.Tech",
+                ...(currentValues?.fullName?.trim() ? { full_name: currentValues.fullName.trim() } : {}),
+              };
+            }}
+            onError={(msg) => setAuthError(msg)}
+          />
+
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Already have an account?</Text>
             <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
@@ -616,6 +647,24 @@ const styles = StyleSheet.create({
   fieldError: {
     color: colors.error,
     fontSize: 12,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+  },
+  dividerText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   footerRow: {
     flexDirection: "row",

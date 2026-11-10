@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "../../src/components/Button";
+import { GoogleSignInButton } from "../../src/components/GoogleSignInButton";
 import { useAuth } from "../../src/store/authContext";
 import { supabase, isSupabaseConfigured } from "../../src/services/supabase";
 import { colors, radius, spacing } from "../../src/theme/colors";
@@ -27,10 +28,16 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated]);
 
   const {
     control,
@@ -176,6 +183,17 @@ export default function LoginScreen() {
             style={{ marginTop: spacing.sm }}
           />
 
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <GoogleSignInButton
+            mode="signIn"
+            onError={(msg) => setAuthError(msg)}
+          />
+
 
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Don't have an account?</Text>
@@ -296,6 +314,24 @@ const styles = StyleSheet.create({
   fieldError: {
     color: colors.error,
     fontSize: 12,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+  },
+  dividerText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   footerRow: {
     flexDirection: "row",
