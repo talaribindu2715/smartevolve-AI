@@ -148,35 +148,20 @@ public class GeminiAiService {
     }
 
     /**
-     * Executes prompt across Anthropic Claude, Google Gemini, OpenAI, or falls back to intelligent heuristics.
+     * Executes prompt via Groq Cloud AI (Llama 3.3 70B), or falls back to intelligent heuristics.
      */
     private AiResult executeAiPrompt(String prompt) {
         return executeAiPrompt(prompt, null, null);
     }
 
     private AiResult executeAiPrompt(String prompt, String customKey, String customProvider) {
-        // 1. Explicit Custom Key Provided from Client
+        // 1. Explicit Custom Groq Key Provided from Client
         if (customKey != null && !customKey.isBlank()) {
             String trimmedKey = customKey.trim().replaceAll("^[\"']|[\"']$", "").replaceAll("^(?i)Bearer\\s+", "").trim();
-            if ("GROQ".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("gsk_")) {
-                String res = callGroqApiWithKey(prompt, trimmedKey, "llama-3.3-70b-versatile");
+            if (trimmedKey.startsWith("gsk_") || !"NONE".equalsIgnoreCase(customProvider)) {
+                String res = callGroqApiWithKey(prompt, trimmedKey, (groqModel != null && !groqModel.isBlank()) ? groqModel : "llama-3.3-70b-versatile");
                 if (res != null && !res.isBlank()) {
                     return new AiResult(res, "GROQ");
-                }
-            } else if ("GEMINI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("AIza")) {
-                String res = callGeminiApiWithKey(prompt, trimmedKey, "gemini-1.5-flash");
-                if (res != null && !res.isBlank()) {
-                    return new AiResult(res, "GEMINI");
-                }
-            } else if ("ANTHROPIC".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-ant-")) {
-                String res = callAnthropicApiWithKey(prompt, trimmedKey, null);
-                if (res != null && !res.isBlank()) {
-                    return new AiResult(res, "ANTHROPIC");
-                }
-            } else if ("OPENAI".equalsIgnoreCase(customProvider) || trimmedKey.startsWith("sk-")) {
-                String res = callOpenAiApiWithKey(prompt, trimmedKey, null);
-                if (res != null && !res.isBlank()) {
-                    return new AiResult(res, "OPENAI");
                 }
             }
         }
@@ -187,33 +172,6 @@ public class GeminiAiService {
             String res = callGroqApiWithKey(prompt, effectiveGroqKey, (groqModel != null && !groqModel.isBlank()) ? groqModel : "llama-3.3-70b-versatile");
             if (res != null && !res.isBlank()) {
                 return new AiResult(res, "GROQ");
-            }
-        }
-
-        // 3. Server-Side Google Gemini
-        String effectiveGeminiKey = getEffectiveGeminiKey();
-        if (effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGeminiKey)) {
-            String res = callGeminiApiWithKey(prompt, effectiveGeminiKey, (geminiModel != null && !geminiModel.isBlank()) ? geminiModel : "gemini-1.5-flash");
-            if (res != null && !res.isBlank()) {
-                return new AiResult(res, "GEMINI");
-            }
-        }
-
-        // 4. Server-Side Anthropic Claude
-        String effectiveAnthropicKey = getEffectiveAnthropicKey();
-        if (effectiveAnthropicKey != null && !effectiveAnthropicKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveAnthropicKey)) {
-            String res = callAnthropicApiWithKey(prompt, effectiveAnthropicKey, anthropicModel);
-            if (res != null && !res.isBlank()) {
-                return new AiResult(res, "ANTHROPIC");
-            }
-        }
-
-        // 5. Server-Side OpenAI
-        String effectiveOpenAiKey = getEffectiveOpenAiKey();
-        if (effectiveOpenAiKey != null && !effectiveOpenAiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveOpenAiKey)) {
-            String res = callOpenAiApiWithKey(prompt, effectiveOpenAiKey, openAiModel);
-            if (res != null && !res.isBlank()) {
-                return new AiResult(res, "OPENAI");
             }
         }
 
@@ -500,35 +458,20 @@ public class GeminiAiService {
     }
 
     /**
-     * Diagnostic health check for Groq Cloud, Anthropic Claude, Google Gemini, and OpenAI API integrations.
+     * Diagnostic health check for Groq Cloud API (Llama 3.3).
      */
     public Map<String, Object> checkGeminiHealth() {
         Map<String, Object> res = new LinkedHashMap<>();
         try {
             String effectiveGroqKey = getEffectiveGroqKey();
-            String effectiveGeminiKey = getEffectiveGeminiKey();
-            String effectiveAnthropicKey = getEffectiveAnthropicKey();
-            String effectiveOpenAiKey = getEffectiveOpenAiKey();
-
             boolean hasGroq = effectiveGroqKey != null && !effectiveGroqKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGroqKey);
-            boolean hasGemini = effectiveGeminiKey != null && !effectiveGeminiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveGeminiKey);
-            boolean hasAnthropic = effectiveAnthropicKey != null && !effectiveAnthropicKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveAnthropicKey);
-            boolean hasOpenAi = effectiveOpenAiKey != null && !effectiveOpenAiKey.isBlank() && !"demo-key".equalsIgnoreCase(effectiveOpenAiKey);
 
-            // Record detected key presence
-            Map<String, Object> keysDetected = new LinkedHashMap<>();
-            keysDetected.put("groq", hasGroq ? maskKey(effectiveGroqKey) : "none");
-            keysDetected.put("gemini", hasGemini ? maskKey(effectiveGeminiKey) : "none");
-            keysDetected.put("anthropic", hasAnthropic ? maskKey(effectiveAnthropicKey) : "none");
-            keysDetected.put("openai", hasOpenAi ? maskKey(effectiveOpenAiKey) : "none");
-            res.put("keysDetected", keysDetected);
+            res.put("provider", "GROQ");
+            res.put("model", (groqModel != null && !groqModel.isBlank()) ? groqModel : "llama-3.3-70b-versatile");
+            res.put("groqKeyConfigured", hasGroq);
+            res.put("keyMask", hasGroq ? maskKey(effectiveGroqKey) : "none");
 
-            // 1. Check Groq Cloud (Ultra-Fast Free Tier Llama 3.3)
             if (hasGroq) {
-                res.put("provider", "GROQ");
-                res.put("model", groqModel != null ? groqModel : "llama-3.3-70b-versatile");
-                res.put("apiKeyConfigured", true);
-
                 long start = System.currentTimeMillis();
                 String testPrompt = "Say 'SmartEvolve Groq AI is online and operational!' in exactly 7 words.";
                 String apiResponse = callGroqApiWithKey(testPrompt, effectiveGroqKey, groqModel);
@@ -539,83 +482,24 @@ public class GeminiAiService {
                     res.put("working", true);
                     res.put("latencyMs", latencyMs);
                     res.put("testResponse", apiResponse.trim());
-                    res.put("message", "Groq Cloud AI is connected and responding in real-time!");
+                    res.put("message", "Groq Cloud Llama 3.3 AI is operational and responding in real-time!");
+                    return res;
+                } else {
+                    res.put("status", "ERROR");
+                    res.put("working", false);
+                    res.put("message", "Groq API key was rejected by api.groq.com. Please verify your Groq key at console.groq.com/keys.");
                     return res;
                 }
             }
 
-            // 2. Check Google Gemini
-            if (hasGemini) {
-                res.put("provider", "GOOGLE_GEMINI");
-                res.put("model", geminiModel != null ? geminiModel : "gemini-1.5-flash");
-                res.put("apiKeyConfigured", true);
-
-                long start = System.currentTimeMillis();
-                String testPrompt = "Say 'SmartEvolve Gemini AI is online and operational!' in exactly 7 words.";
-                String apiResponse = callGeminiApiWithKey(testPrompt, effectiveGeminiKey, geminiModel);
-                long latencyMs = System.currentTimeMillis() - start;
-
-                if (apiResponse != null && !apiResponse.isBlank()) {
-                    res.put("status", "ONLINE");
-                    res.put("working", true);
-                    res.put("latencyMs", latencyMs);
-                    res.put("testResponse", apiResponse.trim());
-                    res.put("message", "Google Gemini AI API is connected and responding in real-time!");
-                    return res;
-                }
-            }
-
-            // 3. Check Anthropic Claude
-            if (hasAnthropic) {
-                res.put("provider", "ANTHROPIC");
-                res.put("model", anthropicModel != null ? anthropicModel : "claude-3-5-haiku-20241022");
-                res.put("apiKeyConfigured", true);
-
-                long start = System.currentTimeMillis();
-                String testPrompt = "Say 'SmartEvolve Claude AI is online and operational!' in exactly 7 words.";
-                String apiResponse = callAnthropicApiWithKey(testPrompt, effectiveAnthropicKey, anthropicModel);
-                long latencyMs = System.currentTimeMillis() - start;
-
-                if (apiResponse != null && !apiResponse.isBlank()) {
-                    res.put("status", "ONLINE");
-                    res.put("working", true);
-                    res.put("latencyMs", latencyMs);
-                    res.put("testResponse", apiResponse.trim());
-                    res.put("message", "Anthropic Claude AI API is connected and responding in real-time!");
-                    return res;
-                }
-            }
-
-            // 4. Check OpenAI
-            if (hasOpenAi) {
-                res.put("provider", "OPENAI");
-                res.put("model", openAiModel != null ? openAiModel : "gpt-4o-mini");
-                res.put("apiKeyConfigured", true);
-
-                long start = System.currentTimeMillis();
-                String testPrompt = "Say 'SmartEvolve OpenAI is online and operational!' in exactly 7 words.";
-                String apiResponse = callOpenAiApiWithKey(testPrompt, effectiveOpenAiKey, openAiModel);
-                long latencyMs = System.currentTimeMillis() - start;
-
-                if (apiResponse != null && !apiResponse.isBlank()) {
-                    res.put("status", "ONLINE");
-                    res.put("working", true);
-                    res.put("latencyMs", latencyMs);
-                    res.put("testResponse", apiResponse.trim());
-                    res.put("message", "OpenAI API is connected and responding in real-time!");
-                    return res;
-                }
-            }
-
-            res.put("provider", "NONE");
             res.put("status", "NOT_CONFIGURED");
             res.put("working", false);
-            res.put("message", "No cloud AI API key responded successfully. Set GROQ_API_KEY, GEMINI_API_KEY, or ANTHROPIC_API_KEY in Render environment.");
+            res.put("message", "Groq API key not configured on server. Set GROQ_API_KEY in Render dashboard environment variables.");
         } catch (Exception ex) {
-            log.error("AI health check error: ", ex);
+            log.error("Groq AI health check error: ", ex);
             res.put("status", "ERROR");
             res.put("working", false);
-            res.put("message", "AI service notice: " + ex.getMessage());
+            res.put("message", "Groq service notice: " + ex.getMessage());
         }
         return res;
     }

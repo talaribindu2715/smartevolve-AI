@@ -19,7 +19,7 @@ interface AiMentorModalProps {
   onClose: () => void;
 }
 
-export type AiProvider = "gemini" | "groq" | "anthropic";
+export type AiProvider = "groq";
 
 function getIntelligentMentorResponse(userText: string, backendReply?: string): string {
   // If backend provided a custom non-repetitive response, use it:
@@ -318,26 +318,17 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
   const [isAsking, setIsAsking] = useState(false);
   const chatScrollRef = useRef<ScrollView>(null);
 
-  // Background Key Provider State
+  // Background Groq Key State
   const [storedApiKey, setStoredApiKey] = useState("");
-  const [storedProv, setStoredProv] = useState<string>("GROQ");
 
   useEffect(() => {
-    AsyncStorage.multiGet([
-      "smartevolve_ai_provider",
-      "smartevolve_groq_api_key",
-      "smartevolve_gemini_api_key",
-      "smartevolve_anthropic_api_key",
-    ]).then(([provItem, groqItem, gemItem, antItem]) => {
-      const groqKey = groqItem?.[1] || "";
-      const gemKey = gemItem?.[1] || "";
-      const antKey = antItem?.[1] || "";
-      const effectiveKey = groqKey || gemKey || antKey || "";
-      const effectiveProv = (provItem?.[1] || (groqKey ? "groq" : gemKey ? "gemini" : "groq")).toUpperCase();
-
-      setStoredApiKey(effectiveKey);
-      setStoredProv(effectiveProv);
-    }).catch(() => {});
+    AsyncStorage.getItem("smartevolve_groq_api_key")
+      .then((groqKey) => {
+        if (groqKey && groqKey.trim().length > 0) {
+          setStoredApiKey(groqKey.trim());
+        }
+      })
+      .catch(() => {});
   }, [visible]);
 
   const handleSendQuestion = async (customText?: string) => {
@@ -395,47 +386,12 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         }
       }
 
-      // 2. Direct Gemini API call if user has a Google Gemini key
-      if (storedApiKey && (storedApiKey.startsWith("AIzaSy") || storedApiKey.startsWith("AIza"))) {
-        const geminiModels = ["gemini-1.5-flash", "gemini-2.0-flash"];
-        for (const gModel of geminiModels) {
-          try {
-            const gemUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${storedApiKey.trim()}`;
-            const gemRes = await fetch(gemUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: textToSend }] }],
-              }),
-            });
-            if (gemRes.ok) {
-              const gData = await gemRes.json();
-              const gText = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (gText && gText.trim().length > 0) {
-                setChatLog((prev) => [
-                  ...prev,
-                  {
-                    sender: "mentor",
-                    text: gText.trim(),
-                    providerLabel: "🔵 Powered by Google Gemini",
-                  },
-                ]);
-                setIsAsking(false);
-                return;
-              }
-            }
-          } catch {
-            // Try next model or fall through to backend
-          }
-        }
-      }
-
-      // 3. Query backend AI Service (which leverages server-side keys configured on Render)
+      // 2. Query backend AI Service (which leverages server-side GROQ_API_KEY configured on Render)
       const res = await api.askAiMentor(
         textToSend,
         undefined,
         storedApiKey || undefined,
-        storedProv
+        "GROQ"
       ).catch(() => null);
 
       let replyText = "";
@@ -443,13 +399,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
 
       if (res && res.reply && res.reply.trim().length > 0) {
         replyText = res.reply.trim();
-        label = res.aiProvider === "GROQ"
-          ? "⚡ Powered by Groq Llama 3.3"
-          : res.aiProvider === "GEMINI"
-          ? "🔵 Powered by Google Gemini"
-          : res.aiProvider === "ANTHROPIC"
-          ? "🟣 Powered by Anthropic Claude"
-          : "✨ SmartEvolve AI Mentor";
+        label = "⚡ Powered by Groq Llama 3.3";
       } else {
         replyText = getIntelligentMentorResponse(textToSend);
       }
@@ -512,8 +462,6 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                     style={[
                       styles.mentorBadge,
                       msg.providerLabel?.includes("Groq") && { color: "#F59E0B" },
-                      msg.providerLabel?.includes("Gemini") && { color: "#60A5FA" },
-                      msg.providerLabel?.includes("Anthropic") && { color: "#C084FC" },
                     ]}
                   >
                     {msg.providerLabel || "✨ SmartEvolve AI Mentor"}
