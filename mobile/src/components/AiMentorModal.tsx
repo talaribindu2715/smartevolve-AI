@@ -351,8 +351,8 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         ...prev,
         {
           sender: "mentor",
-          text: "✅ Groq API Key connected successfully! I will now answer your questions using real-time Groq AI ultra-fast inference.",
-          providerLabel: "⚡ Powered by Groq AI",
+          text: "✅ AI Key connected successfully! I will now answer your questions using real-time ultra-fast intelligence.",
+          providerLabel: "✨ SmartEvolve AI Mentor",
         },
       ]);
     }
@@ -414,7 +414,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                   {
                     sender: "mentor",
                     text: grText.trim(),
-                    providerLabel: "⚡ Powered by Groq AI",
+                    providerLabel: "✨ SmartEvolve AI Mentor",
                   },
                 ]);
                 setIsAsking(false);
@@ -436,17 +436,9 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
       ).catch(() => null);
 
       let replyText = "";
-      let label = "✨ SmartEvolve AI Mentor";
 
       if (res && res.reply && res.reply.trim().length > 0) {
         replyText = res.reply.trim();
-        const isRealGroq = res.aiProvider === "GROQ" &&
-                           res.isGeminiPowered !== false &&
-                           !res.reply.startsWith("Regarding \"") &&
-                           !res.reply.includes("In Full Stack Software Engineering, practical application") &&
-                           !res.reply.includes("The AI & Cognitive Systems pathway requires a balance") &&
-                           !res.reply.includes("That's a thoughtful question regarding");
-        label = isRealGroq ? "⚡ Powered by Groq AI" : "✨ SmartEvolve Mentor (Offline Fallback)";
       } else {
         replyText = getIntelligentMentorResponse(textToSend);
       }
@@ -456,7 +448,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         {
           sender: "mentor",
           text: replyText,
-          providerLabel: label,
+          providerLabel: "✨ SmartEvolve AI Mentor",
         },
       ]);
     } catch {
@@ -490,7 +482,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                 style={styles.keyToggleBtn}
                 activeOpacity={0.7}
               >
-                <Text style={styles.keyToggleBtnText}>{storedApiKey ? "🔑 Groq Active" : "🔑 Connect Key"}</Text>
+                <Text style={styles.keyToggleBtnText}>{storedApiKey ? "🔑 AI Active" : "🔑 Connect Key"}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
                 <Text style={styles.closeBtnText}>✕</Text>
@@ -537,13 +529,8 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                 ]}
               >
                 {msg.sender === "mentor" && (
-                  <Text
-                    style={[
-                      styles.mentorBadge,
-                      msg.providerLabel?.includes("Groq") && { color: "#F59E0B" },
-                    ]}
-                  >
-                    {msg.providerLabel || "✨ SmartEvolve AI Mentor"}
+                  <Text style={styles.mentorBadge}>
+                    ✨ SmartEvolve AI Mentor
                   </Text>
                 )}
                 <Text style={styles.msgText}>{msg.text}</Text>
