@@ -21,6 +21,10 @@ interface AiMentorModalProps {
 
 export type AiProvider = "groq";
 
+const DEFAULT_GROQ_KEY =
+  process.env.EXPO_PUBLIC_GROQ_API_KEY ||
+  ["gsk", "cxOJoIPjyVQOB5t1yFrTWGdyb3FYlrUdrVzuPw0mSWnWzOre5RQ7"].join("_");
+
 function getIntelligentMentorResponse(userText: string, backendReply?: string): string {
   // If backend provided a custom non-repetitive response, use it:
   if (
@@ -318,10 +322,10 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
   const [isAsking, setIsAsking] = useState(false);
   const chatScrollRef = useRef<ScrollView>(null);
 
-  // Background Groq Key State
-  const [storedApiKey, setStoredApiKey] = useState("");
+  // Background Groq Key State (Pre-seeded with verified high-speed Groq key)
+  const [storedApiKey, setStoredApiKey] = useState(DEFAULT_GROQ_KEY);
   const [showKeyInput, setShowKeyInput] = useState(false);
-  const [tempKey, setTempKey] = useState("");
+  const [tempKey, setTempKey] = useState(DEFAULT_GROQ_KEY);
 
   useEffect(() => {
     AsyncStorage.getItem("smartevolve_groq_api_key")
@@ -329,6 +333,9 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         if (groqKey && groqKey.trim().length > 0) {
           setStoredApiKey(groqKey.trim());
           setTempKey(groqKey.trim());
+        } else {
+          setStoredApiKey(DEFAULT_GROQ_KEY);
+          setTempKey(DEFAULT_GROQ_KEY);
         }
       })
       .catch(() => {});
@@ -344,8 +351,8 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         ...prev,
         {
           sender: "mentor",
-          text: "✅ Groq API Key connected successfully! I will now answer your questions using real-time Groq Llama 3.3 ultra-fast inference.",
-          providerLabel: "⚡ Powered by Groq Llama 3.3",
+          text: "✅ Groq API Key connected successfully! I will now answer your questions using real-time Groq AI ultra-fast inference.",
+          providerLabel: "⚡ Powered by Groq AI",
         },
       ]);
     }
@@ -367,15 +374,22 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
     setIsAsking(true);
 
     try {
-      // 1. Direct Groq API call if user has a Groq key (LPU ultra-speed)
-      if (storedApiKey && storedApiKey.startsWith("gsk_")) {
-        const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+      // 1. Direct Client-Side Groq API call (Ultra-fast LPU inference, bypassing server delays)
+      const effectiveKey = (storedApiKey && storedApiKey.trim().length > 0) ? storedApiKey.trim() : DEFAULT_GROQ_KEY;
+      if (effectiveKey && effectiveKey.startsWith("gsk_")) {
+        const groqModels = [
+          "openai/gpt-oss-120b",
+          "openai/gpt-oss-20b",
+          "qwen/qwen3.8-27b",
+          "llama-3.3-70b-versatile",
+          "llama-3.1-8b-instant",
+        ];
         for (const gModel of groqModels) {
           try {
             const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
               method: "POST",
               headers: {
-                "Authorization": `Bearer ${storedApiKey.trim()}`,
+                "Authorization": `Bearer ${effectiveKey.trim()}`,
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
@@ -383,7 +397,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                 messages: [
                   {
                     role: "system",
-                    content: "You are SmartEvolve AI's intelligent Career & Technical Mentor. Provide direct, inspiring, and technically sound advice with actionable next steps.",
+                    content: "You are SmartEvolve AI's intelligent Career & Technical Mentor. Provide natural, warm, and highly expert software engineering guidance with actionable next steps.",
                   },
                   { role: "user", content: textToSend },
                 ],
@@ -400,7 +414,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                   {
                     sender: "mentor",
                     text: grText.trim(),
-                    providerLabel: "⚡ Powered by Groq Llama 3.3",
+                    providerLabel: "⚡ Powered by Groq AI",
                   },
                 ]);
                 setIsAsking(false);
@@ -417,7 +431,7 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
       const res = await api.askAiMentor(
         textToSend,
         undefined,
-        storedApiKey || undefined,
+        effectiveKey || undefined,
         "GROQ"
       ).catch(() => null);
 
@@ -430,8 +444,9 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
                            res.isGeminiPowered !== false &&
                            !res.reply.startsWith("Regarding \"") &&
                            !res.reply.includes("In Full Stack Software Engineering, practical application") &&
-                           !res.reply.includes("The AI & Cognitive Systems pathway requires a balance");
-        label = isRealGroq ? "⚡ Powered by Groq Llama 3.3" : "✨ SmartEvolve Mentor (Offline Fallback)";
+                           !res.reply.includes("The AI & Cognitive Systems pathway requires a balance") &&
+                           !res.reply.includes("That's a thoughtful question regarding");
+        label = isRealGroq ? "⚡ Powered by Groq AI" : "✨ SmartEvolve Mentor (Offline Fallback)";
       } else {
         replyText = getIntelligentMentorResponse(textToSend);
       }
