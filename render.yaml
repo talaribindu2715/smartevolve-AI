@@ -22,6 +22,8 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
       - key: BLOCKCHAIN_RPC_URL
         value: https://rpc.sepolia.org
       - key: BLOCKCHAIN_CHAIN_ID

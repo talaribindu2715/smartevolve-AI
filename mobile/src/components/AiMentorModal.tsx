@@ -320,16 +320,43 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
 
   // Background Groq Key State
   const [storedApiKey, setStoredApiKey] = useState("");
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [tempKey, setTempKey] = useState("");
 
   useEffect(() => {
     AsyncStorage.getItem("smartevolve_groq_api_key")
       .then((groqKey) => {
         if (groqKey && groqKey.trim().length > 0) {
           setStoredApiKey(groqKey.trim());
+          setTempKey(groqKey.trim());
         }
       })
       .catch(() => {});
   }, [visible]);
+
+  const handleSaveKey = async () => {
+    const clean = tempKey.trim().replaceAll("^[\"']|[\"']$", "").replaceAll("^(?i)Bearer\\s+", "").trim();
+    if (clean) {
+      await AsyncStorage.setItem("smartevolve_groq_api_key", clean).catch(() => {});
+      setStoredApiKey(clean);
+      setShowKeyInput(false);
+      setChatLog((prev) => [
+        ...prev,
+        {
+          sender: "mentor",
+          text: "✅ Groq API Key connected successfully! I will now answer your questions using real-time Groq Llama 3.3 ultra-fast inference.",
+          providerLabel: "⚡ Powered by Groq Llama 3.3",
+        },
+      ]);
+    }
+  };
+
+  const handleClearKey = async () => {
+    await AsyncStorage.removeItem("smartevolve_groq_api_key").catch(() => {});
+    setStoredApiKey("");
+    setTempKey("");
+    setShowKeyInput(false);
+  };
 
   const handleSendQuestion = async (customText?: string) => {
     const textToSend = (customText || question).trim();
@@ -399,7 +426,12 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
 
       if (res && res.reply && res.reply.trim().length > 0) {
         replyText = res.reply.trim();
-        label = "⚡ Powered by Groq Llama 3.3";
+        const isRealGroq = res.aiProvider === "GROQ" &&
+                           res.isGeminiPowered !== false &&
+                           !res.reply.startsWith("Regarding \"") &&
+                           !res.reply.includes("In Full Stack Software Engineering, practical application") &&
+                           !res.reply.includes("The AI & Cognitive Systems pathway requires a balance");
+        label = isRealGroq ? "⚡ Powered by Groq Llama 3.3" : "✨ SmartEvolve Mentor (Offline Fallback)";
       } else {
         replyText = getIntelligentMentorResponse(textToSend);
       }
@@ -433,14 +465,46 @@ export function AiMentorModal({ visible, onClose }: AiMentorModalProps) {
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.header}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.headerTitle}>SmartEvolve AI Mentor</Text>
               <Text style={styles.headerSubTitle}>24/7 Cognitive Career & Technical Advisor</Text>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-              <Text style={styles.closeBtnText}>✕</Text>
-            </TouchableOpacity>
+            <View style={styles.headerRightActions}>
+              <TouchableOpacity
+                onPress={() => setShowKeyInput(!showKeyInput)}
+                style={styles.keyToggleBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.keyToggleBtnText}>{storedApiKey ? "🔑 Groq Active" : "🔑 Connect Key"}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+                <Text style={styles.closeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Optional Direct Key Input (Toggled by key button) */}
+          {showKeyInput && (
+            <View style={styles.quickKeyRow}>
+              <TextInput
+                style={styles.quickKeyInput}
+                placeholder="Paste Groq Key (gsk_...) for instant AI"
+                placeholderTextColor="#64748B"
+                value={tempKey}
+                onChangeText={setTempKey}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity style={styles.quickKeySaveBtn} onPress={handleSaveKey}>
+                <Text style={styles.quickKeySaveBtnText}>Save</Text>
+              </TouchableOpacity>
+              {storedApiKey ? (
+                <TouchableOpacity style={styles.quickKeyClearBtn} onPress={handleClearKey}>
+                  <Text style={styles.quickKeyClearBtnText}>Clear</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          )}
 
           {/* Chat Messages */}
           <ScrollView
@@ -544,6 +608,73 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     marginTop: 2,
+  },
+  headerRightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  keyToggleBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.4)",
+  },
+  keyToggleBtnText: {
+    color: "#F59E0B",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  quickKeyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: "#0F172A",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+    gap: 8,
+  },
+  quickKeyInput: {
+    flex: 1,
+    height: 38,
+    backgroundColor: "#1E293B",
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    color: "#F8FAFC",
+    fontSize: 12,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  quickKeySaveBtn: {
+    backgroundColor: "#F59E0B",
+    paddingHorizontal: 14,
+    height: 38,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickKeySaveBtnText: {
+    color: "#0B0F19",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  quickKeyClearBtn: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.4)",
+    paddingHorizontal: 10,
+    height: 38,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickKeyClearBtnText: {
+    color: "#F87171",
+    fontSize: 11,
+    fontWeight: "700",
   },
   closeBtn: {
     width: 32,
