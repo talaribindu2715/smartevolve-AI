@@ -28,9 +28,9 @@ const registerSchema = z
     email: z.string().email("Enter a valid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Please confirm your password"),
-    educationLevel: z.string().min(2, "Education level is required"),
+    educationLevel: z.string().optional(),
     institution: z.string().optional(),
-    branch: z.string().min(2, "Degree or branch is required"),
+    branch: z.string().optional(),
     graduationYear: z.string().optional(),
     interests: z.string().optional(),
   })
@@ -359,67 +359,8 @@ export default function RegisterScreen() {
             ) : null}
           </View>
 
-          {/* Degree & Branch */}
-          <View style={styles.rowInputs}>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.label}>Branch / Degree *</Text>
-              <Controller
-                control={control}
-                name="branch"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={[styles.input, errors.branch && styles.inputError]}
-                    placeholder="Computer Science"
-                    placeholderTextColor={colors.textMuted}
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
-            </View>
-
-            <View style={[styles.inputGroup, { width: 110 }]}>
-              <Text style={styles.label}>Grad Year</Text>
-              <Controller
-                control={control}
-                name="graduationYear"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    style={styles.input}
-                    placeholder="2027"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="numeric"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
-            </View>
-          </View>
-
-          {/* College or Institution */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>College or Institution (Optional)</Text>
-            <Controller
-              control={control}
-              name="institution"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. University / College name"
-                  placeholderTextColor={colors.textMuted}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-          </View>
-
           <Button
-            title="Create Student Profile & Verify Email"
+            title="Create and Verify Email"
             onPress={handleSubmit(onSubmit)}
             loading={loading}
             size="lg"
@@ -437,12 +378,10 @@ export default function RegisterScreen() {
             getExtraData={() => {
               const currentValues = getValues();
               return {
-                branch: currentValues?.branch?.trim() || "Computer Science",
-                graduation_year: currentValues?.graduationYear
-                  ? parseInt(currentValues.graduationYear, 10)
-                  : 2027,
-                institution: currentValues?.institution?.trim() || "Engineering College",
-                education_level: currentValues?.educationLevel || "Undergraduate B.Tech",
+                branch: "Computer Science",
+                graduation_year: 2027,
+                institution: "Engineering College",
+                education_level: "Undergraduate B.Tech",
                 ...(currentValues?.fullName?.trim() ? { full_name: currentValues.fullName.trim() } : {}),
               };
             }}
