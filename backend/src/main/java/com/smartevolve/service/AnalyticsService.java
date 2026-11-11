@@ -41,7 +41,7 @@ public class AnalyticsService {
         Profile profile = profileRepository.findById(studentId).orElse(null);
         String studentName = (profile != null && profile.getFullName() != null && !profile.getFullName().equalsIgnoreCase("Student") && !profile.getFullName().equalsIgnoreCase("Alex Chen"))
                 ? profile.getFullName()
-                : "Bunny pradeep";
+                : "Bindu Talari";
         boolean onboardingDone = profile != null && Boolean.TRUE.equals(profile.getOnboardingCompleted());
 
         List<StudentSkillDto> studentSkills = skillService.getStudentSkills(studentId);

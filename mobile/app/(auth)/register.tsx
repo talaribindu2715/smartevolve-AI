@@ -237,9 +237,7 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.appName}>SmartEvolve <Text style={{ color: colors.accent }}>AI</Text></Text>
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Start your personalized, blockchain-backed career roadmap</Text>
         </View>
 
         {authError ? (
@@ -258,7 +256,7 @@ export default function RegisterScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.fullName && styles.inputError]}
-                  placeholder="Alex Chen"
+                  placeholder="Enter your full name"
                   placeholderTextColor={colors.textMuted}
                   onBlur={onBlur}
                   onChangeText={onChange}
@@ -280,7 +278,7 @@ export default function RegisterScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="alex.chen@university.edu"
+                  placeholder="Enter your email"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -305,7 +303,7 @@ export default function RegisterScreen() {
                 <View style={[styles.passwordInputWrap, errors.password && styles.inputError]}>
                   <TextInput
                     style={styles.passwordInputField}
-                    placeholder="••••••••••••"
+                    placeholder="Enter password"
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry={!showPassword}
                     onBlur={onBlur}
@@ -337,7 +335,7 @@ export default function RegisterScreen() {
                 <View style={[styles.passwordInputWrap, errors.confirmPassword && styles.inputError]}>
                   <TextInput
                     style={styles.passwordInputField}
-                    placeholder="••••••••••••"
+                    placeholder="Confirm password"
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry={!showConfirmPassword}
                     onBlur={onBlur}
@@ -492,31 +490,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: spacing.xl,
-    paddingTop: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    justifyContent: "center",
     width: "100%",
     maxWidth: 480,
     alignSelf: "center",
   },
   header: {
-    marginBottom: spacing.lg,
-  },
-  appName: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "800",
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginTop: 4,
   },
   errorBanner: {
     backgroundColor: colors.errorBg,

@@ -186,7 +186,7 @@ public class DataInitializer implements CommandLineRunner {
         UUID demoStudentId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         Profile demoProfile = profileRepository.save(Profile.builder()
             .id(demoStudentId)
-            .fullName("Bunny pradeep")
+            .fullName("Bindu Talari")
             .educationLevel("Undergraduate B.Tech")
             .institution("MIT Engineering")
             .branch("Computer Science")

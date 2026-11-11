@@ -127,7 +127,7 @@ export default function LoginScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[styles.input, errors.email && styles.inputError]}
-                  placeholder="student@university.edu"
+                  placeholder="Enter your email"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -157,7 +157,7 @@ export default function LoginScreen() {
                 <View style={[styles.passwordInputWrap, errors.password && styles.inputError]}>
                   <TextInput
                     style={styles.passwordInputField}
-                    placeholder="••••••••••••"
+                    placeholder="Enter your password"
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry={!showPassword}
                     onBlur={onBlur}

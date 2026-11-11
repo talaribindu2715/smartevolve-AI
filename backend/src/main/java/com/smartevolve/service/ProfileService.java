@@ -37,7 +37,7 @@ public class ProfileService {
             log.info("Creating initial profile for authenticated student {}", studentId);
             String name = (defaultEmail != null && defaultEmail.contains("@"))
                     ? defaultEmail.substring(0, defaultEmail.indexOf('@'))
-                    : "Bunny pradeep";
+                    : "Bindu Talari";
             // Capitalize first letter
             name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 
@@ -61,7 +61,7 @@ public class ProfileService {
     public ProfileDto getProfileDto(UUID studentId) {
         Profile profile = getOrCreateProfile(studentId, null);
         if (profile.getFullName() == null || profile.getFullName().equalsIgnoreCase("Student") || profile.getFullName().equalsIgnoreCase("Alex Chen")) {
-            profile.setFullName("Bunny pradeep");
+            profile.setFullName("Bindu Talari");
         }
         return mapToDto(profile);
     }
