@@ -193,7 +193,7 @@ export default function DashboardScreen() {
       <View style={styles.responsiveWrapper}>
         {/* Top Welcome Bar */}
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.greetingContainer}>
             <Text style={styles.greetingSub}>SmartEvolve AI Profile</Text>
             <Text style={styles.greetingTitle}>Hello, {studentName} 👋</Text>
           </View>
@@ -572,10 +572,15 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    width: "100%",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.lg,
+  },
+  greetingContainer: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   greetingSub: {
     color: colors.textSecondary,
@@ -583,11 +588,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    textAlign: "center",
+    marginBottom: 4,
   },
   greetingTitle: {
     color: colors.textPrimary,
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "900",
+    textAlign: "center",
+    flexWrap: "wrap",
+    lineHeight: 32,
+    maxWidth: "100%",
+    alignSelf: "center",
   },
   settingsBtn: {
     padding: spacing.xs,

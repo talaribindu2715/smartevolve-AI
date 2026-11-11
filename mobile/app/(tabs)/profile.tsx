@@ -200,7 +200,7 @@ export default function ProfileScreen() {
     .filter(Boolean)
     .slice(0, 2)
     .join("")
-    .toUpperCase() || "BP";
+    .toUpperCase() || "ST";
 
   const handleOpenEdit = () => {
     setEditName(effectiveStudentName);
@@ -582,9 +582,11 @@ const styles = StyleSheet.create({
   },
   profileHeaderCard: {
     alignItems: "center",
+    justifyContent: "center",
     padding: spacing.xl,
     backgroundColor: colors.surface,
     marginBottom: spacing.md,
+    width: "100%",
   },
   avatarWrap: {
     width: 76,
@@ -606,17 +608,28 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 22,
     fontWeight: "800",
+    textAlign: "center",
+    flexWrap: "wrap",
+    lineHeight: 30,
+    maxWidth: "100%",
+    alignSelf: "center",
   },
   education: {
     color: colors.textSecondary,
     fontSize: 14,
-    marginTop: 4,
+    marginTop: 6,
     textAlign: "center",
+    flexWrap: "wrap",
+    lineHeight: 20,
+    maxWidth: "100%",
+    alignSelf: "center",
   },
   gradYear: {
     color: colors.textMuted,
     fontSize: 13,
     marginTop: 2,
+    textAlign: "center",
+    alignSelf: "center",
   },
   metaBadgeRow: {
     flexDirection: "row",
