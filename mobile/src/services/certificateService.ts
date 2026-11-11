@@ -27,7 +27,7 @@ export async function getStoredEarnedCertificates(): Promise<EarnedCourseCertifi
     let list: EarnedCourseCertificate[] = raw ? JSON.parse(raw) : [];
 
     // Purge any legacy sample mock certificate
-    const filtered = list.filter((c) => c.studentName !== "Bindu Talari" && c.id !== "SE-GL-926487");
+    const filtered = list.filter((c) => c.id !== "SE-GL-926487");
     if (filtered.length !== list.length) {
       list = filtered;
       await AsyncStorage.setItem(EARNED_CERTS_STORAGE_KEY, JSON.stringify(list));

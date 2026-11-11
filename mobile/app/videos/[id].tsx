@@ -21,6 +21,7 @@ import { Badge } from "../../src/components/Badge";
 import { Button } from "../../src/components/Button";
 import { VideoCard } from "../../src/components/VideoCard";
 import { CertificateModal } from "../../src/components/CertificateModal";
+import { useAuth } from "../../src/store/authContext";
 import { YouTubeVideo } from "../../src/types";
 import { MASTER_VIDEOS, getMasterVideoById } from "../../src/data/masterVideos";
 import { saveEarnedCertificate } from "../../src/services/certificateService";
@@ -70,6 +71,7 @@ export default function VideoDetailScreen() {
   const [quizStreak, setQuizStreak] = useState(0);
   const [maxQuizStreak, setMaxQuizStreak] = useState(0);
 
+  const { user } = useAuth();
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: () => api.getProfile(),
@@ -899,7 +901,7 @@ export default function VideoDetailScreen() {
           onClose={() => setShowCertModal(false)}
           certificate={{
             id: "SE-GL-" + (effectiveVideo.videoId || "CERT").toUpperCase(),
-            studentName: profile?.fullName || "Student",
+            studentName: user?.fullName || profile?.fullName || "Student",
             department: profile?.branch || "Computer Science",
             institution: profile?.institution || "SmartEvolve Academy",
             graduationYear: profile?.graduationYear,

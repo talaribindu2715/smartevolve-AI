@@ -55,13 +55,12 @@ export function CertificateModal({ visible, onClose, certificate }: CertificateM
   const candidateName =
     certificate.studentName &&
     certificate.studentName.trim().length > 0 &&
-    certificate.studentName !== "Bindu Talari" &&
     certificate.studentName !== "Student" &&
     certificate.studentName !== "Alex Chen"
       ? certificate.studentName.trim()
       : user?.fullName && user.fullName !== "Student" && user.fullName !== "Alex Chen"
       ? user.fullName.trim()
-      : "Bunny pradeep";
+      : certificate.studentName?.trim() || user?.fullName?.trim() || "Student";
   const studentName = candidateName;
 
   const issuedDate = certificate.issuedDate

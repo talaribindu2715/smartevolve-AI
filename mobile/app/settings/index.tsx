@@ -78,7 +78,7 @@ export default function SettingsScreen() {
           ? profile.fullName
           : storedName && storedName !== "Student" && storedName !== "Alex Chen"
           ? storedName
-          : "Bunny pradeep";
+          : user?.fullName || "Student";
 
       setFullName(effectiveName);
       if (profile) {

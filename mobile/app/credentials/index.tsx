@@ -23,6 +23,7 @@ import { Skeleton, CardSkeleton } from "../../src/components/Skeleton";
 import { ErrorBanner } from "../../src/components/ErrorBanner";
 import { Credential, EligibleCredential, VerifyCredentialResponse } from "../../src/types";
 import { CertificateModal } from "../../src/components/CertificateModal";
+import { useAuth } from "../../src/store/authContext";
 import {
   getStoredEarnedCertificates,
   mergeCredentialsWithStoredCerts,
@@ -30,6 +31,7 @@ import {
 import { colors, radius, spacing } from "../../src/theme/colors";
 
 export default function CredentialsScreen() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{
     verify?: string;
@@ -471,7 +473,11 @@ export default function CredentialsScreen() {
             selectedCredDetail
               ? {
                   id: selectedCredDetail.id,
-                  studentName: (params.name ? decodeURIComponent(params.name) : null) || profile?.fullName || "Student",
+                  studentName:
+                    (params.name ? decodeURIComponent(params.name) : null) ||
+                    user?.fullName ||
+                    profile?.fullName ||
+                    "Student",
                   department: profile?.branch || "Computer Science",
                   institution: profile?.institution || "SmartEvolve Academy",
                   graduationYear: profile?.graduationYear,

@@ -179,7 +179,7 @@ export default function ProfileScreen() {
       ? profile.fullName
       : dashboard?.studentName && dashboard.studentName !== "Student" && dashboard.studentName !== "Alex Chen"
       ? dashboard.studentName
-      : "Bunny pradeep";
+      : user?.fullName || "Student";
 
   const effectiveBranch =
     profile?.branch && profile.branch !== "Engineering Discipline"
@@ -506,7 +506,7 @@ export default function ProfileScreen() {
                 style={styles.formInput}
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="e.g. Bunny pradeep"
+                placeholder="e.g. Bindu Talari"
                 placeholderTextColor={colors.textMuted}
               />
             </View>

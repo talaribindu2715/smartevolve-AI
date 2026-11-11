@@ -89,7 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? fetchedProfile.fullName
         : storedName && storedName !== "Student" && storedName !== "Alex Chen"
         ? storedName
-        : "Bunny pradeep";
+        : sessionUser?.email
+        ? sessionUser.email.split("@")[0]
+        : "Student";
 
     // Persist real registered name and metadata to local storage
     await AsyncStorage.setItem(STORAGE_KEY_STUDENT_NAME, effectiveName);

@@ -69,7 +69,12 @@ export default function LoginScreen() {
 
         if (authData.session) {
           const userMeta = authData.session.user?.user_metadata || {};
-          const metaName = userMeta.full_name || userMeta.fullName || userMeta.name || "Bunny pradeep";
+          const metaName =
+            userMeta.full_name ||
+            userMeta.fullName ||
+            userMeta.name ||
+            data.email.split("@")[0] ||
+            "Student";
           await login(authData.session.access_token, authData.session.user.id, {
             fullName: metaName,
             institution: userMeta.institution,

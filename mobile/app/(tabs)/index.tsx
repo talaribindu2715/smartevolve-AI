@@ -115,7 +115,7 @@ export default function DashboardScreen() {
       ? storedStudentName
       : dashboard?.studentName && dashboard.studentName !== "Student" && dashboard.studentName !== "Alex Chen"
       ? dashboard.studentName
-      : "Bunny pradeep";
+      : "Student";
   const careerGoal =
     dashboard?.targetCareerName && dashboard.targetCareerName !== "Not Selected"
       ? dashboard.targetCareerName
