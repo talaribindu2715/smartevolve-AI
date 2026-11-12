@@ -31,7 +31,7 @@ plt.rcParams['axes.labelsize'] = 12
 # 1. SIMULATION SETUP (2,000 LEARNERS x 10 RANDOM SEEDS)
 # ==============================================================================
 NUM_LEARNERS = 2000
-SEEDS = [42, 101, 202, 303, 404, 505, 606, 707, 808, 909]
+SEEDS = list(range(1000, 1010))  # Fixed random seeds (1000–1009 for main comparison per paper Section III-G)
 NUM_ATTEMPTS = 20
 
 # Algorithm 1: Damped Rate (SmartEvolve AI algorithm)

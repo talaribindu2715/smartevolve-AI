@@ -124,9 +124,9 @@ public class CareerMatchingEngine {
         String readiness;
         if (overallScore.compareTo(new BigDecimal("85.0")) >= 0) {
             readiness = "READY";
-        } else if (overallScore.compareTo(new BigDecimal("65.0")) >= 0) {
+        } else if (overallScore.compareTo(new BigDecimal("70.0")) >= 0) {
             readiness = "HIGH_POTENTIAL";
-        } else if (overallScore.compareTo(new BigDecimal("40.0")) >= 0) {
+        } else if (overallScore.compareTo(new BigDecimal("50.0")) >= 0) {
             readiness = "DEVELOPING";
         } else {
             readiness = "EARLY_STAGE";

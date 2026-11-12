@@ -1,5 +1,6 @@
 package com.smartevolve.ai;
 
+import com.smartevolve.exception.CircularPrerequisiteException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -72,12 +73,9 @@ public class PrerequisiteResolver {
         }
 
         if (sorted.size() < nodeMap.size()) {
-            // Fallback gracefully without crash if cycle exists, append remaining nodes
-            for (ResourceNode node : nodes) {
-                if (!sorted.contains(node)) {
-                    sorted.add(node);
-                }
-            }
+            throw new CircularPrerequisiteException(String.format(
+                    "Circular prerequisite dependency detected: only %d of %d curriculum nodes could be resolved.",
+                    sorted.size(), nodeMap.size()));
         }
 
         return sorted;
