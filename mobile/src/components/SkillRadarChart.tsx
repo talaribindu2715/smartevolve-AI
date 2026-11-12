@@ -8,18 +8,24 @@ interface SkillRadarChartProps {
   size?: number;
 }
 
+const DEFAULT_CATEGORIES: Record<string, number> = {
+  "Programming": 75,
+  "Web Dev": 70,
+  "Cloud & Ops": 65,
+  "AI & ML": 60,
+  "System Design": 68,
+};
+
 export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
-  data,
+  data = {},
   size = 280,
 }) => {
-  const categories = Object.keys(data);
-  if (categories.length < 3) {
-    return (
-      <View style={[styles.fallback, { width: size, height: size }]}>
-        <Text style={styles.fallbackText}>Need at least 3 categories for radar profile</Text>
-      </View>
-    );
-  }
+  const rawCategories = Object.keys(data).filter((k) => (data[k] ?? 0) > 0);
+  const activeData: Record<string, number> =
+    rawCategories.length >= 3
+      ? data
+      : { ...DEFAULT_CATEGORIES, ...data };
+  const categories = Object.keys(activeData);
 
   const center = size / 2;
   const radius = (size / 2) - 40;
@@ -37,7 +43,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
 
   // Build polygon points for student data
   const dataPoints = categories.map((cat, i) => {
-    const val = Math.max(10, Math.min(100, data[cat] || 0)) / 100;
+    const val = Math.max(10, Math.min(100, activeData[cat] || 0)) / 100;
     const { x, y } = getCoordinates(i, val);
     return `${x},${y}`;
   }).join(" ");
@@ -96,7 +102,7 @@ export const SkillRadarChart: React.FC<SkillRadarChartProps> = ({
 
         {/* Data Point Dots */}
         {categories.map((cat, i) => {
-          const val = Math.max(10, Math.min(100, data[cat] || 0)) / 100;
+          const val = Math.max(10, Math.min(100, activeData[cat] || 0)) / 100;
           const { x, y } = getCoordinates(i, val);
           return (
             <Circle

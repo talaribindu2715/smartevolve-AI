@@ -221,6 +221,22 @@ public class DataInitializer implements CommandLineRunner {
             .evidenceType("SELF_REPORTED")
             .build());
 
+        studentSkillRepository.save(StudentSkill.builder()
+            .student(demoProfile)
+            .skill(skills.get("Docker"))
+            .proficiency(BigDecimal.valueOf(72.0))
+            .confidence(BigDecimal.valueOf(0.78))
+            .evidenceType("ASSESSMENT_VERIFIED")
+            .build());
+
+        studentSkillRepository.save(StudentSkill.builder()
+            .student(demoProfile)
+            .skill(skills.get("Machine Learning"))
+            .proficiency(BigDecimal.valueOf(65.0))
+            .confidence(BigDecimal.valueOf(0.70))
+            .evidenceType("PROJECT_SUBMISSION")
+            .build());
+
         log.info("SmartEvolve in-memory database initialized successfully with {} skills, {} careers, and YouTube educational pipeline.",
             skills.size(), careers.size());
     }

@@ -14,8 +14,9 @@ public final class SecurityUtils {
     private static final Map<String, UUID> EMAIL_TO_STUDENT_ID = new ConcurrentHashMap<>();
 
     static {
-        // Pre-map the primary student account email so both Email/Password and Google OAuth resolve to the exact same profile
+        // Pre-map primary student account emails so both Email/Password and Google OAuth resolve to the exact same profile
         EMAIL_TO_STUDENT_ID.put("talaribindu767@gmail.com", DEMO_STUDENT_ID);
+        EMAIL_TO_STUDENT_ID.put("bunny.akki21@gmail.com", DEMO_STUDENT_ID);
         EMAIL_TO_STUDENT_ID.put("bunny.pradeep@student.edu", DEMO_STUDENT_ID);
     }
 
