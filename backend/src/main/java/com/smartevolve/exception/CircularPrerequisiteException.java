@@ -5,3 +5,4 @@ public class CircularPrerequisiteException extends RuntimeException {
         super(message);
     }
 }
+
